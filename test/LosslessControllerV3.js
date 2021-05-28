@@ -1019,5 +1019,52 @@ describe.only('LosslessControllerV3', () => {
     });
   });
 
+  describe('getAvailableAmount', () => {
+    it('should get available amount correctly', async () => {
+      await token.connect(initialHolder).transfer(recipient.address, 10);
+      await token.connect(initialHolder).transfer(recipient.address, 10);
+      await token.connect(initialHolder).transfer(recipient.address, 10);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(duration.minutes(5)),
+      ]);
+
+      await token.connect(initialHolder).transfer(recipient.address, 5);
+      await token.connect(initialHolder).transfer(recipient.address, 6);
+
+      expect(
+        await losslessController.getAvailableAmount(
+          token.address,
+          recipient.address,
+        ),
+      ).to.be.equal(30);
+    });
+  });
+
+  describe('transfer instantly after recieving', () => {
+    it('should revert in case cooldown is not done', async () => {
+      await token.connect(initialHolder).transfer(recipient.address, 10);
+      await expect(
+        token.connect(recipient).transfer(initialHolder.address, 10),
+      ).to.be.revertedWith('LERC20: transfer amount exceeds balance');
+    });
+
+    it('should succeed if cooldown is finished', async () => {
+      await token.connect(initialHolder).transfer(recipient.address, 10);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(duration.minutes(5)),
+      ]);
+
+      await token.connect(recipient).transfer(initialHolder.address, 10);
+      expect(
+        await losslessController.getAvailableAmount(
+          token.address,
+          recipient.address,
+        ),
+      ).to.be.equal(0);
+    });
+  });
+
   regularERC20();
 });

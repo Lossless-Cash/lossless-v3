@@ -145,12 +145,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- BEFORE HOOKS ---
 
     function beforeTransfer(address sender, address recipient, uint256 amount) external {
-        // DO NOT ALLOW TRANSFER IF AMOUNT IS NOT ALLOWED
-
+        require(getAvailableAmount(_msgSender(), sender) >= amount, "LERC20: transfer amount exceeds balance");
     }
 
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
-        // DO NOT ALLOW TRANSFER IF AMOUNT IS NOT ALLOWED
+        require(getAvailableAmount(_msgSender(), sender) >= amount, "LERC20: transfer amount exceeds balance");
     }
 
     function beforeApprove(address sender, address spender, uint256 amount) external {}
