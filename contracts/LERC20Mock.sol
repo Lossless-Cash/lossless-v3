@@ -14,16 +14,12 @@ contract LERC20Mock is LERC20 {
         address admin,
         address adminBackup,
          uint256 _timelockPeriod
-    ) payable LERC20(totalSupply, name, symbol, lssAddress, admin, adminBackup, _timelockPeriod) {
+    ) payable LERC20(totalSupply, name, symbol, admin, adminBackup, _timelockPeriod, lssAddress) {
         _mint(initialAccount, initialBalance);
     }
 
     function mint(address account, uint256 amount) public {
         _mint(account, amount);
-    }
-
-    function burn(address account, uint256 amount) public {
-        _burn(account, amount);
     }
 
     function transferInternal(address from, address to, uint256 value) public {

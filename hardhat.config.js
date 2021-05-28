@@ -1,9 +1,9 @@
 require('@nomiclabs/hardhat-waffle');
 require('@openzeppelin/hardhat-upgrades');
 require('solidity-coverage');
-require('hardhat-abi-exporter');
-require('@nomiclabs/hardhat-etherscan');
-require('@openzeppelin/hardhat-defender');
+// require('hardhat-abi-exporter');
+// require('@nomiclabs/hardhat-etherscan');
+// require('@openzeppelin/hardhat-defender');
 require('hardhat-gas-reporter');
 
 const {
