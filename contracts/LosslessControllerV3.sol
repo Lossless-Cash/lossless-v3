@@ -109,8 +109,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     function enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
-        queue.last += 1;
-        queue.lockedFunds[queue.last] = checkpoint;
+        if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
+            queue.lockedFunds[queue.last].amount += checkpoint.amount;
+        } else {
+            queue.last += 1;
+            queue.lockedFunds[queue.last] = checkpoint;
+        }
     }
 
     function dequeueLockedFunds(address recipient) private {
@@ -124,7 +128,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function getVersion() public pure returns (uint256) {
         return 3;
     }
-
+    
     function getLockedAmount(address token, address account) public view returns (uint256 lockedAmount) {
         LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
         uint i = queue.first;
@@ -140,6 +144,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function getAvailableAmount(address token, address account) public view returns (uint256 amount) {
         uint total = IERC20(token).balanceOf(account);
         return total - getLockedAmount(token, account);
+    }
+
+    function getQueueTail(address token, address account) public view returns (uint256) {
+        LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
+        return queue.last;
     }
 
     // --- BEFORE HOOKS ---

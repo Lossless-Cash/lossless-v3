@@ -10,5 +10,6 @@ module.exports = {
     artifacts: 'writable',
     ethers: 'writable',
     upgrades: 'writable',
+    network: 'writable',
   },
 };

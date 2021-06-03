@@ -1066,5 +1066,73 @@ describe.only('LosslessControllerV3', () => {
     });
   });
 
-  regularERC20();
+  describe('prevent DoSing a wallet', () => {
+    it('should not increase queue when transfering in the same block', async () => {
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+
+      await network.provider.send('evm_setAutomine', [false]);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await network.provider.send('evm_setAutomine', [true]);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+
+      await network.provider.send('evm_setAutomine', [false]);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await network.provider.send('evm_setAutomine', [true]);
+
+      expect(
+        await losslessController.getQueueTail(token.address, recipient.address),
+      ).to.be.equal(2);
+    });
+
+    it('should calculate available amount correctly', async () => {
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+
+      await network.provider.send('evm_setAutomine', [false]);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await network.provider.send('evm_setAutomine', [true]);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(duration.minutes(5)) + 1,
+      ]);
+
+      await network.provider.send('evm_setAutomine', [false]);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+      await network.provider.send('evm_setAutomine', [true]);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+
+      expect(
+        await losslessController.getQueueTail(token.address, recipient.address),
+      ).to.be.equal(3);
+
+      expect(
+        await losslessController.getAvailableAmount(
+          token.address,
+          recipient.address,
+        ),
+      ).to.be.equal(4);
+    });
+  });
+
+  // regularERC20();
 });

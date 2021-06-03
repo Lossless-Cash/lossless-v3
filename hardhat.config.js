@@ -4,7 +4,7 @@ require('solidity-coverage');
 // require('hardhat-abi-exporter');
 // require('@nomiclabs/hardhat-etherscan');
 // require('@openzeppelin/hardhat-defender');
-require('hardhat-gas-reporter');
+// require('hardhat-gas-reporter');
 
 const {
   ROPSTEN_PRIVATE_KEY,
