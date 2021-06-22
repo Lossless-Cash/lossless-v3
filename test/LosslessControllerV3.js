@@ -15,6 +15,7 @@ let deployer;
 let losslessController;
 let losslessControllerV1;
 let token;
+let dex;
 
 const name = 'My Token';
 const symbol = 'MTKN';
@@ -895,7 +896,7 @@ function regularERC20() {
   });
 }
 
-describe.only('LosslessControllerV3', () => {
+describe('LosslessControllerV3', () => {
   beforeEach(async () => {
     [
       deployer,
@@ -908,6 +909,7 @@ describe.only('LosslessControllerV3', () => {
       oneMoreAccount,
       pauseAdmin,
       adminBackup,
+      dex,
     ] = await ethers.getSigners();
 
     const LosslessController = await ethers.getContractFactory(
@@ -918,15 +920,16 @@ describe.only('LosslessControllerV3', () => {
       'LosslessControllerV3',
     );
 
-    losslessControllerV1 = await upgrades.deployProxy(LosslessController, [
-      lssAdmin.address,
-      lssRecoveryAdmin.address,
-      pauseAdmin.address,
-    ]);
+    losslessControllerV1 = await upgrades.deployProxy(
+      LosslessController,
+      [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address],
+      { initializer: 'initialize' },
+    );
 
     losslessController = await upgrades.upgradeProxy(
       losslessControllerV1.address,
       LosslessControllerV3,
+      { initializer: 'initialize' },
     );
 
     const LERC20Mock = await ethers.getContractFactory('LERC20Mock');
@@ -1042,27 +1045,129 @@ describe.only('LosslessControllerV3', () => {
   });
 
   describe('transfer instantly after recieving', () => {
-    it('should revert in case cooldown is not done', async () => {
-      await token.connect(initialHolder).transfer(recipient.address, 10);
-      await expect(
-        token.connect(recipient).transfer(initialHolder.address, 10),
-      ).to.be.revertedWith('LERC20: transfer amount exceeds balance');
+    describe('recipient is in dexlist', () => {
+      beforeEach(async () => {
+        await losslessController.connect(lssAdmin).addToDexList(dex.address);
+      });
+
+      it('should revert in case cooldown is not done', async () => {
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+        await expect(
+          token.connect(recipient).transfer(dex.address, 10),
+        ).to.be.revertedWith('LERC20: transfer amount exceeds balance');
+      });
+
+      it('should succeed in case amount is below threshold', async () => {
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+        await token.connect(recipient).transfer(dex.address, 1);
+
+        expect(
+          await losslessController.getAvailableAmount(
+            token.address,
+            recipient.address,
+          ),
+        ).to.be.equal(0);
+
+        expect(await token.balanceOf(recipient.address)).to.be.equal(9);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(duration.hours(1)),
+        ]);
+        await network.provider.send('evm_mine');
+
+        expect(
+          await losslessController.getAvailableAmount(
+            token.address,
+            recipient.address,
+          ),
+        ).to.be.equal(9);
+      });
+
+      it('should succeed if cooldown is finished', async () => {
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(duration.minutes(5)),
+        ]);
+
+        await token.connect(recipient).transfer(dex.address, 10);
+        expect(
+          await losslessController.getAvailableAmount(
+            token.address,
+            recipient.address,
+          ),
+        ).to.be.equal(10);
+      });
+
+      it('should revert if more than one transfer in a row', async () => {
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+
+        await token.connect(recipient).transfer(dex.address, 1);
+        await expect(
+          token.connect(recipient).transfer(dex.address, 1),
+        ).to.be.revertedWith('LERC20: transfers limit reached');
+      });
+
+      it('should allow transfering if cooldown is finished, but more than one transfer in a row', async () => {
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(duration.minutes(5)),
+        ]);
+        await network.provider.send('evm_mine');
+
+        await token.connect(recipient).transfer(dex.address, 1);
+        await token.connect(recipient).transfer(dex.address, 1);
+
+        expect(
+          await losslessController.getAvailableAmount(
+            token.address,
+            recipient.address,
+          ),
+        ).to.be.equal(18);
+      });
     });
 
-    it('should succeed if cooldown is finished', async () => {
-      await token.connect(initialHolder).transfer(recipient.address, 10);
+    describe('recipient is not in dexlist', () => {
+      it('should succeed if cooldown is not finished', async () => {
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+        await token.connect(initialHolder).transfer(recipient.address, 10);
 
-      await ethers.provider.send('evm_increaseTime', [
-        Number(duration.minutes(5)),
-      ]);
+        await token.connect(recipient).transfer(initialHolder.address, 10);
+        expect(
+          await losslessController.getAvailableAmount(
+            token.address,
+            recipient.address,
+          ),
+        ).to.be.equal(0);
 
-      await token.connect(recipient).transfer(initialHolder.address, 10);
-      expect(
-        await losslessController.getAvailableAmount(
-          token.address,
-          recipient.address,
-        ),
-      ).to.be.equal(0);
+        expect(
+          await losslessController.getLockedAmount(
+            token.address,
+            recipient.address,
+          ),
+        ).to.be.equal(10);
+      });
+
+      it('should succeed if cooldown is finished', async () => {
+        await token.connect(initialHolder).transfer(recipient.address, 10);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(duration.minutes(5)),
+        ]);
+
+        await token.connect(recipient).transfer(initialHolder.address, 10);
+        expect(
+          await losslessController.getAvailableAmount(
+            token.address,
+            recipient.address,
+          ),
+        ).to.be.equal(0);
+      });
     });
   });
 
@@ -1094,43 +1199,68 @@ describe.only('LosslessControllerV3', () => {
       ).to.be.equal(2);
     });
 
-    it('should calculate available amount correctly', async () => {
-      await token.connect(initialHolder).transfer(recipient.address, 1);
+    // it('should calculate available amount correctly', async () => {
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
 
-      await network.provider.send('evm_setAutomine', [false]);
-      await token.connect(initialHolder).transfer(recipient.address, 1);
-      await token.connect(initialHolder).transfer(recipient.address, 1);
-      await network.provider.send('evm_setAutomine', [true]);
+    //   await network.provider.send('evm_setAutomine', [false]);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await network.provider.send('evm_setAutomine', [true]);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+
+    //   await ethers.provider.send('evm_increaseTime', [
+    //     Number(duration.minutes(5)) + 1,
+    //   ]);
+
+    //   await network.provider.send('evm_setAutomine', [false]);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+    //   await network.provider.send('evm_setAutomine', [true]);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+
+    //   await network.provider.send('evm_setAutomine', [false]);
+    //   await token.connect(initialHolder).transfer(recipient.address, 1);
+
+    //   expect(
+    //     await losslessController.getQueueTail(token.address, recipient.address),
+    //   ).to.be.equal(3);
+
+    //   expect(
+    //     await losslessController.getAvailableAmount(
+    //       token.address,
+    //       recipient.address,
+    //     ),
+    //   ).to.be.equal(4);
+    // });
+
+    it('should calculate available amount correctly', async () => {
       await token.connect(initialHolder).transfer(recipient.address, 1);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(duration.minutes(5)) + 1,
       ]);
 
-      await network.provider.send('evm_setAutomine', [false]);
       await token.connect(initialHolder).transfer(recipient.address, 1);
       await token.connect(initialHolder).transfer(recipient.address, 1);
       await token.connect(initialHolder).transfer(recipient.address, 1);
       await token.connect(initialHolder).transfer(recipient.address, 1);
       await token.connect(initialHolder).transfer(recipient.address, 1);
       await token.connect(initialHolder).transfer(recipient.address, 1);
-      await token.connect(initialHolder).transfer(recipient.address, 1);
-      await token.connect(initialHolder).transfer(recipient.address, 1);
-      await token.connect(initialHolder).transfer(recipient.address, 1);
-      await token.connect(initialHolder).transfer(recipient.address, 1);
-      await network.provider.send('evm_setAutomine', [true]);
       await token.connect(initialHolder).transfer(recipient.address, 1);
 
-      expect(
-        await losslessController.getQueueTail(token.address, recipient.address),
-      ).to.be.equal(3);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
 
-      expect(
-        await losslessController.getAvailableAmount(
-          token.address,
-          recipient.address,
-        ),
-      ).to.be.equal(4);
+      await token.connect(initialHolder).transfer(recipient.address, 1);
+
+      await token.connect(recipient).transfer(initialHolder.address, 1);
     });
   });
 

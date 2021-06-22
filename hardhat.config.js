@@ -1,6 +1,7 @@
 require('@nomiclabs/hardhat-waffle');
+
 require('@openzeppelin/hardhat-upgrades');
-require('solidity-coverage');
+// require('solidity-coverage');
 // require('hardhat-abi-exporter');
 // require('@nomiclabs/hardhat-etherscan');
 // require('@openzeppelin/hardhat-defender');
@@ -15,13 +16,32 @@ const {
 } = require('./config');
 
 module.exports = {
-  solidity: '0.8.0',
+  solidity: {
+    compilers: [
+      {
+        version: '0.8.0',
+      },
+      {
+        version: '0.5.16',
+      },
+      {
+        version: '0.4.18',
+      },
+      {
+        version: '0.6.6',
+      },
+    ],
+  },
   paths: {
     artifacts: './src/artifacts',
   },
   networks: {
     hardhat: {
       chainId: 1337,
+      forking: {
+        url: `https://eth-mainnet.alchemyapi.io/v2/WpZq7dbPsInJFOhzMtNSNXkib7dL7A1O`,
+        blockNumber: 12644052,
+      },
     },
     ropsten: {
       url: `https://ropsten.infura.io/v3/${INFURA_KEY}`,
