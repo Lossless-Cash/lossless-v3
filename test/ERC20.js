@@ -863,7 +863,7 @@ function regularERC20() {
   });
 }
 
-describe('ERC20 WITH LOSSLESS V1', () => {
+describe.skip('ERC20 WITH LOSSLESS V1', () => {
   beforeEach(async () => {
     [
       deployer,
@@ -904,7 +904,7 @@ describe('ERC20 WITH LOSSLESS V1', () => {
   regularERC20();
 });
 
-describe('ERC20 WITH LOSSLESS V2', () => {
+describe.skip('ERC20 WITH LOSSLESS V2', () => {
   beforeEach(async () => {
     [
       deployer,
@@ -955,7 +955,7 @@ describe('ERC20 WITH LOSSLESS V2', () => {
   regularERC20();
 });
 
-describe('ERC20 WITH LOSSLESS TURNED OFF', () => {
+describe.skip('ERC20 WITH LOSSLESS TURNED OFF', () => {
   beforeEach(async () => {
     [
       deployer,

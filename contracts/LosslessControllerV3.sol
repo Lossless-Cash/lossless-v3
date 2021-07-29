@@ -175,15 +175,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
     
     function getLockedAmount(address token, address account) public view returns (uint256) {
-        // console.log("---");
         uint256 lockedAmount = 0;
         LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
         uint i = queue.first;
         while (i <= queue.last) {
             ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
-            // console.log("checkpoint.timestamp", checkpoint.timestamp);
-            // console.log("amount", checkpoint.amount);
-            // console.log("block.timestamp", block.timestamp);
             if (checkpoint.timestamp > block.timestamp) {
                 lockedAmount = lockedAmount + checkpoint.amount;
             }
@@ -194,7 +190,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     function getAvailableAmount(address token, address account) public view returns (uint256 amount) {
-        // console.log("------");
         uint256 total = IERC20(token).balanceOf(account);
         uint256 locked = getLockedAmount(token, account);
         return total - locked;

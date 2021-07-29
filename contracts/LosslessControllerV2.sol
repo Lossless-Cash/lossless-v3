@@ -4,157 +4,71 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "hardhat/console.sol";
 
+interface LERC20 {
+    function totalSupply() external view returns (uint256);
 
-interface ILERC20 {
-    function transferOutBlacklistedFunds(address[] calldata from) external;
-    function transfer(address recipient, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
-    function getAdmin() external view returns (address);
+
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
 contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
     address public admin;
     address public recoveryAdmin;
-    
-    struct Blacklist {
-        mapping(address => uint256) blacklist;
+
+    uint256 public reportLifetime;
+    uint256 public reportCount;
+    uint256 public stakeAmount;
+    LERC20 public losslessToken;
+
+    // FIX
+    struct TokenReports {
+        mapping(address => uint256) reports;
     }
 
-    struct RemoveFromBlacklistProposal {
-        bool confirmedByTokenAdmin;
-        bool confirmedByLosslessAdmin;
+    struct Stake {
+        uint256 reportId;
+        uint256 timestamp;
     }
 
-    struct RemoveFromBlacklistProposalsList {
-        mapping(address => RemoveFromBlacklistProposal) list;
-    }
+    mapping(uint256 => address) public reporter;
+    mapping(address => TokenReports) tokenReports;
+    mapping(uint256 => uint256) public reportTimestamps;
+    mapping(uint256 => address) public reportTokens;
+    mapping(uint256 => bool) public anotherReports;
 
-    struct Freezelist {
-        mapping(address => uint256) freezelist;
-    }
+    mapping(address => Stake[]) public stakes;
+    mapping(uint256 => address[]) public stakers;
 
-    struct IdoConfig {
-        bool confirmed;
-        uint256 startTime;
-        uint256 duration;
-        address[] whitelist;
-    }
-
-    struct TokensTransferProposal {
-        bool confirmedByTokenAdmin;
-        bool confirmedByLosslessAdmin;
-        address proposedAddress;
-    }
-
-    mapping(address => Freezelist) internal tokensFreezelist;
-    mapping(address => Blacklist) internal tokensBlacklists;
-    mapping(address => IdoConfig) internal tokensIdoConfig;
-    mapping(address => RemoveFromBlacklistProposalsList) internal tokensBlacklistRemoveProposals;
-    mapping(address => TokensTransferProposal) internal tokensTransfersPorposals;
-    mapping(address => bool) internal idoProposals;
-
-    uint256 public BLACKLIST_DISPUTE_TIME;
-
-    event TokenRegistered(address indexed token, address indexed admin);
-    event CooldownSet(address indexed token, address indexed admin, uint256 cooldown);
-    event AddressesBlacklisted(address indexed token, address indexed admin, address[] addressesToBlacklist);
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event IDOProposed(address indexed tokenAddress, uint256 duration);
-    event IDOConfirmed(address indexed tokenAddress);
-    event BlacklistedAddressesProposedRemovalTokenAdmin(address indexed tokenAddress, address[] proposedAddreses);
-    event BlacklistedAddressesProposedRemovalLosslessAdmin(address indexed tokenAddress, address[] proposedAddreses);
-    event BlacklistedFundsTransferedOut(address indexed tokenAddress, address indexed adminAddress, address[] blacklistedAddresses);
-    event TransferProposedByTokenAdmin(address indexed tokenAddress, address indexed adminAddress, address indexed proposedAddress);
-    event TransferProposedByLosslessAdmin(address indexed tokenAddress, address indexed adminAddress, address indexed proposedAddress);
-    event FundsTransfered(address indexed tokenAddress, address indexed adminAddress, address indexed proposedAddress, uint256 amount);
 
+    event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
+    event AnotherReportSubmitted(address indexed token, address indexed account, uint256 reportId);
+    event Staked(address indexed token, address indexed account, uint256 reportId);
     // --- MODIFIERS ---
-
-    modifier onlyAdmin (address tokenAddress) {
-        require(
-            ILERC20(tokenAddress).getAdmin() == _msgSender() || admin == _msgSender(),
-            "LOSSLESS: Sender is not admin"
-        );
-        _;
-    }
 
     modifier onlyLosslessRecoveryAdmin() {
         require(_msgSender() == recoveryAdmin, "LOSSLESS: Must be recoveryAdmin");
         _;
     }
 
-    modifier onlyTokenAdmin(address tokenAddress) {
-        require(
-            ILERC20(tokenAddress).getAdmin() == _msgSender(),
-            "LOSSLESS: Sender must be token admin"
-        );
-        _;
-    }
-
     modifier onlyLosslessAdmin() {
-        require(
-            admin == _msgSender(),
-            "LOSSLESS: Must be admin"
-        );
+        require(admin == _msgSender(), "LOSSLESS: Must be admin");
         _;
     }
 
-    // --- INITIALIZER ---
-
-    function initialize() public onlyLosslessAdmin {
-        BLACKLIST_DISPUTE_TIME =  7 days;
-    }
-
-    // --- GETTERS ---
-    function getIsBlacklisted(address tokenAddress, address _address) public view returns (bool) {
-        return tokensBlacklists[tokenAddress].blacklist[_address] > 0;
-    }
-
-    function getIsIdoConfirmed(address tokenAddress) public view returns (bool) {
-        return tokensIdoConfig[tokenAddress].confirmed;
-    }
-
-    function getIdoStartTime(address tokenAddress) public view returns (uint256) {
-        return tokensIdoConfig[tokenAddress].startTime;
-    }
-
-    function getIdoDuration(address tokenAddress) public view returns (uint256) {
-        return tokensIdoConfig[tokenAddress].duration;
-    }
-
-    function getIdoWhitelist(address tokenAddress) public view returns (address[] memory) {
-        return tokensIdoConfig[tokenAddress].whitelist;
-    }
-
-    function getRemovalProposedByTokenAdmin(address tokenAddress, address proposedAddress) public view returns (bool) {
-        return tokensBlacklistRemoveProposals[tokenAddress].list[proposedAddress].confirmedByTokenAdmin;
-    }
-
-    function getRemovalProposedByLosslessAdmin(address tokenAddress, address proposedAddress) public view returns (bool) {
-        return tokensBlacklistRemoveProposals[tokenAddress].list[proposedAddress].confirmedByLosslessAdmin;
-    }
-
-    function getTransferProposedByTokenAdmin(address tokenAddress) public view returns (bool) {
-        return tokensTransfersPorposals[tokenAddress].confirmedByTokenAdmin;
-    }
-
-    function getTransferProposedByLosslessAdmin(address tokenAddress) public view returns (bool) {
-        return tokensTransfersPorposals[tokenAddress].confirmedByLosslessAdmin;
-    }
-
-    function getTransferProposedAddress(address tokenAddress) public view returns (address) {
-        return tokensTransfersPorposals[tokenAddress].proposedAddress;
-    }
-
-    function getVersion() public pure returns (uint256) {
-        return 2;
-    }
- 
-    // --- SETTERS ---
+    // --- ADMIN STUFF ---
 
     function pause() public {
         require(_msgSender() == pauseAdmin, "LOSSLESS: Must be pauseAdmin");
@@ -181,186 +95,122 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
         pauseAdmin = newPauseAdmin;
     }
 
-    function blacklistAddresses(address tokenAddress, address[] calldata addressesToBlacklist) public onlyAdmin(tokenAddress) whenNotPaused {
-        require(tokensIdoConfig[tokenAddress].startTime != 0, "LOSSLESS: IDO has not started yet");
-        require(tokensIdoConfig[tokenAddress].startTime + tokensIdoConfig[tokenAddress].duration > block.timestamp, "LOSSLESS: IDO has ended");
-        require(addressesToBlacklist.length > 0, "LOSSLESS: Blacklist can not be empty");
-        for (uint i = 0; i < addressesToBlacklist.length; i++) {
-            require(addressesToBlacklist[i] != address(this), "LOSSLESS: Can not blacklist lossless contract");
-            tokensBlacklists[tokenAddress].blacklist[addressesToBlacklist[i]] = block.timestamp;
-        }
-        emit AddressesBlacklisted(tokenAddress, _msgSender(), addressesToBlacklist);
+    function setReportLifetime(uint256 _reportLifetime) public onlyLosslessAdmin {
+        reportLifetime = _reportLifetime;
     }
 
-    function proposeIdoConfig(address tokenAddress, uint256 duration, address[] calldata whitelist) public onlyTokenAdmin(tokenAddress)  whenNotPaused{
-        require(duration != 0, "LOSSLESS: Duration cannot be 0");
-        require(duration <= 1 hours, "LOSSLESS: Duration cannot be more than one hour");
-        require(whitelist.length > 0, "LOSSLESS: Whitelist cannot be empty");
-        IdoConfig storage idoConfig = tokensIdoConfig[tokenAddress];
-        require(idoConfig.startTime == 0, "LOSSLESS: IDO already started");
-        idoConfig.confirmed = false;
-        idoConfig.duration = duration;
-        idoConfig.whitelist = whitelist;
-        emit IDOProposed(tokenAddress, duration);
+    function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
+        losslessToken = LERC20(_losslessToken);
     }
 
-    function setIdoConfigConfirm(address tokenAddress, bool value) public onlyLosslessAdmin whenNotPaused {
-        IdoConfig storage idoConfig = tokensIdoConfig[tokenAddress];
-        require(idoConfig.duration != 0, "LOSSLESS: IDO config is not proposed");
-        require(idoConfig.startTime == 0, "LOSSLESS: IDO already started");
-        idoConfig.confirmed = value;
-        emit IDOConfirmed(tokenAddress);
+    function setStakeAmount(uint256 _stakeAmount) public onlyLosslessAdmin {
+        stakeAmount = _stakeAmount;
     }
 
-    function startIdo(address tokenAddress) public onlyTokenAdmin(tokenAddress) whenNotPaused {
-        IdoConfig storage idoConfig = tokensIdoConfig[tokenAddress];
-        require(idoConfig.confirmed, "LOSSLESS: IDO config is not confirmed");
-        require(idoConfig.startTime == 0, "LOSSLESS: IDO already started");
-        idoConfig.startTime = block.timestamp;
+    // --- GETTERS ---
+
+    function getVersion() public pure returns (uint256) {
+        return 2;
     }
 
-    function removeFromBlacklistByTokenAdmin(address tokenAddress, address[] memory addressesToRemove) public onlyTokenAdmin(tokenAddress) whenNotPaused {
-        for(uint i = 0; i < addressesToRemove.length; i++) {
-            RemoveFromBlacklistProposal storage proposal =  tokensBlacklistRemoveProposals[tokenAddress].list[addressesToRemove[i]];
-            if (proposal.confirmedByLosslessAdmin) {
-                tokensBlacklists[tokenAddress].blacklist[addressesToRemove[i]] = 0;
-                delete tokensBlacklistRemoveProposals[tokenAddress].list[addressesToRemove[i]];
-            } else {
-                proposal.confirmedByTokenAdmin = true;
+    // GET STAKE INFO
+
+    function getAccountStakes(address account) public view returns(Stake[] memory) {
+        return stakes[account];
+    }
+
+    function getReportStakes(uint256 reportId) public view returns(address[] memory) {
+        return stakers[reportId];
+    }
+
+    function getIsAccountStaked(uint256 reportId, address account) public view returns(bool) {
+        for(uint256 i = 0; i < stakes[account].length; i++) {
+            if (stakes[account][i].reportId == reportId) {
+                return true;
             }
         }
 
-        emit BlacklistedAddressesProposedRemovalTokenAdmin(tokenAddress, addressesToRemove);
+        return false;
     }
 
-    function removeFromBlacklistByLosslessAdmin(address tokenAddress, address[] memory addressesToRemove) public onlyLosslessAdmin whenNotPaused {
-        for(uint i = 0; i < addressesToRemove.length; i++) {
-            RemoveFromBlacklistProposal storage proposal =  tokensBlacklistRemoveProposals[tokenAddress].list[addressesToRemove[i]];
-            if (proposal.confirmedByTokenAdmin) {
-                tokensBlacklists[tokenAddress].blacklist[addressesToRemove[i]] = 0;
-                delete tokensBlacklistRemoveProposals[tokenAddress].list[addressesToRemove[i]];
-            } else {
-                proposal.confirmedByLosslessAdmin = true;
-            }
-        }
+    // --- REPORTS ---
 
-        emit BlacklistedAddressesProposedRemovalLosslessAdmin(tokenAddress, addressesToRemove);
+    function report(address token, address account) public {
+        uint256 reportId = tokenReports[token].reports[account];
+        uint256 reportTimestamp = reportTimestamps[reportId];
+        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LOSSLESS: report already exists");
+
+        reportId = reportCount + 1;
+        reporter[reportId] = _msgSender();
+        // Bellow does not allow freezing more than one wallet. Do we want that?
+        tokenReports[token].reports[account] = reportId;
+        reportTimestamps[reportId] = block.timestamp;
+        reportTokens[reportId] = token;
+
+        losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
+
+        emit ReportSubmitted(token, account, reportId);
     }
 
-    function transferTokensByTokenAdmin(address tokenAddress, address proposedAddress) public onlyTokenAdmin(tokenAddress) whenNotPaused {
-        TokensTransferProposal storage proposal = tokensTransfersPorposals[tokenAddress];
-        if (proposal.confirmedByLosslessAdmin && proposal.proposedAddress == proposedAddress) {
-            proposal.confirmedByLosslessAdmin = false;
-            proposal.confirmedByTokenAdmin = false;
-            proposal.proposedAddress = address(0);
-            uint256 balance = ILERC20(tokenAddress).balanceOf(address(this));
-            require(ILERC20(tokenAddress).transfer(proposedAddress, balance));
-            emit FundsTransfered(tokenAddress, _msgSender(), proposedAddress, balance);
-        } else {
-            proposal.confirmedByTokenAdmin = true;
-            proposal.confirmedByLosslessAdmin = false;
-            proposal.proposedAddress = proposedAddress;
-            emit TransferProposedByTokenAdmin(tokenAddress, _msgSender(), proposedAddress);
-        }
+    function reportAnother(uint256 reportId, address token, address account) public {
+        uint256 reportTimestamp = reportTimestamps[reportId];
+        require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LOSSLESS: report does not exists");
+        require(anotherReports[reportId] == false, "LOSSLESS: another report already submitted");
+        require(_msgSender() == reporter[reportId], "LOSSLESS: invalid reporter");
+
+        anotherReports[reportId] = true;
+        tokenReports[token].reports[account] = reportId;
+
+        emit AnotherReportSubmitted(token, account, reportId);
     }
 
-    function transferTokensByLosslessAdmin(address tokenAddress, address proposedAddress) public onlyLosslessAdmin whenNotPaused {
-        TokensTransferProposal storage proposal = tokensTransfersPorposals[tokenAddress];
-        if (proposal.confirmedByTokenAdmin && proposal.proposedAddress == proposedAddress) {
-            proposal.confirmedByLosslessAdmin = false;
-            proposal.confirmedByTokenAdmin = false;
-            proposal.proposedAddress = address(0);
-            uint256 balance = ILERC20(tokenAddress).balanceOf(address(this));
-            require(ILERC20(tokenAddress).transfer(proposedAddress, balance));
-            emit FundsTransfered(tokenAddress, _msgSender(), proposedAddress, balance);
-        } else {
-            proposal.confirmedByLosslessAdmin = true;
-            proposal.confirmedByTokenAdmin = false;
-            proposal.proposedAddress = proposedAddress;
-            emit TransferProposedByLosslessAdmin(tokenAddress, _msgSender(), proposedAddress);
-        }
+    function stake(uint256 reportId) public {        
+        require(!getIsAccountStaked(reportId, _msgSender()), "LOSSLESS: already staked");
+        require(reporter[reportId] != _msgSender(), "LOSSLESS: reporter can not stake");
+        uint256 reportTimestamp = reportTimestamps[reportId];
+        require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LOSSLESS: report does not exists");
+
+        stakers[reportId].push(_msgSender());
+        stakes[_msgSender()].push(Stake(reportId, block.timestamp));
+        losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
+        
+        emit Staked(reportTokens[reportId], _msgSender(), reportId);
     }
 
-
-    function addCooldown(address recipient) private {
-        IdoConfig memory conf = tokensIdoConfig[_msgSender()];
-        if (conf.startTime > 0 && conf.startTime + conf.duration > block.timestamp) {
-            bool isWhitelisted = false;
-            for (uint i = 0; i < conf.whitelist.length; i++) {
-                if (conf.whitelist[i] == recipient) {
-                    isWhitelisted = true;
-                }
-            }
-            if (!isWhitelisted) {
-                tokensFreezelist[_msgSender()].freezelist[recipient] = conf.startTime + conf.duration;
-            }
-        }
-    }
-
-    function transferOutBlacklistedFunds(address tokenAddress, address[] calldata blacklistedAddresses) public onlyAdmin(tokenAddress) {
-        require(blacklistedAddresses.length > 0, "LOSSLESS: blacklisted addresses must not be empty");
-        for (uint i = 0; i < blacklistedAddresses.length; i++) {
-            require(tokensBlacklists[tokenAddress].blacklist[blacklistedAddresses[i]] > 0, "LOSSLESS: some addresses are not blacklisted");
-            require(tokensBlacklists[tokenAddress].blacklist[blacklistedAddresses[i]] + BLACKLIST_DISPUTE_TIME < block.timestamp, "LOSSLESS: some addresses still can be disputed");
-        }
-
-        ILERC20(tokenAddress).transferOutBlacklistedFunds(blacklistedAddresses);
-        emit BlacklistedFundsTransferedOut(tokenAddress, _msgSender(), blacklistedAddresses);
-    }
 
     // --- BEFORE HOOKS ---
 
-    function beforeTransfer(address sender, address recipient, uint256 amount) public view {
-        uint256 blacklistedAt = tokensBlacklists[_msgSender()].blacklist[sender];
-        bool isStopped = false;
-        if (blacklistedAt > 0) {
-            isStopped = true;
-        }
-
-        uint256 freezedUntil = tokensFreezelist[_msgSender()].freezelist[sender];
-        if (freezedUntil > block.timestamp) {
-            isStopped = true;
-        }
-        
-        require(!isStopped, "LOSSLESS: Operation not allowed");
+    function beforeTransfer(address sender, address recipient, uint256 amount) external {
+        uint256 reportId = tokenReports[_msgSender()].reports[sender];
+        uint256 reportTimestamp = reportTimestamps[reportId];
+        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LOSSLESS: address is temporarily flagged");
     }
 
-    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) public view {
-        uint256 senderBlacklistedAt= tokensBlacklists[_msgSender()].blacklist[sender];
-        uint256 msgSenderBlacklistedAt= tokensBlacklists[_msgSender()].blacklist[msgSender];
-        bool isStopped = false;
-        if (senderBlacklistedAt > 0 || msgSenderBlacklistedAt > 0) {
-            isStopped = true;
-        }
+    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
+        uint256 reportId = tokenReports[_msgSender()].reports[sender];
+        uint256 reportTimestamp = reportTimestamps[reportId];
+        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LOSSLESS: address is temporarily flagged");
 
-        uint256 senderFreezedUntil = tokensFreezelist[_msgSender()].freezelist[sender];
-        uint256 msgSenderFreezedUntil = tokensFreezelist[_msgSender()].freezelist[msgSender];
-        if (senderFreezedUntil > block.timestamp || msgSenderFreezedUntil > block.timestamp) {
-            isStopped = true;
-        }
-        
-        require(!isStopped, "LOSSLESS: Operation not allowed");
+        uint256 msgSenderReportId = tokenReports[_msgSender()].reports[msgSender];
+        uint256 msgSenderReportTimestamp = reportTimestamps[msgSenderReportId];
+        require(msgSenderReportId == 0 || msgSenderReportTimestamp + reportLifetime < block.timestamp, "LOSSLESS: address is temporarily flagged");
     }
 
-    function beforeApprove(address sender, address spender, uint256 amount) public {}
+    function beforeApprove(address sender, address spender, uint256 amount) external {}
 
-    function beforeIncreaseAllowance(address msgSender, address spender, uint256 addedValue) public {}
+    function beforeIncreaseAllowance(address msgSender, address spender, uint256 addedValue) external {}
 
-    function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) public {}
+    function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external {}
 
     // --- AFTER HOOKS ---
 
-    function afterApprove(address sender, address spender, uint256 amount) public {}
+    function afterApprove(address sender, address spender, uint256 amount) external {}
 
-    function afterTransfer(address sender, address recipient, uint256 amount) public {
-        addCooldown(recipient);
-    }
+    function afterTransfer(address sender, address recipient, uint256 amount) external {}
 
-    function afterTransferFrom(address msgSender, address sender, address recipient, uint256 amount) public {
-        addCooldown(recipient);
-    }
+    function afterTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {}
 
-    function afterIncreaseAllowance(address sender, address spender, uint256 addedValue) public {}
+    function afterIncreaseAllowance(address sender, address spender, uint256 addedValue) external {}
 
-    function afterDecreaseAllowance(address sender, address spender, uint256 subtractedValue) public {}
+    function afterDecreaseAllowance(address sender, address spender, uint256 subtractedValue) external {}
 }

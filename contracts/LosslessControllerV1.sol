@@ -14,12 +14,6 @@ contract LosslessControllerV1 is Initializable, ContextUpgradeable, PausableUpgr
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
 
-    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin) public initializer {
-        admin = _admin;
-        recoveryAdmin = _recoveryAdmin;
-        pauseAdmin = _pauseAdmin;
-    }
-
     // --- MODIFIERS ---
 
     modifier onlyLosslessRecoveryAdmin() {
@@ -30,6 +24,12 @@ contract LosslessControllerV1 is Initializable, ContextUpgradeable, PausableUpgr
     modifier onlyLosslessAdmin() {
         require(admin == _msgSender(), "LOSSLESS: Must be admin");
         _;
+    }
+
+    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin) public initializer {
+        admin = _admin;
+        recoveryAdmin = _recoveryAdmin;
+        pauseAdmin = _pauseAdmin;
     }
 
     // --- SETTERS ---
