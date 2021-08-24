@@ -59,12 +59,12 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // --- MODIFIERS ---
 
     modifier onlyLosslessRecoveryAdmin() {
-        require(_msgSender() == recoveryAdmin, "LOSSLESS: Must be recoveryAdmin");
+        require(_msgSender() == recoveryAdmin, "LOSSLESS: must be recoveryAdmin");
         _;
     }
 
     modifier onlyLosslessAdmin() {
-        require(admin == _msgSender(), "LOSSLESS: Must be admin");
+        require(admin == _msgSender(), "LOSSLESS: must be admin");
         _;
     }
 
@@ -140,7 +140,8 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 reportTimestamp = reportTimestamps[reportId];
         require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LOSSLESS: report already exists");
 
-        reportId = reportCount + 1;
+        reportCount = reportCount + 1;
+        reportId = reportCount;
         reporter[reportId] = _msgSender();
         // Bellow does not allow freezing more than one wallet. Do we want that?
         tokenReports[token].reports[account] = reportId;

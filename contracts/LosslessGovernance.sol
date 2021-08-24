@@ -1,10 +1,13 @@
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "hardhat/console.sol";
 
 interface LosslessController {
     // Checks if not over and checks if exists
-    function isReportValid(uint256 reportId) external view returns (bool);
     function reportedProject(uint256 reportId) external view returns (address);
     function admin() external view returns (address);
+    function reportTimestamps(uint256 reportId) external view returns (uint256);
+    function reportLifetime() external view returns(uint256);
+    function reportTokens(uint256 reportId) external view returns(address);
 }
 
 // [ ] set project team
@@ -19,19 +22,20 @@ interface LERC20 {
 
 contract LosslessGovernance is AccessControl {
     bytes32 private constant COMMITTEE_ROLE = keccak256("COMMITTEE_ROLE");
-    uint8 private lssTeamVoteIndex = 0;
-    uint8 private projectTeamVoteIndex = 1;
-    uint8 private committeeVoteIndex = 2;
+    uint8 public lssTeamVoteIndex = 0;
+    uint8 public projectTeamVoteIndex = 1;
+    uint8 public committeeVoteIndex = 2;
 
     LosslessController public controller;
     uint256 public committeeMembersCount = 0;
+    uint256 public quorumSize = 0;
     mapping(address => address) projectOwners;
 
     struct Vote {
         mapping(address => bool) committeeMemberVoted;
         bool[] committeeVotes;
-        bool[] votes;
-        bool[] voted;
+        bool[3] votes;
+        bool[3] voted;
         bool resolved;
     }
 
@@ -40,6 +44,15 @@ contract LosslessGovernance is AccessControl {
     constructor(address _controller) {
         controller = LosslessController(_controller);
         _setupRole(DEFAULT_ADMIN_ROLE, controller.admin());
+    }
+
+    modifier onlyLosslessAdmin() {
+        require(controller.admin() == _msgSender(), "LOSSLESS: must be admin");
+        _;
+    }
+
+    function isCommitteeMember(address account) public view returns(bool) {
+        return hasRole(COMMITTEE_ROLE, account);
     }
 
     function getCommitteeMajorityReachedResult(uint256 reportId) private view returns(bool isMajorityReached, bool result) {
@@ -63,17 +76,36 @@ contract LosslessGovernance is AccessControl {
 
         return (false, false);
     }
+
+    function getIsVoted(uint256 reportId, uint8 voterIndex) public view returns(bool) {
+        return reportVotes[reportId].voted[voterIndex];
+    }
+
+    function getIsCommitteeMemberVoted(uint256 reportId, address account) public view returns(bool) {
+        return reportVotes[reportId].committeeMemberVoted[account];
+    }
+
+    function getVote(uint256 reportId, uint8 voterIndex) public view returns(bool) {
+        return reportVotes[reportId].votes[voterIndex];
+    }
+
+    function getCommitteeVotesCount(uint256 reportId) public view returns(uint256) {
+        return reportVotes[reportId].committeeVotes.length;
+    }
     
-    // revoke committee
-    function addCommitteeMembers(address[] memory members) public  {
+    function addCommitteeMembers(address[] memory members, uint256 newQuorumSize) public onlyLosslessAdmin  {
         committeeMembersCount += members.length;
+        quorumSize = newQuorumSize;
         for (uint256 i = 0; i < members.length; ++i) {
+            require(!isCommitteeMember(members[i]), "LOSSLESS: duplicate members");
             grantRole(COMMITTEE_ROLE, members[i]);
         }
     } 
 
-    function removeCommitteeMembers(address[] memory members) public  {
+    function removeCommitteeMembers(address[] memory members, uint256 newQuorumSize) public onlyLosslessAdmin  {
+        require(committeeMembersCount != 0, "LOSSLESS: committee has no members");
         committeeMembersCount -= members.length;
+        quorumSize = newQuorumSize;
         for (uint256 i = 0; i < members.length; ++i) {
             revokeRole(COMMITTEE_ROLE, members[i]);
         }
@@ -84,39 +116,39 @@ contract LosslessGovernance is AccessControl {
     // - PROJECT TEAM VOTE ON REPORT
     // - COMMITTEE VOTE ON REPORT
 
-    // QUESTIONS: 
-    // - do we want to change vote once we've vote
-
-    function losslessVote(uint256 reportId, bool vote) public {
-        require(controller.admin() == msg.sender, "Caller is not lossless team");
-        require(controller.isReportValid(reportId), "Report is not valid");
+    function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin {
+        uint256 reportTimestamp = controller.reportTimestamps(reportId);
+        require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LOSSLESS: report is not valid");
 
         Vote storage reportVote = reportVotes[reportId];
-        require(!reportVote.voted[lssTeamVoteIndex], "Lossless team already voted.");
+        require(!reportVote.voted[lssTeamVoteIndex], "LOSSLESS: LSS team already voted.");
 
         reportVote.voted[lssTeamVoteIndex] = true;
         reportVote.votes[lssTeamVoteIndex] = vote;
     }
 
     function projectTeamVote(uint256 reportId, bool vote) public {
-        require(controller.isReportValid(reportId), "Report is not valid");
-        
-        address projectTeam = LERC20(controller.reportedProject(reportId)).admin();
-        require(projectTeam == msg.sender, "Caller is not project team");
+        uint256 reportTimestamp = controller.reportTimestamps(reportId);
+        require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LOSSLESS: report is not valid");
+
+        address projectTeam = LERC20(controller.reportTokens(reportId)).admin();
+        require(projectTeam == msg.sender, "LOSSLESS: must be project team");
 
         Vote storage reportVote = reportVotes[reportId];
-        require(!reportVote.voted[projectTeamVoteIndex], "Project team already voted.");
+        require(!reportVote.voted[projectTeamVoteIndex], "LOSSLESS: team already voted");
         
         reportVote.voted[projectTeamVoteIndex] = true;
         reportVote.votes[projectTeamVoteIndex] = vote;
     }
 
     function committeeMemberVote(uint256 reportId, bool vote) public {
-        require(hasRole(COMMITTEE_ROLE, msg.sender), "Caller is not committee member");
-        require(controller.isReportValid(reportId), "Report is not valid");
+        require(isCommitteeMember(msg.sender), "LOSSLESS: Caller is not committee member");
+
+        uint256 reportTimestamp = controller.reportTimestamps(reportId);
+        require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LOSSLESS: report is not valid");
 
         Vote storage reportVote = reportVotes[reportId];
-        require(!reportVote.committeeMemberVoted[msg.sender], "Committee member already voted.");
+        require(!reportVote.committeeMemberVoted[msg.sender], "LOSSLESS: Committee member already voted.");
         
         reportVote.committeeMemberVoted[msg.sender] = true;
         reportVote.committeeVotes.push(vote);

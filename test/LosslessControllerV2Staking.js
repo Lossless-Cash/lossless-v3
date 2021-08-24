@@ -22,7 +22,7 @@ const initialSupply = 1000000;
 const stakeAmount = 5000;
 const reportLifetime = time.duration.days(1);
 
-describe.only('LosslessControllerV2', () => {
+describe('LosslessControllerV2 Staking', () => {
   beforeEach(async () => {
     [
       initialHolder,
@@ -88,310 +88,6 @@ describe.only('LosslessControllerV2', () => {
     await losslessController.connect(lssAdmin).setLosslessToken(erc20.address);
   });
 
-  describe('getVersion', () => {
-    it('should get version', async () => {
-      expect(
-        await losslessController.connect(oneMoreAccount).getVersion(),
-      ).to.be.equal(2);
-    });
-  });
-
-  describe('pause', () => {
-    describe('when sender is not pause admin', () => {
-      it('should revert', async () => {
-        await expect(
-          losslessController.connect(oneMoreAccount).pause(),
-        ).to.be.revertedWith('LOSSLESS: Must be pauseAdmin');
-      });
-    });
-
-    describe('when sender is pause admin', () => {
-      it('should change admin', async () => {
-        await losslessController.connect(pauseAdmin).pause();
-        expect(await losslessController.paused()).to.eq(true);
-      });
-
-      it('should emit Paused event', async () => {
-        await expect(losslessController.connect(pauseAdmin).pause())
-          .to.emit(losslessController, 'Paused')
-          .withArgs(pauseAdmin.address);
-      });
-    });
-  });
-
-  describe('unpause', () => {
-    describe('when is not paused', () => {
-      it('should revert', async () => {
-        await expect(
-          losslessController.connect(pauseAdmin).unpause(),
-        ).to.be.revertedWith('Pausable: not paused');
-      });
-    });
-
-    describe('when sender is not pause admin', () => {
-      it('should revert', async () => {
-        await losslessController.connect(pauseAdmin).pause();
-        await expect(
-          losslessController.connect(oneMoreAccount).unpause(),
-        ).to.be.revertedWith('LOSSLESS: Must be pauseAdmin');
-      });
-    });
-
-    describe('when sender is pause admin', () => {
-      it('should change admin', async () => {
-        await losslessController.connect(pauseAdmin).pause();
-        await losslessController.connect(pauseAdmin).unpause();
-        expect(await losslessController.paused()).to.eq(false);
-      });
-
-      it('should emit Unpaused event', async () => {
-        await losslessController.connect(pauseAdmin).pause();
-        await expect(losslessController.connect(pauseAdmin).unpause())
-          .to.emit(losslessController, 'Unpaused')
-          .withArgs(pauseAdmin.address);
-      });
-    });
-  });
-
-  describe('setAdmin', () => {
-    describe('when sender is not recovery admin', () => {
-      it('should revert', async () => {
-        it('should revert', async () => {
-          await expect(
-            losslessController
-              .connect(oneMoreAccount)
-              .setAdmin(oneMoreAccount.address),
-          ).to.be.revertedWith('LOSSLESS: Must be recoveryAdmin');
-        });
-      });
-    });
-
-    describe('when contract is paused', () => {
-      it('should change admin', async () => {
-        await losslessController.connect(pauseAdmin).pause();
-        await losslessController
-          .connect(lssRecoveryAdmin)
-          .setAdmin(oneMoreAccount.address);
-
-        const newAdmin = await losslessController.admin();
-        expect(newAdmin).to.eq(oneMoreAccount.address);
-      });
-    });
-
-    describe('when sender is recovery admin', () => {
-      it('should change admin', async () => {
-        await losslessController
-          .connect(lssRecoveryAdmin)
-          .setAdmin(oneMoreAccount.address);
-
-        const newAdmin = await losslessController.admin();
-        expect(newAdmin).to.eq(oneMoreAccount.address);
-      });
-
-      it('should emit AdminChanged event', async () => {
-        await expect(
-          losslessController
-            .connect(lssRecoveryAdmin)
-            .setAdmin(oneMoreAccount.address),
-        )
-          .to.emit(losslessController, 'AdminChanged')
-          .withArgs(lssAdmin.address, oneMoreAccount.address);
-      });
-    });
-
-    describe('when sender is regular admin', () => {
-      it('should revert', async () => {
-        await expect(
-          losslessController.connect(lssAdmin).setAdmin(oneMoreAccount.address),
-        ).to.be.revertedWith('LOSSLESS: Must be recoveryAdmin');
-      });
-    });
-  });
-
-  describe('setRecoveryAdmin', () => {
-    describe('when sender is not recovery admin', () => {
-      it('should revert', async () => {
-        it('should revert', async () => {
-          await expect(
-            losslessController
-              .connect(oneMoreAccount)
-              .setRecoveryAdmin(oneMoreAccount.address),
-          ).to.be.revertedWith('LOSSLESS: Must be recoveryAdmin');
-        });
-      });
-    });
-
-    describe('when contract is paused', () => {
-      it('should change admin', async () => {
-        await losslessController.connect(pauseAdmin).pause();
-        await losslessController
-          .connect(lssRecoveryAdmin)
-          .setRecoveryAdmin(oneMoreAccount.address);
-
-        expect(await losslessController.recoveryAdmin()).to.equal(
-          oneMoreAccount.address,
-        );
-      });
-    });
-
-    describe('when sender is regular admin', () => {
-      it('should revert', async () => {
-        await expect(
-          losslessController
-            .connect(lssAdmin)
-            .setRecoveryAdmin(oneMoreAccount.address),
-        ).to.be.revertedWith('LOSSLESS: Must be recoveryAdmin');
-      });
-    });
-
-    describe('when sender is recovery admin', () => {
-      it('should change admin', async () => {
-        await losslessController
-          .connect(lssRecoveryAdmin)
-          .setRecoveryAdmin(oneMoreAccount.address);
-
-        expect(await losslessController.recoveryAdmin()).to.equal(
-          oneMoreAccount.address,
-        );
-      });
-
-      it('should emit RecoveryAdminChanged event', async () => {
-        await expect(
-          losslessController
-            .connect(lssRecoveryAdmin)
-            .setRecoveryAdmin(oneMoreAccount.address),
-        )
-          .to.emit(losslessController, 'RecoveryAdminChanged')
-          .withArgs(lssRecoveryAdmin.address, oneMoreAccount.address);
-      });
-    });
-  });
-
-  describe('setPauseAdmin', () => {
-    describe('when sender is not recovery admin', () => {
-      it('should revert', async () => {
-        it('should revert', async () => {
-          await expect(
-            losslessController
-              .connect(oneMoreAccount)
-              .setPauseAdmin(oneMoreAccount.address),
-          ).to.be.revertedWith('LOSSLESS: Must be recoveryAdmin');
-        });
-      });
-    });
-
-    describe('when contract is paused', () => {
-      it('should change admin', async () => {
-        await losslessController.connect(pauseAdmin).pause();
-        await losslessController
-          .connect(lssRecoveryAdmin)
-          .setPauseAdmin(oneMoreAccount.address);
-
-        expect(await losslessController.pauseAdmin()).to.equal(
-          oneMoreAccount.address,
-        );
-      });
-    });
-
-    describe('when sender is regular admin', () => {
-      it('should revert', async () => {
-        await expect(
-          losslessController
-            .connect(lssAdmin)
-            .setPauseAdmin(oneMoreAccount.address),
-        ).to.be.revertedWith('LOSSLESS: Must be recoveryAdmin');
-      });
-    });
-
-    describe('when sender is recovery admin', () => {
-      it('should change admin', async () => {
-        await losslessController
-          .connect(lssRecoveryAdmin)
-          .setPauseAdmin(oneMoreAccount.address);
-
-        expect(await losslessController.pauseAdmin()).to.equal(
-          oneMoreAccount.address,
-        );
-      });
-
-      it('should emit RecoveryAdminChanged event', async () => {
-        await expect(
-          losslessController
-            .connect(lssRecoveryAdmin)
-            .setPauseAdmin(oneMoreAccount.address),
-        )
-          .to.emit(losslessController, 'PauseAdminChanged')
-          .withArgs(pauseAdmin.address, oneMoreAccount.address);
-      });
-    });
-  });
-
-  describe('setReportLifetime', () => {
-    describe('when sender is not lossless admin', () => {
-      it('should revert', async () => {
-        await expect(
-          losslessController
-            .connect(oneMoreAccount)
-            .setReportLifetime(Number(time.duration.days(10))),
-        ).to.be.revertedWith('LOSSLESS: Must be admin');
-      });
-    });
-
-    describe('when sender is admin', () => {
-      it('should change report lifetime', async () => {
-        await losslessController
-          .connect(lssAdmin)
-          .setReportLifetime(Number(time.duration.days(10)));
-
-        expect(await losslessController.reportLifetime()).to.equal(
-          Number(time.duration.days(10)),
-        );
-      });
-    });
-  });
-
-  describe('setLosslessToken', () => {
-    describe('when sender is not lossless admin', () => {
-      it('should revert', async () => {
-        await expect(
-          losslessController
-            .connect(oneMoreAccount)
-            .setLosslessToken(erc20.address),
-        ).to.be.revertedWith('LOSSLESS: Must be admin');
-      });
-    });
-
-    describe('when sender is admin', () => {
-      it('should change report lifetime', async () => {
-        await losslessController
-          .connect(lssAdmin)
-          .setLosslessToken(erc20.address);
-
-        expect(await losslessController.losslessToken()).to.equal(
-          erc20.address,
-        );
-      });
-    });
-  });
-
-  describe('setStakeAmount', () => {
-    describe('when sender is not lossless admin', () => {
-      it('should revert', async () => {
-        await expect(
-          losslessController.connect(oneMoreAccount).setStakeAmount(1000000),
-        ).to.be.revertedWith('LOSSLESS: Must be admin');
-      });
-    });
-
-    describe('when sender is admin', () => {
-      it('should change report lifetime', async () => {
-        await losslessController.connect(lssAdmin).setStakeAmount(1000000);
-
-        expect(await losslessController.stakeAmount()).to.equal(1000000);
-      });
-    });
-  });
-
   describe('report', () => {
     describe('when sender did not approve lossless token transfer', () => {
       it('should revert', async () => {
@@ -424,6 +120,24 @@ describe.only('LosslessControllerV2', () => {
         expect(await erc20.balanceOf(initialHolder.address)).to.be.equal(
           initialSupply - stakeAmount,
         );
+      });
+
+      it('should increase report count after report', async () => {
+        await losslessController
+          .connect(initialHolder)
+          .report(anotherErc20.address, anotherAccount.address);
+
+        expect(await losslessController.reportCount()).to.be.equal(1);
+
+        await erc20
+          .connect(initialHolder)
+          .approve(losslessController.address, stakeAmount);
+
+        await losslessController
+          .connect(initialHolder)
+          .report(anotherErc20.address, oneMoreAccount.address);
+
+        expect(await losslessController.reportCount()).to.be.equal(2);
       });
 
       it('should revert in case of duplicate', async () => {
@@ -770,7 +484,7 @@ describe.only('LosslessControllerV2', () => {
     });
   });
 
-  describe.only('stake', () => {
+  describe('stake', () => {
     beforeEach(async () => {
       await erc20
         .connect(initialHolder)
