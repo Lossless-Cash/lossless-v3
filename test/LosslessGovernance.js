@@ -1,5 +1,5 @@
 const { time, constants } = require('@openzeppelin/test-helpers');
-const { expect } = require('chai');
+const { expect, assert } = require('chai');
 
 let initialHolder;
 let recipient;
@@ -128,8 +128,7 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ],
-              2,
+              ]
             ),
         ).to.be.revertedWith('LOSSLESS: must be admin');
       });
@@ -146,8 +145,7 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ],
-              2,
+              ]
             );
 
           expect(
@@ -176,11 +174,10 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ],
-              2,
+              ]
             );
 
-          expect(await governance.quorumSize()).to.be.equal(2);
+          expect(await governance.quorumSize()).to.be.equal(3);
         });
 
         it('should revert when adding duplicate members', async () => {
@@ -193,8 +190,7 @@ describe.only('Lossless Governance', () => {
                   member1.address,
                   member1.address,
                   member1.address,
-                ],
-                2,
+                ]
               ),
           ).to.be.revertedWith('LOSSLESS: duplicate members');
         });
@@ -210,8 +206,7 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ],
-              2,
+              ]
             );
         });
 
@@ -224,8 +219,7 @@ describe.only('Lossless Governance', () => {
                 member6.address,
                 member7.address,
                 member8.address,
-              ],
-              2,
+              ]
             );
 
           expect(
@@ -254,11 +248,10 @@ describe.only('Lossless Governance', () => {
                 member6.address,
                 member7.address,
                 member8.address,
-              ],
-              4,
+              ]
             );
 
-          expect(await governance.quorumSize()).to.be.equal(4);
+          expect(await governance.quorumSize()).to.be.equal(5);
         });
 
         it('should revert when adding duplicate members', async () => {
@@ -271,8 +264,7 @@ describe.only('Lossless Governance', () => {
                   member2.address,
                   member3.address,
                   member4.address,
-                ],
-                4,
+                ]
               ),
           ).to.be.revertedWith('LOSSLESS: duplicate members');
         });
@@ -292,8 +284,7 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ],
-              2,
+              ]
             ),
         ).to.be.revertedWith('LOSSLESS: must be admin');
       });
@@ -311,8 +302,7 @@ describe.only('Lossless Governance', () => {
                   member2.address,
                   member3.address,
                   member4.address,
-                ],
-                2,
+                ]
               ),
           ).to.be.revertedWith('LOSSLESS: committee has no members');
         });
@@ -328,10 +318,10 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ],
-              2,
+              ]
             );
-          await governance.connect(lssAdmin).removeCommitteeMembers([], 4);
+          await governance.connect(lssAdmin).removeCommitteeMembers([]);
+          expect(await governance.quorumSize()).to.be.equal(0);
         });
       });
 
@@ -345,8 +335,7 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ],
-              2,
+              ]
             );
 
           expect(
@@ -355,7 +344,7 @@ describe.only('Lossless Governance', () => {
 
           await governance
             .connect(lssAdmin)
-            .removeCommitteeMembers([member1.address], 1);
+            .removeCommitteeMembers([member1.address]);
 
           expect(
             await governance.isCommitteeMember(member1.address),
@@ -371,17 +360,16 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ],
-              2,
+              ]
             );
 
-          expect(await governance.quorumSize()).to.be.equal(2);
+          expect(await governance.quorumSize()).to.be.equal(3);
 
           await governance
             .connect(lssAdmin)
-            .removeCommitteeMembers([member1.address], 1);
+            .removeCommitteeMembers([member1.address]);
 
-          expect(await governance.quorumSize()).to.be.equal(1);
+          expect(await governance.quorumSize()).to.be.equal(2);
         });
       });
 
@@ -397,8 +385,7 @@ describe.only('Lossless Governance', () => {
                 member4.address,
                 member5.address,
                 member6.address,
-              ],
-              2,
+              ]
             );
 
           expect(
@@ -412,12 +399,13 @@ describe.only('Lossless Governance', () => {
           expect(
             await governance.isCommitteeMember(member5.address),
           ).to.be.equal(true);
+
+          expect(await governance.quorumSize()).to.be.equal(4);
 
           await governance
             .connect(lssAdmin)
             .removeCommitteeMembers(
-              [member1.address, member3.address, member5.address],
-              2,
+              [member1.address, member3.address, member5.address]
             );
 
           expect(
@@ -431,12 +419,23 @@ describe.only('Lossless Governance', () => {
           expect(
             await governance.isCommitteeMember(member5.address),
           ).to.be.equal(false);
+
+          expect(await governance.quorumSize()).to.be.equal(2);
         });
       });
+    
+      /*describe('Test new quorum size function', () => {
+        it('should return quorum size', async () => {
+          expect(
+            await governance._updateQuorum(10));
+          expect(
+            await governance.quorumSize()).to.be.equal();
+        });
+      });*/
     });
   });
 
-  describe('losslessVote', () => {
+/*  describe('losslessVote', () => {
     describe('when sender is not admin', () => {
       it('should revert', async () => {
         await expect(
@@ -824,5 +823,5 @@ describe.only('Lossless Governance', () => {
         });
       });
     });
-  });
+  });*/
 });

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Unlicensed
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "hardhat/console.sol";
 
@@ -93,23 +94,31 @@ contract LosslessGovernance is AccessControl {
         return reportVotes[reportId].committeeVotes.length;
     }
     
-    function addCommitteeMembers(address[] memory members, uint256 newQuorumSize) public onlyLosslessAdmin  {
+    //Added auto change Quorum
+    function addCommitteeMembers(address[] memory members) public onlyLosslessAdmin  {
         committeeMembersCount += members.length;
-        quorumSize = newQuorumSize;
+        _updateQuorum(committeeMembersCount);
         for (uint256 i = 0; i < members.length; ++i) {
             require(!isCommitteeMember(members[i]), "LOSSLESS: duplicate members");
             grantRole(COMMITTEE_ROLE, members[i]);
         }
     } 
 
-    function removeCommitteeMembers(address[] memory members, uint256 newQuorumSize) public onlyLosslessAdmin  {
+    function removeCommitteeMembers(address[] memory members) public onlyLosslessAdmin  {
         require(committeeMembersCount != 0, "LOSSLESS: committee has no members");
         committeeMembersCount -= members.length;
-        quorumSize = newQuorumSize;
+        _updateQuorum(committeeMembersCount);
         for (uint256 i = 0; i < members.length; ++i) {
             revokeRole(COMMITTEE_ROLE, members[i]);
         }
     }
+
+    //Update QuorumSize
+    function _updateQuorum(uint256 _newTeamSize) private {
+        quorumSize = ((_newTeamSize/2)+1);
+        console.log("New quorum size is %s", quorumSize);
+    }
+
 
     // TODO:
     // - LSS TEAM VOTE ON REPORT
@@ -121,8 +130,8 @@ contract LosslessGovernance is AccessControl {
         require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LOSSLESS: report is not valid");
 
         Vote storage reportVote = reportVotes[reportId];
-        require(!reportVote.voted[lssTeamVoteIndex], "LOSSLESS: LSS team already voted.");
-
+        require(!reportVote.voted[lssTeamVoteIndex], "LOSSLESS: LSS already voted.");
+        
         reportVote.voted[lssTeamVoteIndex] = true;
         reportVote.votes[lssTeamVoteIndex] = vote;
     }
