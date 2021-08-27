@@ -321,7 +321,6 @@ describe.only('Lossless Governance', () => {
               ]
             );
           await governance.connect(lssAdmin).removeCommitteeMembers([]);
-          expect(await governance.quorumSize()).to.be.equal(0);
         });
       });
 
@@ -435,7 +434,7 @@ describe.only('Lossless Governance', () => {
     });
   });
 
-/*  describe('losslessVote', () => {
+  describe('losslessVote', () => {
     describe('when sender is not admin', () => {
       it('should revert', async () => {
         await expect(
@@ -523,11 +522,15 @@ describe.only('Lossless Governance', () => {
 
         describe('when voting second time for the same report', () => {
           it('should revert', async () => {
-            await governance.connect(lssAdmin).losslessVote(1, false);
+            const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+            
+            expect(await governance.connect(lssAdmin).losslessVote(1, false));
+
+            expect(await governance.getVote(1, lssTeamVoteIndex)).to.be.equal(false,);
 
             await expect(
               governance.connect(lssAdmin).losslessVote(1, true),
-            ).to.be.revertedWith('LOSSLESS: LSS team already voted');
+            ).to.be.revertedWith("LOSSLESS: LSS already voted.");
           });
         });
 
@@ -823,5 +826,5 @@ describe.only('Lossless Governance', () => {
         });
       });
     });
-  });*/
+  });
 });

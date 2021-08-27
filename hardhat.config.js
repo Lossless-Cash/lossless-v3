@@ -34,7 +34,13 @@ module.exports = {
   },
   paths: {
     artifacts: './src/artifacts',
-  }}/*,
+  }, 
+  gasReporter: {
+    currency: 'USD',
+    gasPrice: 21,
+    enabled: (process.env.REPORT_GAS) ? true : false
+  },
+}/*,
   networks: {
     hardhat: {
       chainId: 1337,

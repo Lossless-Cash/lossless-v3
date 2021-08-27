@@ -115,8 +115,11 @@ contract LosslessGovernance is AccessControl {
 
     //Update QuorumSize
     function _updateQuorum(uint256 _newTeamSize) private {
-        quorumSize = ((_newTeamSize/2)+1);
-        console.log("New quorum size is %s", quorumSize);
+        if (_newTeamSize != 0) {
+            quorumSize = ((_newTeamSize/2)+1);
+        } else {
+            quorumSize = 0;
+        }
     }
 
 
@@ -127,11 +130,12 @@ contract LosslessGovernance is AccessControl {
 
     function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin {
         uint256 reportTimestamp = controller.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LOSSLESS: report is not valid");
-
         Vote storage reportVote = reportVotes[reportId];
-        require(!reportVote.voted[lssTeamVoteIndex], "LOSSLESS: LSS already voted.");
+        bool teamVoted = reportVotes[reportId].voted[lssTeamVoteIndex];
         
+        require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LOSSLESS: report is not valid");
+        require(!teamVoted, "LOSSLESS: LSS already voted.");
+
         reportVote.voted[lssTeamVoteIndex] = true;
         reportVote.votes[lssTeamVoteIndex] = vote;
     }
@@ -194,12 +198,12 @@ contract LosslessGovernance is AccessControl {
         }
 
         if (aggreeCount > 1) {
-            // DO STUFF
+            console.log('Report resolved as agreed with %s votes', aggreeCount);
         }
 
         uint256 disagreeCount = voteCount - aggreeCount;
         if (disagreeCount > 1) {
-            // DO OTHER STUFF
+            console.log('Report refused as agreed with %s votes', disagreeCount);
         }
     }
 }
