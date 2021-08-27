@@ -718,7 +718,6 @@ describe.only('Lossless Governance', () => {
             member8.address,
             member9.address,
           ],
-          4,
         );
 
       await erc20
@@ -825,6 +824,124 @@ describe.only('Lossless Governance', () => {
           );
         });
       });
+      
+      describe('when voting second time for the same report', () => {
+        it('should revert', async () => {
+          await governance.connect(member1).committeeMemberVote(1, false);
+
+          await expect(
+            governance.connect(member1).committeeMemberVote(1, false),
+          ).to.be.revertedWith('LOSSLESS: Committee member already voted.');
+        });
+      });
+
+      describe('when voting for two different reports', () => {
+        it('should register both votes', async () => {
+          await governance.connect(member1).committeeMemberVote(1, false);
+
+          expect(
+            await governance.getIsCommitteeMemberVoted(1, member1.address),
+          ).to.be.equal(true);
+
+          await governance.connect(member1).committeeMemberVote(2, true);
+
+          expect(
+            await governance.getIsCommitteeMemberVoted(2, member1.address),
+          ).to.be.equal(true);
+        });
+
+        it('should count votes for each report', async () => {
+          await governance.connect(member1).committeeMemberVote(1, false);
+          await governance.connect(member1).committeeMemberVote(2, true);
+
+          expect(await governance.getCommitteeVotesCount(1)).to.be.equal(1);
+          expect(await governance.getCommitteeVotesCount(2)).to.be.equal(1);
+        });
+      });
+    });
+  });
+
+  describe('reportResolution', () => {
+    beforeEach(async () => {
+      await governance
+        .connect(lssAdmin)
+        .addCommitteeMembers(
+          [
+            member1.address,
+            member2.address,
+            member3.address,
+            member4.address,
+            member5.address,
+            member6.address,
+            member7.address,
+            member8.address,
+            member9.address,
+          ],
+        );
+
+      await erc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, stakeAmount);
+
+      await erc20
+        .connect(initialHolder)
+        .approve(controller.address, stakeAmount);
+
+      await controller
+        .connect(initialHolder)
+        .report(erc20.address, anotherAccount.address);
+    });
+    
+    describe('when report is not resolved', () => {
+      it('should not be resolved', async () => {
+        expect(
+          await governance.isReportSolved(1),
+        ).to.be.equal(false);
+      });
+   
+    //Comitee Members Votes
+      it('should save committee vote', async () => {
+        await governance.connect(member1).committeeMemberVote(1, true);
+
+        expect(
+          await governance.getIsCommitteeMemberVoted(1, member1.address),
+        ).to.be.equal(true);
+
+        await governance.connect(member2).committeeMemberVote(1, true);
+
+        expect(
+          await governance.getIsCommitteeMemberVoted(1, member2.address),
+        ).to.be.equal(true);
+      });
+
+      //Project Team Vote
+      it('should save Team vote', async () => {
+        const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+        await governance.connect(admin).projectTeamVote(1, true);
+
+        expect(
+          await governance.getVote(1, projectTeamVoteIndex),
+        ).to.be.equal(true);
+      });
+      
+      //LossLess Team Vote
+      it('should save LSS vote', async () => {
+        const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+
+        await governance.connect(lssAdmin).losslessVote(1, true);
+
+        expect(
+          await governance.getIsVoted(1, lssTeamVoteIndex),
+        ).to.be.equal(true);
+      });
+
+      /*it('should resolve report', async () => {
+        await governance.resolveReport(1);
+
+        expect(
+          await governance.getIsVoted(1, lssTeamVoteIndex),
+        ).to.be.equal(true);
+      });*/
     });
   });
 });

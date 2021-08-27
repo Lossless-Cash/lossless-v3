@@ -93,6 +93,12 @@ contract LosslessGovernance is AccessControl {
     function getCommitteeVotesCount(uint256 reportId) public view returns(uint256) {
         return reportVotes[reportId].committeeVotes.length;
     }
+
+    //Returns if report has been resolved
+    function isReportSolved(uint256 reportId) public view returns(bool){
+        Vote storage reportVote = reportVotes[reportId];
+        return reportVote.resolved;
+    }
     
     //Added auto change Quorum
     function addCommitteeMembers(address[] memory members) public onlyLosslessAdmin  {
@@ -129,6 +135,8 @@ contract LosslessGovernance is AccessControl {
     // - COMMITTEE VOTE ON REPORT
 
     function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin {
+        require(!isReportSolved(reportId), "LOSSLESS: Report already solved.");
+
         uint256 reportTimestamp = controller.reportTimestamps(reportId);
         Vote storage reportVote = reportVotes[reportId];
         bool teamVoted = reportVotes[reportId].voted[lssTeamVoteIndex];
@@ -141,6 +149,8 @@ contract LosslessGovernance is AccessControl {
     }
 
     function projectTeamVote(uint256 reportId, bool vote) public {
+        require(!isReportSolved(reportId), "LOSSLESS: Report already solved.");
+
         uint256 reportTimestamp = controller.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LOSSLESS: report is not valid");
 
@@ -155,6 +165,7 @@ contract LosslessGovernance is AccessControl {
     }
 
     function committeeMemberVote(uint256 reportId, bool vote) public {
+        require(!isReportSolved(reportId), "LOSSLESS: Report already solved.");
         require(isCommitteeMember(msg.sender), "LOSSLESS: Caller is not committee member");
 
         uint256 reportTimestamp = controller.reportTimestamps(reportId);
@@ -183,7 +194,7 @@ contract LosslessGovernance is AccessControl {
         // Need to check if we have atleast a couple of parties voted
         
         Vote storage reportVote = reportVotes[reportId];
-        require(!reportVote.resolved, "Report already resolved");
+        require(!isReportSolved(reportId), "Report already resolved");
 
         uint256 aggreeCount = 0;
         uint256 voteCount = 0;
@@ -198,12 +209,14 @@ contract LosslessGovernance is AccessControl {
         }
 
         if (aggreeCount > 1) {
-            console.log('Report resolved as agreed with %s votes', aggreeCount);
+            console.log("Report resolved as agreed with %s votes", aggreeCount);
+            reportVote.resolved = true;
         }
 
         uint256 disagreeCount = voteCount - aggreeCount;
         if (disagreeCount > 1) {
-            console.log('Report refused as agreed with %s votes', disagreeCount);
+            console.log("Report refused as agreed with %s votes", disagreeCount);
+            reportVote.resolved = false;
         }
     }
 }
