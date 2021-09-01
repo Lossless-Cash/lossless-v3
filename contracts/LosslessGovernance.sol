@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Unlicensed
+pragma solidity ^0.8.0;
+
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "hardhat/console.sol";
 
@@ -186,16 +188,17 @@ contract LosslessGovernance is AccessControl {
     }
 
     function resolveReport(uint256 reportId) public {
-        address reportedProject = controller.reportedProject(reportId);
+
+        address projectOwner = LERC20(controller.reportTokens(reportId)).admin();
         require(hasRole(COMMITTEE_ROLE, msg.sender) 
                 || msg.sender == controller.admin() 
-                || msg.sender == projectOwners[reportedProject]);
-
+                || msg.sender == projectOwner);
         // Need to check if we have atleast a couple of parties voted
         
         Vote storage reportVote = reportVotes[reportId];
-        require(!isReportSolved(reportId), "Report already resolved");
+        require(!isReportSolved(reportId), "LOSSLESS: Report already resolved");
 
+        // IMPORTANT is not taking into consideration comitee votes
         uint256 aggreeCount = 0;
         uint256 voteCount = 0;
         for(uint256 i = 0; i < 3; i++) {
@@ -208,15 +211,32 @@ contract LosslessGovernance is AccessControl {
             }
         }
 
+        (bool comitteeResoluted, bool committeeResolution) = getCommitteeMajorityReachedResult(reportId);
+
+        console.log("Committee resoluted: %s - committeeResolution: %s", comitteeResoluted, committeeResolution);
+
+        require(comitteeResoluted == true, "LOSSLESS: Committee hasnt reached a resolution.");
+
+        voteCount += 1;
+
+        if (committeeResolution) {
+            aggreeCount += 1;
+        }
+
+        console.log("%s votes counted", voteCount);
+        console.log("%s votes agreed", aggreeCount);
+
+        require(voteCount > 2, "LOSSLESS: Not enough votes.");
+
         if (aggreeCount > 1) {
-            console.log("Report resolved as agreed with %s votes", aggreeCount);
             reportVote.resolved = true;
+            //Do more stuff on controller
         }
 
         uint256 disagreeCount = voteCount - aggreeCount;
         if (disagreeCount > 1) {
-            console.log("Report refused as agreed with %s votes", disagreeCount);
             reportVote.resolved = false;
+            //Do more stuff on controller
         }
     }
 }

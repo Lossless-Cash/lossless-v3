@@ -18,7 +18,10 @@ interface LERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
 
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    
+    function admin() external view returns (address);
 }
+
 
 contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
@@ -177,7 +180,6 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
         
         emit Staked(reportTokens[reportId], _msgSender(), reportId);
     }
-
 
     // --- BEFORE HOOKS ---
 

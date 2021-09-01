@@ -935,13 +935,106 @@ describe.only('Lossless Governance', () => {
         ).to.be.equal(true);
       });
 
-      /*it('should resolve report', async () => {
-        await governance.resolveReport(1);
+      it('should resolve report with everyone agreeing', async () => {
+        const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+        const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+
+        await governance.connect(lssAdmin).losslessVote(1, true);
 
         expect(
           await governance.getIsVoted(1, lssTeamVoteIndex),
         ).to.be.equal(true);
-      });*/
+
+        await governance.connect(admin).projectTeamVote(1, true);
+
+        expect(
+          await governance.getVote(1, projectTeamVoteIndex),
+        ).to.be.equal(true);
+
+        await governance.connect(member1).committeeMemberVote(1, true);
+
+        expect(
+          await governance.getIsCommitteeMemberVoted(1, member1.address),
+        ).to.be.equal(true);
+
+        await governance.connect(member2).committeeMemberVote(1, true);
+
+        expect(
+          await governance.getIsCommitteeMemberVoted(1, member2.address),
+        ).to.be.equal(true);
+
+        await governance.connect(member3).committeeMemberVote(1, true);
+
+        expect(
+          await governance.getIsCommitteeMemberVoted(1, member3.address),
+        ).to.be.equal(true);
+
+        await governance.connect(lssAdmin).resolveReport(1);
+
+        expect(
+          await governance.isReportSolved(1),
+        ).to.be.equal(true);
+
+      });
+
+      it('should not resolve report if mayority doesnt agree', async () => {
+        const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+        const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+
+        await governance.connect(lssAdmin).losslessVote(1, false);
+        
+        expect(
+          await governance.getIsVoted(1, lssTeamVoteIndex),
+          ).to.be.equal(true);
+
+        await governance.connect(admin).projectTeamVote(1, false);
+
+        expect(
+          await governance.getIsVoted(1, projectTeamVoteIndex),
+        ).to.be.equal(true);
+
+        await governance.connect(member1).committeeMemberVote(1, true);
+
+        expect(
+          await governance.getIsCommitteeMemberVoted(1, member1.address),
+        ).to.be.equal(true);
+
+        await governance.connect(member2).committeeMemberVote(1, true);
+
+        expect(
+          await governance.getIsCommitteeMemberVoted(1, member2.address),
+        ).to.be.equal(true);
+
+        await governance.connect(lssAdmin).resolveReport(1);
+
+        expect(
+          await governance.isReportSolved(1),
+        ).to.be.equal(false);
+
+      });
+
+      it('should revert with committee not voting', async () => {
+        const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+        const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+
+        await governance.connect(lssAdmin).losslessVote(1, false);
+        
+        expect(
+          await governance.getIsVoted(1, lssTeamVoteIndex),
+          ).to.be.equal(true);
+
+        await governance.connect(admin).projectTeamVote(1, true);
+
+        expect(
+          await governance.getIsVoted(1, projectTeamVoteIndex),
+        ).to.be.equal(true);
+        
+        console.log("Test: passed all voting")
+
+        expect(
+          await governance.connect(lssAdmin).resolveReport(1),
+        ).to.be.revertedWith("LOSSLESS: Committee hasnt reached a resolution.")
+      });
     });
   });
 });
