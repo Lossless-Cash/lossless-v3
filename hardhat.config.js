@@ -1,19 +1,19 @@
 require('@nomiclabs/hardhat-waffle');
 
 require('@openzeppelin/hardhat-upgrades');
-// require('solidity-coverage');
-// require('hardhat-abi-exporter');
-// require('@nomiclabs/hardhat-etherscan');
-// require('@openzeppelin/hardhat-defender');
-// require('hardhat-gas-reporter');
+require('solidity-coverage');
+require('hardhat-abi-exporter');
+require('@nomiclabs/hardhat-etherscan');
+require('@openzeppelin/hardhat-defender');
+require('hardhat-gas-reporter');
 
-/*const {
+const {
   ROPSTEN_PRIVATE_KEY,
   INFURA_KEY,
   ETHERSCAN_KEY,
   DEFENDER_KEY,
   DEFENDER_SECRET,
-} = require('./config');*/
+} = require('./config');
 
 module.exports = {
   solidity: {
@@ -35,12 +35,6 @@ module.exports = {
   paths: {
     artifacts: './src/artifacts',
   }, 
-  gasReporter: {
-    currency: 'USD',
-    gasPrice: 21,
-    enabled: (process.env.REPORT_GAS) ? true : false
-  },
-}/*,
   networks: {
     hardhat: {
       chainId: 1337,
@@ -59,8 +53,8 @@ module.exports = {
     },
   },
   gasReporter: {
-    currency: 'EUR',
-    gasPrice: 21,
+    currency: 'USD',
+    gasPrice: 70,
   },
   abiExporter: {
     path: './abi',
@@ -73,8 +67,8 @@ module.exports = {
     // Obtain one at https://etherscan.io/
     apiKey: ETHERSCAN_KEY,
   },
-  defender: {
+  /*defender: {
     apiKey: DEFENDER_KEY,
     apiSecret: DEFENDER_SECRET,
-  },
-};*/
+  },*/
+};

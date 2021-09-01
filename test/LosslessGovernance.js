@@ -128,9 +128,10 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ]
+              ],
+              2
             ),
-        ).to.be.revertedWith('LOSSLESS: must be admin');
+        ).to.be.revertedWith('LSS: must be admin');
       });
     });
 
@@ -145,7 +146,8 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ]
+              ],
+              2
             );
 
           expect(
@@ -174,10 +176,11 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ]
+              ],
+              2
             );
 
-          expect(await governance.quorumSize()).to.be.equal(3);
+          expect(await governance.quorumSize()).to.be.equal(2);
         });
 
         it('should revert when adding duplicate members', async () => {
@@ -190,9 +193,10 @@ describe.only('Lossless Governance', () => {
                   member1.address,
                   member1.address,
                   member1.address,
-                ]
+                ],
+                2
               ),
-          ).to.be.revertedWith('LOSSLESS: duplicate members');
+          ).to.be.revertedWith('LSS: duplicate members');
         });
       });
 
@@ -206,7 +210,8 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ]
+              ],
+              2
             );
         });
 
@@ -219,7 +224,8 @@ describe.only('Lossless Governance', () => {
                 member6.address,
                 member7.address,
                 member8.address,
-              ]
+              ],
+              4
             );
 
           expect(
@@ -248,10 +254,11 @@ describe.only('Lossless Governance', () => {
                 member6.address,
                 member7.address,
                 member8.address,
-              ]
+              ],
+              4
             );
 
-          expect(await governance.quorumSize()).to.be.equal(5);
+          expect(await governance.quorumSize()).to.be.equal(4);
         });
 
         it('should revert when adding duplicate members', async () => {
@@ -264,9 +271,10 @@ describe.only('Lossless Governance', () => {
                   member2.address,
                   member3.address,
                   member4.address,
-                ]
+                ],
+                2
               ),
-          ).to.be.revertedWith('LOSSLESS: duplicate members');
+          ).to.be.revertedWith('LSS: duplicate members');
         });
       });
     });
@@ -284,9 +292,10 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ]
+              ],
+              0
             ),
-        ).to.be.revertedWith('LOSSLESS: must be admin');
+        ).to.be.revertedWith('LSS: must be admin');
       });
     });
 
@@ -302,9 +311,10 @@ describe.only('Lossless Governance', () => {
                   member2.address,
                   member3.address,
                   member4.address,
-                ]
+                ],
+                0
               ),
-          ).to.be.revertedWith('LOSSLESS: committee has no members');
+          ).to.be.revertedWith('LSS: committee has no members');
         });
       });
 
@@ -318,9 +328,10 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ]
+              ],
+              2
             );
-          await governance.connect(lssAdmin).removeCommitteeMembers([]);
+          await governance.connect(lssAdmin).removeCommitteeMembers([], 0);
         });
       });
 
@@ -334,7 +345,8 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ]
+              ],
+              4
             );
 
           expect(
@@ -343,7 +355,7 @@ describe.only('Lossless Governance', () => {
 
           await governance
             .connect(lssAdmin)
-            .removeCommitteeMembers([member1.address]);
+            .removeCommitteeMembers([member1.address], 2);
 
           expect(
             await governance.isCommitteeMember(member1.address),
@@ -359,14 +371,15 @@ describe.only('Lossless Governance', () => {
                 member2.address,
                 member3.address,
                 member4.address,
-              ]
+              ],
+              2
             );
 
-          expect(await governance.quorumSize()).to.be.equal(3);
+          expect(await governance.quorumSize()).to.be.equal(2);
 
           await governance
             .connect(lssAdmin)
-            .removeCommitteeMembers([member1.address]);
+            .removeCommitteeMembers([member1.address], 2);
 
           expect(await governance.quorumSize()).to.be.equal(2);
         });
@@ -384,7 +397,8 @@ describe.only('Lossless Governance', () => {
                 member4.address,
                 member5.address,
                 member6.address,
-              ]
+              ],
+              3
             );
 
           expect(
@@ -399,12 +413,12 @@ describe.only('Lossless Governance', () => {
             await governance.isCommitteeMember(member5.address),
           ).to.be.equal(true);
 
-          expect(await governance.quorumSize()).to.be.equal(4);
+          expect(await governance.quorumSize()).to.be.equal(3);
 
           await governance
             .connect(lssAdmin)
             .removeCommitteeMembers(
-              [member1.address, member3.address, member5.address]
+              [member1.address, member3.address, member5.address], 2
             );
 
           expect(
@@ -439,7 +453,7 @@ describe.only('Lossless Governance', () => {
       it('should revert', async () => {
         await expect(
           governance.connect(anotherAccount).losslessVote(1, true),
-        ).to.be.revertedWith('LOSSLESS: must be admin');
+        ).to.be.revertedWith('LSS: must be admin');
       });
     });
 
@@ -448,7 +462,7 @@ describe.only('Lossless Governance', () => {
         it('should revert', async () => {
           await expect(
             governance.connect(lssAdmin).losslessVote(1, true),
-          ).to.be.revertedWith('LOSSLESS: report is not valid');
+          ).to.be.revertedWith('LSS: report is not valid');
         });
       });
 
@@ -472,7 +486,7 @@ describe.only('Lossless Governance', () => {
 
           await expect(
             governance.connect(lssAdmin).losslessVote(1, true),
-          ).to.be.revertedWith('LOSSLESS: report is not valid');
+          ).to.be.revertedWith('LSS: report is not valid');
         });
       });
 
@@ -530,7 +544,7 @@ describe.only('Lossless Governance', () => {
 
             await expect(
               governance.connect(lssAdmin).losslessVote(1, true),
-            ).to.be.revertedWith("LOSSLESS: LSS already voted.");
+            ).to.be.revertedWith('LSS: LSS already voted.');
           });
         });
 
@@ -593,7 +607,7 @@ describe.only('Lossless Governance', () => {
       it('should revert', async () => {
         await expect(
           governance.connect(anotherAccount).projectTeamVote(1, true),
-        ).to.be.revertedWith('LOSSLESS: must be project team');
+        ).to.be.revertedWith('LSS: must be project team');
       });
     });
 
@@ -602,7 +616,7 @@ describe.only('Lossless Governance', () => {
         it('should revert', async () => {
           await expect(
             governance.connect(admin).projectTeamVote(10, true),
-          ).to.be.revertedWith('LOSSLESS: report is not valid');
+          ).to.be.revertedWith('LSS: report is not valid');
         });
       });
 
@@ -614,7 +628,7 @@ describe.only('Lossless Governance', () => {
 
           await expect(
             governance.connect(admin).projectTeamVote(1, true),
-          ).to.be.revertedWith('LOSSLESS: report is not valid');
+          ).to.be.revertedWith('LSS: report is not valid');
         });
       });
 
@@ -658,7 +672,7 @@ describe.only('Lossless Governance', () => {
 
             await expect(
               governance.connect(admin).projectTeamVote(1, true),
-            ).to.be.revertedWith('LOSSLESS: team already voted');
+            ).to.be.revertedWith('LSS: team already voted');
           });
         });
 
@@ -718,6 +732,7 @@ describe.only('Lossless Governance', () => {
             member8.address,
             member9.address,
           ],
+          5
         );
 
       await erc20
@@ -737,7 +752,7 @@ describe.only('Lossless Governance', () => {
       it('should revert', async () => {
         await expect(
           governance.connect(recipient).committeeMemberVote(1, true),
-        ).to.be.revertedWith('LOSSLESS: Caller is not committee member');
+        ).to.be.revertedWith('LSS: Caller is not committee member');
       });
     });
 
@@ -745,7 +760,7 @@ describe.only('Lossless Governance', () => {
       it('should revert', async () => {
         await expect(
           governance.connect(member1).committeeMemberVote(2, true),
-        ).to.be.revertedWith('LOSSLESS: report is not valid');
+        ).to.be.revertedWith('LSS: report is not valid');
       });
     });
 
@@ -757,7 +772,7 @@ describe.only('Lossless Governance', () => {
 
         await expect(
           governance.connect(member1).committeeMemberVote(1, true),
-        ).to.be.revertedWith('LOSSLESS: report is not valid');
+        ).to.be.revertedWith('LSS: report is not valid');
       });
     });
 
@@ -831,7 +846,7 @@ describe.only('Lossless Governance', () => {
 
           await expect(
             governance.connect(member1).committeeMemberVote(1, false),
-          ).to.be.revertedWith('LOSSLESS: Committee member already voted.');
+          ).to.be.revertedWith('LSS: Committee member already voted.');
         });
       });
 
@@ -870,13 +885,8 @@ describe.only('Lossless Governance', () => {
             member1.address,
             member2.address,
             member3.address,
-            member4.address,
-            member5.address,
-            member6.address,
-            member7.address,
-            member8.address,
-            member9.address,
           ],
+          2
         );
 
       await erc20
@@ -975,9 +985,13 @@ describe.only('Lossless Governance', () => {
           await governance.isReportSolved(1),
         ).to.be.equal(true);
 
+        expect(
+          await governance.reportResolution(1),
+        ).to.be.equal(true);
+
       });
 
-      it('should not resolve report if mayority doesnt agree', async () => {
+      it('should resolve report negatively if mayority doesnt agree', async () => {
         const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
         const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
 
@@ -1009,6 +1023,10 @@ describe.only('Lossless Governance', () => {
 
         expect(
           await governance.isReportSolved(1),
+        ).to.be.equal(true);
+        
+        expect(
+          await governance.reportResolution(1),
         ).to.be.equal(false);
 
       });
@@ -1028,12 +1046,10 @@ describe.only('Lossless Governance', () => {
         expect(
           await governance.getIsVoted(1, projectTeamVoteIndex),
         ).to.be.equal(true);
-        
-        console.log("Test: passed all voting")
 
-        expect(
-          await governance.connect(lssAdmin).resolveReport(1),
-        ).to.be.revertedWith("LOSSLESS: Committee hasnt reached a resolution.")
+        await expect(
+           governance.connect(lssAdmin).resolveReport(1),
+        ).to.be.revertedWith('LSS: Committee hasnt reached a resolution.');
       });
     });
   });
