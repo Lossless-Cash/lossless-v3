@@ -28,19 +28,16 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     address public admin;
     address public recoveryAdmin;
 
+    //Duplicate with V3 remove when fully implemented
+    uint256 public stakeAmount;
+
     uint256 public reportLifetime;
     uint256 public reportCount;
-    uint256 public stakeAmount;
     LERC20 public losslessToken;
 
     // FIX
     struct TokenReports {
         mapping(address => uint256) reports;
-    }
-
-    struct Stake {
-        uint256 reportId;
-        uint256 timestamp;
     }
 
     mapping(uint256 => address) public reporter;
@@ -49,16 +46,12 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(uint256 => address) public reportTokens;
     mapping(uint256 => bool) public anotherReports;
 
-    mapping(address => Stake[]) public stakes;
-    mapping(uint256 => address[]) public stakers;
-
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
 
     event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
     event AnotherReportSubmitted(address indexed token, address indexed account, uint256 reportId);
-    event Staked(address indexed token, address indexed account, uint256 reportId);
     // --- MODIFIERS ---
 
     modifier onlyLosslessRecoveryAdmin() {
@@ -106,6 +99,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
         losslessToken = LERC20(_losslessToken);
     }
 
+    //Duplicate with V3 remove when fully implemented
     function setStakeAmount(uint256 _stakeAmount) public onlyLosslessAdmin {
         stakeAmount = _stakeAmount;
     }
@@ -114,26 +108,6 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     function getVersion() public pure returns (uint256) {
         return 2;
-    }
-
-    // GET STAKE INFO
-
-    function getAccountStakes(address account) public view returns(Stake[] memory) {
-        return stakes[account];
-    }
-
-    function getReportStakes(uint256 reportId) public view returns(address[] memory) {
-        return stakers[reportId];
-    }
-
-    function getIsAccountStaked(uint256 reportId, address account) public view returns(bool) {
-        for(uint256 i = 0; i < stakes[account].length; i++) {
-            if (stakes[account][i].reportId == reportId) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     // --- REPORTS ---
@@ -167,19 +141,6 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
         tokenReports[token].reports[account] = reportId;
 
         emit AnotherReportSubmitted(token, account, reportId);
-    }
-
-    function stake(uint256 reportId) public {        
-        require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
-        require(reporter[reportId] != _msgSender(), "LSS: reporter can not stake");
-        uint256 reportTimestamp = reportTimestamps[reportId];
-        require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
-
-        stakers[reportId].push(_msgSender());
-        stakes[_msgSender()].push(Stake(reportId, block.timestamp));
-        losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
-        
-        emit Staked(reportTokens[reportId], _msgSender(), reportId);
     }
 
     // --- BEFORE HOOKS ---

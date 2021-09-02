@@ -30,11 +30,18 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     address public admin;
     address public recoveryAdmin;
 
+    uint256 public stakeAmount;
+
     uint public cooldownPeriod;
 
     struct ReceiveCheckpoint {
         uint amount;
         uint timestamp;
+    }
+
+    struct Stake {
+        uint256 reportId;
+        uint256 timestamp;
     }
 
     struct LocksQueue {
@@ -53,9 +60,15 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(address => bool) whitelist;
     uint256 dexTranferThreshold;
 
+    
+    mapping(address => Stake[]) public stakes;
+    mapping(uint256 => address[]) public stakers;
+
+
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
+    event Staked(address indexed token, address indexed account, uint256 reportId);
 
     function initialize() public initializer {
        cooldownPeriod = 5 minutes;
@@ -100,6 +113,42 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
+
+
+    // GET STAKE INFO
+
+    function getAccountStakes(address account) public view returns(Stake[] memory) {
+        return stakes[account];
+    }
+
+    function getReportStakes(uint256 reportId) public view returns(address[] memory) {
+        return stakers[reportId];
+    }
+
+    function getIsAccountStaked(uint256 reportId, address account) public view returns(bool) {
+        for(uint256 i = 0; i < stakes[account].length; i++) {
+            if (stakes[account][i].reportId == reportId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    
+    function stake(uint256 reportId) public {        
+        require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
+        require(reporter[reportId] != _msgSender(), "LSS: reporter can not stake");
+        uint256 reportTimestamp = reportTimestamps[reportId];
+        require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
+
+        stakers[reportId].push(_msgSender());
+        stakes[_msgSender()].push(Stake(reportId, block.timestamp));
+        losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
+        
+        emit Staked(reportTokens[reportId], _msgSender(), reportId);
+    }
+
 
     function removeExpiredLocks (address recipient) private {
         LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
