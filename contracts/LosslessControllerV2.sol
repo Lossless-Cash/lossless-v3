@@ -110,6 +110,26 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
         return 2;
     }
 
+    function getReporter(uint256 _reportId) public view returns (address) {
+        return reporter[_reportId];
+    }
+
+    function getReportTimestamps(uint256 _reportId) public view returns (uint256) {
+        return reportTimestamps[_reportId];
+    }
+
+    function getTokenFromReport(uint256 _reportId) public view returns (address) {
+        return reportTokens[_reportId];
+    }
+
+    function getReportLifetime() public view returns (uint256) {
+        return reportLifetime;
+    }
+
+    function sendStake(address _from, address _to, uint256 _amt) private {
+        losslessToken.transferFrom(_from, _to, _amt);
+    }
+
     // --- REPORTS ---
 
     function report(address token, address account) public {

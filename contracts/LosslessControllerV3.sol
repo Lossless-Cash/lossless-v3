@@ -24,6 +24,18 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
+interface ControllerV2 {
+    function getReporter(uint256 _reportId) external view returns (address);
+    
+    function getReportTimestamps(uint256 _reportId) external view returns (uint256);
+
+    function getTokenFromReport(uint256 _reportId) external view returns (address);
+
+    function getReportLifetime() external view returns (uint256);
+
+    function sendStake(address _from, address _to, uint256 _amt) external;
+}
+
 
 contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
@@ -33,6 +45,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     uint256 public stakeAmount;
 
     uint public cooldownPeriod;
+
+    ControllerV2 public controllerV2;
 
     struct ReceiveCheckpoint {
         uint amount;
@@ -70,9 +84,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
-    function initialize() public initializer {
+    function initialize(address _controllerV2) public initializer {
        cooldownPeriod = 5 minutes;
        dexTranferThreshold = 2;
+       controllerV2 = ControllerV2(_controllerV2);
     }
 
     // --- MODIFIERS ---
@@ -137,16 +152,22 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     
     function stake(uint256 reportId) public {        
+        address reporter = address(ControllerV2(controllerV2.getReporter(reportId)));
+
         require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
-        require(reporter[reportId] != _msgSender(), "LSS: reporter can not stake");
-        uint256 reportTimestamp = reportTimestamps[reportId];
+        require(reporter != _msgSender(), "LSS: reporter can not stake");
+
+        uint256 reportTimestamp = controllerV2.getReportTimestamps(reportId);
+        uint256 reportLifetime = controllerV2.getReportLifetime();
+        
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
 
         stakers[reportId].push(_msgSender());
         stakes[_msgSender()].push(Stake(reportId, block.timestamp));
-        losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
+
+        controllerV2.sendStake(_msgSender(), address(this), stakeAmount);
         
-        emit Staked(reportTokens[reportId], _msgSender(), reportId);
+        emit Staked(controllerV2.getTokenFromReport(reportId), _msgSender(), reportId);
     }
 
 
