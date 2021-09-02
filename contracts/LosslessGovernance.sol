@@ -5,19 +5,12 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "hardhat/console.sol";
 
 interface LosslessController {
-    // Checks if not over and checks if exists
     function reportedProject(uint256 reportId) external view returns (address);
     function admin() external view returns (address);
     function reportTimestamps(uint256 reportId) external view returns (uint256);
     function reportLifetime() external view returns(uint256);
     function reportTokens(uint256 reportId) external view returns(address);
 }
-
-// [ ] set project team
-// [ ] set lossless team
-// [ ] set commitee members
-// [ ] set losslessController
-
 
 interface LERC20 {
     function admin() external view returns (address);
@@ -55,10 +48,44 @@ contract LosslessGovernance is AccessControl {
         _;
     }
 
+    //Verifies if an address is member
     function isCommitteeMember(address account) public view returns(bool) {
         return hasRole(COMMITTEE_ROLE, account);
     }
 
+    //Returns if a vote was casted by a team on a report
+    function getIsVoted(uint256 reportId, uint8 voterIndex) public view returns(bool) {
+        return reportVotes[reportId].voted[voterIndex];
+    }
+
+    //Returns if a committee member has voted
+    function getIsCommitteeMemberVoted(uint256 reportId, address account) public view returns(bool) {
+        return reportVotes[reportId].committeeMemberVoted[account];
+    }
+
+    //Returns the resolution on a report by a team
+    function getVote(uint256 reportId, uint8 voterIndex) public view returns(bool) {
+        return reportVotes[reportId].votes[voterIndex];
+    }
+
+    //Returns number of votes made by the committee
+    function getCommitteeVotesCount(uint256 reportId) public view returns(uint256) {
+        return reportVotes[reportId].committeeVotes.length;
+    }
+
+    //Returns if report has been resolved
+    function isReportSolved(uint256 reportId) public view returns(bool){
+        Vote storage reportVote = reportVotes[reportId];
+        return reportVote.resolved;
+    }
+
+    //Returns report resolution
+    function reportResolution(uint256 reportId) public view returns(bool){
+        Vote storage reportVote = reportVotes[reportId];
+        return reportVote.resolution;
+    }
+    
+    //Get if majority voted and the resolution of the votes
     function getCommitteeMajorityReachedResult(uint256 reportId) private view returns(bool isMajorityReached, bool result) {        
         Vote storage reportVote = reportVotes[reportId];
 
@@ -80,36 +107,9 @@ contract LosslessGovernance is AccessControl {
         return (false, false);
     }
 
-    function getIsVoted(uint256 reportId, uint8 voterIndex) public view returns(bool) {
-        return reportVotes[reportId].voted[voterIndex];
-    }
-
-    function getIsCommitteeMemberVoted(uint256 reportId, address account) public view returns(bool) {
-        return reportVotes[reportId].committeeMemberVoted[account];
-    }
-
-    function getVote(uint256 reportId, uint8 voterIndex) public view returns(bool) {
-        return reportVotes[reportId].votes[voterIndex];
-    }
-
-    function getCommitteeVotesCount(uint256 reportId) public view returns(uint256) {
-        return reportVotes[reportId].committeeVotes.length;
-    }
-
-    //Returns if report has been resolved
-    function isReportSolved(uint256 reportId) public view returns(bool){
-        Vote storage reportVote = reportVotes[reportId];
-        return reportVote.resolved;
-    }
-
-    //Returns report resolution
-    function reportResolution(uint256 reportId) public view returns(bool){
-        Vote storage reportVote = reportVotes[reportId];
-        return reportVote.resolution;
-    }
-    
-    //Auto change Quorum
+    //Add committee members
     function addCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin  {
+        require(newQuorum > 0, "LSS: Quorum cannot be zero with members.");
         committeeMembersCount += members.length;
         quorumSize = newQuorum;
         //_updateQuorum(committeeMembersCount);
@@ -119,6 +119,7 @@ contract LosslessGovernance is AccessControl {
         }
     } 
 
+    //Remove Committee members
     function removeCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin  {
         require(committeeMembersCount != 0, "LSS: committee has no members");
         committeeMembersCount -= members.length;
@@ -130,7 +131,7 @@ contract LosslessGovernance is AccessControl {
         }
     }
 
-    //Update QuorumSize
+    //Auto change Quorum
     function _updateQuorum(uint256 _newTeamSize) private {
         if (_newTeamSize != 0) {
             quorumSize = ((_newTeamSize/2)+1);
@@ -139,12 +140,7 @@ contract LosslessGovernance is AccessControl {
         }
     }
 
-
-    // TODO:
-    // - LSS TEAM VOTE ON REPORT
-    // - PROJECT TEAM VOTE ON REPORT
-    // - COMMITTEE VOTE ON REPORT
-
+    //LossLess Team voting
     function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
@@ -159,6 +155,7 @@ contract LosslessGovernance is AccessControl {
         reportVote.votes[lssTeamVoteIndex] = vote;
     }
 
+    //Token Team voting
     function projectTeamVote(uint256 reportId, bool vote) public {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
@@ -175,6 +172,7 @@ contract LosslessGovernance is AccessControl {
         reportVote.votes[projectTeamVoteIndex] = vote;
     }
 
+    //Committee members voting
     function committeeMemberVote(uint256 reportId, bool vote) public {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
         require(isCommitteeMember(msg.sender), "LSS: Caller is not committee member");
@@ -196,6 +194,8 @@ contract LosslessGovernance is AccessControl {
         }
     }
 
+
+    //Report resolution
     function resolveReport(uint256 reportId) public {
 
         address projectOwner = LERC20(controller.reportTokens(reportId)).admin();

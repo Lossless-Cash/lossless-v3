@@ -62,24 +62,24 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // --- MODIFIERS ---
 
     modifier onlyLosslessRecoveryAdmin() {
-        require(_msgSender() == recoveryAdmin, "LOSSLESS: must be recoveryAdmin");
+        require(_msgSender() == recoveryAdmin, "LSS: must be recoveryAdmin");
         _;
     }
 
     modifier onlyLosslessAdmin() {
-        require(admin == _msgSender(), "LOSSLESS: must be admin");
+        require(admin == _msgSender(), "LSS: must be admin");
         _;
     }
 
     // --- ADMIN STUFF ---
 
     function pause() public {
-        require(_msgSender() == pauseAdmin, "LOSSLESS: Must be pauseAdmin");
+        require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
         _pause();
     }    
     
     function unpause() public {
-        require(_msgSender() == pauseAdmin, "LOSSLESS: Must be pauseAdmin");
+        require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
         _unpause();
     }
 
@@ -141,11 +141,12 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     function report(address token, address account) public {
         uint256 reportId = tokenReports[token].reports[account];
         uint256 reportTimestamp = reportTimestamps[reportId];
-        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LOSSLESS: report already exists");
+        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LSS: report already exists");
 
-        reportCount = reportCount + 1;
+        reportCount += 1;
         reportId = reportCount;
         reporter[reportId] = _msgSender();
+
         // Bellow does not allow freezing more than one wallet. Do we want that?
         tokenReports[token].reports[account] = reportId;
         reportTimestamps[reportId] = block.timestamp;
@@ -158,9 +159,9 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     function reportAnother(uint256 reportId, address token, address account) public {
         uint256 reportTimestamp = reportTimestamps[reportId];
-        require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LOSSLESS: report does not exists");
-        require(anotherReports[reportId] == false, "LOSSLESS: another report already submitted");
-        require(_msgSender() == reporter[reportId], "LOSSLESS: invalid reporter");
+        require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
+        require(anotherReports[reportId] == false, "LSS: another report already submitted");
+        require(_msgSender() == reporter[reportId], "LSS: invalid reporter");
 
         anotherReports[reportId] = true;
         tokenReports[token].reports[account] = reportId;
@@ -169,10 +170,10 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     function stake(uint256 reportId) public {        
-        require(!getIsAccountStaked(reportId, _msgSender()), "LOSSLESS: already staked");
-        require(reporter[reportId] != _msgSender(), "LOSSLESS: reporter can not stake");
+        require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
+        require(reporter[reportId] != _msgSender(), "LSS: reporter can not stake");
         uint256 reportTimestamp = reportTimestamps[reportId];
-        require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LOSSLESS: report does not exists");
+        require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
 
         stakers[reportId].push(_msgSender());
         stakes[_msgSender()].push(Stake(reportId, block.timestamp));
@@ -183,20 +184,20 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- BEFORE HOOKS ---
 
-    function beforeTransfer(address sender, address recipient, uint256 amount) external {
+    function beforeTransfer(address sender, address recipient, uint256 amount) external view{
         uint256 reportId = tokenReports[_msgSender()].reports[sender];
         uint256 reportTimestamp = reportTimestamps[reportId];
-        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LOSSLESS: address is temporarily flagged");
+        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LSS: address is temporarily flagged");
     }
 
-    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
+    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external view{
         uint256 reportId = tokenReports[_msgSender()].reports[sender];
         uint256 reportTimestamp = reportTimestamps[reportId];
-        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LOSSLESS: address is temporarily flagged");
+        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LSS: address is temporarily flagged");
 
         uint256 msgSenderReportId = tokenReports[_msgSender()].reports[msgSender];
         uint256 msgSenderReportTimestamp = reportTimestamps[msgSenderReportId];
-        require(msgSenderReportId == 0 || msgSenderReportTimestamp + reportLifetime < block.timestamp, "LOSSLESS: address is temporarily flagged");
+        require(msgSenderReportId == 0 || msgSenderReportTimestamp + reportLifetime < block.timestamp, "LSS: address is temporarily flagged");
     }
 
     function beforeApprove(address sender, address spender, uint256 amount) external {}
