@@ -11,6 +11,7 @@ const {
   ROPSTEN_PRIVATE_KEY,
   INFURA_KEY,
   ETHERSCAN_KEY,
+  COINMARKETCAP,
   DEFENDER_KEY,
   DEFENDER_SECRET,
 } = require('./config');
@@ -55,6 +56,7 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
     gasPrice: 70,
+    coinmarketcap: COINMARKETCAP
   },
   abiExporter: {
     path: './abi',

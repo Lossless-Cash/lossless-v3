@@ -71,6 +71,10 @@ describe.only('Lossless Governance', () => {
       'LosslessControllerV2',
     );
 
+    const LosslessControllerV3 = await ethers.getContractFactory(
+      'LosslessControllerV3',
+    );
+
     losslessControllerV1 = await upgrades.deployProxy(
       LosslessController,
       [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address],
@@ -80,6 +84,12 @@ describe.only('Lossless Governance', () => {
     controller = await upgrades.upgradeProxy(
       losslessControllerV1.address,
       LosslessControllerV2,
+      { initializer: 'initialize' },
+    );
+
+    losslessControllerV3 = await upgrades.deployProxy(
+      LosslessControllerV3,
+      [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address, controller.address],
       { initializer: 'initialize' },
     );
 
@@ -872,6 +882,7 @@ describe.only('Lossless Governance', () => {
           expect(await governance.getCommitteeVotesCount(1)).to.be.equal(1);
           expect(await governance.getCommitteeVotesCount(2)).to.be.equal(1);
         });
+      
       });
     });
   });
@@ -1051,6 +1062,59 @@ describe.only('Lossless Governance', () => {
            governance.connect(lssAdmin).resolveReport(1),
         ).to.be.revertedWith('LSS: Committee hasnt reached a resolution.');
       });
+    });
+  });
+
+  describe('LosslessV3 Contoller', () => {
+    it('should get controller V3 version', async () => {
+      expect(
+         await losslessControllerV3.getVersion(),
+      ).to.be.equal(3);
+    });
+
+    describe('Account staking', () => {
+      describe('when its not staking', () => {
+        it('should return false', async () => {
+          expect(
+             await losslessControllerV3.getIsAccountStaked(1, anotherAccount.address),
+          ).to.be.equal(false);
+        });
+      });
+      
+      describe('when staking', () => {
+        describe('if report is invalid', () => {
+          it('should revert', async () => { 
+
+            await expect(losslessControllerV3.connect(anotherAccount).stake(1),
+            ).to.be.revertedWith("LSS: report does not exists");
+
+          });
+        });
+
+        describe('if report is valid', () => {
+          beforeEach(async () => {
+            await erc20
+              .connect(initialHolder)
+              .approve(controller.address, stakeAmount);
+  
+            await controller
+              .connect(initialHolder)
+              .report(erc20.address, anotherAccount.address);
+          });
+  
+          it('should stake', async () => {
+
+            await losslessControllerV3.connect(anotherAccount).stake(1);
+            console.log('staked');
+
+            expect(await losslessControllerV3.getIsAccountStaked(1, anotherAccount.address),
+            ).to.be.equal(true);
+
+          });
+        });
+
+      });
+
     });
   });
 });
