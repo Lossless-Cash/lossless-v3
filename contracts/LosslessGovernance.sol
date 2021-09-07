@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "hardhat/console.sol";
 
-interface LosslessController {
+interface LosslessControllerInterface {
     function reportedProject(uint256 reportId) external view returns (address);
     function admin() external view returns (address);
     function reportTimestamps(uint256 reportId) external view returns (uint256);
@@ -22,7 +22,7 @@ contract LosslessGovernance is AccessControl {
     uint8 public projectTeamVoteIndex = 1;
     uint8 public committeeVoteIndex = 2;
 
-    LosslessController public controller;
+    LosslessControllerInterface public controller;
     uint256 public committeeMembersCount = 0;
     uint256 public quorumSize = 0;
     mapping(address => address) projectOwners;
@@ -39,7 +39,7 @@ contract LosslessGovernance is AccessControl {
     mapping(uint256 => Vote) reportVotes;
 
     constructor(address _controller) {
-        controller = LosslessController(_controller);
+        controller = LosslessControllerInterface(_controller);
         _setupRole(DEFAULT_ADMIN_ROLE, controller.admin());
     }
 

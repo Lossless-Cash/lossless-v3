@@ -896,7 +896,7 @@ function regularERC20() {
   });
 }
 
-describe('LosslessControllerV3', () => {
+describe('LosslessStaking', () => {
   beforeEach(async () => {
     [
       deployer,
@@ -916,8 +916,8 @@ describe('LosslessControllerV3', () => {
       'LosslessControllerV1',
     );
 
-    const LosslessControllerV3 = await ethers.getContractFactory(
-      'LosslessControllerV3',
+    const LosslessStaking = await ethers.getContractFactory(
+      'LosslessStaking',
     );
 
     losslessControllerV1 = await upgrades.deployProxy(
@@ -928,7 +928,7 @@ describe('LosslessControllerV3', () => {
 
     losslessController = await upgrades.upgradeProxy(
       losslessControllerV1.address,
-      LosslessControllerV3,
+      LosslessStaking,
       { initializer: 'initialize' },
     );
 

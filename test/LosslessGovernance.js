@@ -64,31 +64,31 @@ describe.only('Lossless Governance', () => {
     ] = await ethers.getSigners();
 
     const LosslessController = await ethers.getContractFactory(
-      'LosslessControllerV1',
+      'LosslessController',
     );
 
-    const LosslessControllerV2 = await ethers.getContractFactory(
+    /*const LosslessControllerV2 = await ethers.getContractFactory(
       'LosslessControllerV2',
+    );*/
+
+    const LosslessStaking = await ethers.getContractFactory(
+      'LosslessStaking',
     );
 
-    const LosslessControllerV3 = await ethers.getContractFactory(
-      'LosslessControllerV3',
-    );
-
-    losslessControllerV1 = await upgrades.deployProxy(
+    controller = await upgrades.deployProxy(
       LosslessController,
       [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address],
       { initializer: 'initialize' },
     );
 
-    controller = await upgrades.upgradeProxy(
+    /*controller = await upgrades.upgradeProxy(
       losslessControllerV1.address,
       LosslessControllerV2,
       { initializer: 'initialize' },
-    );
+    );*/
 
-    losslessControllerV3 = await upgrades.deployProxy(
-      LosslessControllerV3,
+    losslessStaking = await upgrades.deployProxy(
+      LosslessStaking,
       [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address, controller.address],
       { initializer: 'initialize' },
     );
@@ -1068,7 +1068,7 @@ describe.only('Lossless Governance', () => {
   describe('LosslessV3 Contoller', () => {
     it('should get controller V3 version', async () => {
       expect(
-         await losslessControllerV3.getVersion(),
+         await losslessStaking.getVersion(),
       ).to.be.equal(3);
     });
 
@@ -1076,7 +1076,7 @@ describe.only('Lossless Governance', () => {
       describe('when its not staking', () => {
         it('should return false', async () => {
           expect(
-             await losslessControllerV3.getIsAccountStaked(1, anotherAccount.address),
+             await losslessStaking.getIsAccountStaked(1, anotherAccount.address),
           ).to.be.equal(false);
         });
       });
@@ -1085,7 +1085,7 @@ describe.only('Lossless Governance', () => {
         describe('if report is invalid', () => {
           it('should revert', async () => { 
 
-            await expect(losslessControllerV3.connect(anotherAccount).stake(1),
+            await expect(losslessStaking.connect(anotherAccount).stake(1),
             ).to.be.revertedWith("LSS: report does not exists");
 
           });
@@ -1104,10 +1104,10 @@ describe.only('Lossless Governance', () => {
   
           it('should stake', async () => {
 
-            await losslessControllerV3.connect(anotherAccount).stake(1);
+            await losslessStaking.connect(anotherAccount).stake(1);
             console.log('staked');
 
-            expect(await losslessControllerV3.getIsAccountStaked(1, anotherAccount.address),
+            expect(await losslessStaking.getIsAccountStaked(1, anotherAccount.address),
             ).to.be.equal(true);
 
           });

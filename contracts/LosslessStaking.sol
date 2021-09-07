@@ -36,7 +36,7 @@ interface ControllerV2 {
     function sendStake(address _from, address _to, uint256 _amt) external;
 }
 
-contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgradeable {
+contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
     address public admin;
     address public recoveryAdmin;
