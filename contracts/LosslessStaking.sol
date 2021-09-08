@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
 
-interface LERC20 {
+interface ILERC20 {
     function totalSupply() external view returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
@@ -46,7 +46,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     uint public cooldownPeriod;
 
-    LERC20 public losslessToken;
+    ILERC20 public losslessToken;
     ControllerV2 public controllerV2;
 
     struct ReceiveCheckpoint {
@@ -138,7 +138,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
-        losslessToken = LERC20(_losslessToken);
+        losslessToken = ILERC20(_losslessToken);
     }
     
     // GET STAKE INFO
@@ -197,7 +197,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     function removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
         LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[account];
-        require(queue.touchedTimestamp + 5 minutes <= block.timestamp, "LERC20: transfers limit reached");
+        require(queue.touchedTimestamp + 5 minutes <= block.timestamp, "ILERC20: transfers limit reached");
         uint256 amountLeft = amount - availableAmount;
         uint i = queue.first;
 
@@ -227,6 +227,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     function enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
+        console.log("EnqueuesLock");
         LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
         if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
             queue.lockedFunds[queue.last].amount += checkpoint.amount;
@@ -267,12 +268,12 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
             }
             i += 1;
         }
-
+        console.log("Locked amount is %s", lockedAmount);
         return lockedAmount;
     }
 
     function getAvailableAmount(address token, address account) public view returns (uint256 amount) {
-        uint256 total = LERC20(token).balanceOf(account);
+        uint256 total = ILERC20(token).balanceOf(account);
         uint256 locked = getLockedAmount(token, account);
         return total - locked;
     }
@@ -287,7 +288,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function beforeTransfer(address sender, address recipient, uint256 amount) external {
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
         if (dexList[recipient] && amount > 2) {
-            require(availableAmount >= amount, "LERC20: transfer amount exceeds settled balance");
+            require(availableAmount >= amount, "ILERC20: transfer amount exceeds settled balance");
         } else if (availableAmount < amount) {
             removeUsedUpLocks(availableAmount, sender, amount);
         }
@@ -296,7 +297,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
         if (dexList[recipient]  && amount > dexTranferThreshold) {
-            require(availableAmount >= amount, "LERC20: transfer amount exceeds settled balance");
+            require(availableAmount >= amount, "ILERC20: transfer amount exceeds settled balance");
         } else if (availableAmount < amount) {
             removeUsedUpLocks(availableAmount, sender, amount);
         }
@@ -313,6 +314,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function afterApprove(address sender, address spender, uint256 amount) external {}
 
     function afterTransfer(address sender, address recipient, uint256 amount) external {
+        console.log("Enters after transfer");
         if (dexList[recipient]) {
             removeExpiredLocks(recipient);
         }
@@ -321,6 +323,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     function afterTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
+        console.log("Enters after transfer");
         removeExpiredLocks(recipient);
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + 5 minutes);
         enqueueLockedFunds(newCheckpoint, recipient);

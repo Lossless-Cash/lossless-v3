@@ -9,12 +9,13 @@ contract LERC20Mock is LERC20 {
         string memory name,
         string memory symbol,
         address initialAccount,
+        address initialHodler,
         uint256 initialBalance,
         address lssAddress,
         address admin,
         address adminBackup,
          uint256 _timelockPeriod
-    ) payable LERC20(totalSupply, name, symbol, admin, adminBackup, _timelockPeriod, lssAddress) {
+    ) payable LERC20(totalSupply, name, symbol, initialHodler, admin, adminBackup, _timelockPeriod, lssAddress) {
         _mint(initialAccount, initialBalance);
     }
 

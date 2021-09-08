@@ -12,7 +12,7 @@ interface LosslessControllerInterface {
     function reportTokens(uint256 reportId) external view returns(address);
 }
 
-interface LERC20 {
+interface LERC20Interface {
     function admin() external view returns (address);
 } 
 
@@ -162,7 +162,7 @@ contract LosslessGovernance is AccessControl {
         uint256 reportTimestamp = controller.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LSS: report is not valid");
 
-        address projectTeam = LERC20(controller.reportTokens(reportId)).admin();
+        address projectTeam = LERC20Interface(controller.reportTokens(reportId)).admin();
         require(projectTeam == msg.sender, "LSS: must be project team");
 
         Vote storage reportVote = reportVotes[reportId];
@@ -198,7 +198,7 @@ contract LosslessGovernance is AccessControl {
     //Report resolution
     function resolveReport(uint256 reportId) public {
 
-        address projectOwner = LERC20(controller.reportTokens(reportId)).admin();
+        address projectOwner = LERC20Interface(controller.reportTokens(reportId)).admin();
         require(hasRole(COMMITTEE_ROLE, msg.sender) 
                 || msg.sender == controller.admin() 
                 || msg.sender == projectOwner,

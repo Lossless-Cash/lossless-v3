@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
-interface LERC20 {
+interface ILERC20 {
     function totalSupply() external view returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
@@ -33,7 +33,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     uint256 public reportLifetime;
     uint256 public reportCount;
-    LERC20 public losslessToken;
+    ILERC20 public losslessToken;
 
     // FIX
     struct TokenReports {
@@ -106,7 +106,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
-        losslessToken = LERC20(_losslessToken);
+        losslessToken = ILERC20(_losslessToken);
     }
 
     function setStakeAmount(uint256 _stakeAmount) public onlyLosslessAdmin {
