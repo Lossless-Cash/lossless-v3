@@ -15,6 +15,8 @@ interface LERC20 {
 
     function allowance(address owner, address spender) external view returns (uint256);
 
+    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
+
     function approve(address spender, uint256 amount) external returns (bool);
 
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
@@ -27,7 +29,6 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     address public admin;
     address public recoveryAdmin;
 
-    //Duplicate with V3 remove when fully implemented
     uint256 public stakeAmount;
 
     uint256 public reportLifetime;
@@ -108,10 +109,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         losslessToken = LERC20(_losslessToken);
     }
 
-    //Duplicate with V3 remove when fully implemented
     function setStakeAmount(uint256 _stakeAmount) public onlyLosslessAdmin {
         stakeAmount = _stakeAmount;
     }
+
 
     // --- GETTERS ---
 
@@ -135,8 +136,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         return reportLifetime;
     }
 
-    function sendStake(address _from, address _to, uint256 _amt) private {
-        losslessToken.transferFrom(_from, _to, _amt);
+    function getStakeAmount() public view returns (uint256) {
+        return stakeAmount;
     }
 
     // --- REPORTS ---

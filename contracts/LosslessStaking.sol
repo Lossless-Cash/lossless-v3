@@ -6,7 +6,8 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
-interface IERC20 {
+
+interface LERC20 {
     function totalSupply() external view returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
@@ -15,13 +16,13 @@ interface IERC20 {
 
     function allowance(address owner, address spender) external view returns (uint256);
 
+    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
+
     function approve(address spender, uint256 amount) external returns (bool);
 
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    
+    function admin() external view returns (address);
 }
 
 interface ControllerV2 {
@@ -33,7 +34,9 @@ interface ControllerV2 {
 
     function getReportLifetime() external view returns (uint256);
 
-    function sendStake(address _from, address _to, uint256 _amt) external;
+    function getLSSBalance(address _adr) external view returns(uint256);
+
+    function getStakeAmount() external view returns (uint256);
 }
 
 contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -41,10 +44,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     address public admin;
     address public recoveryAdmin;
 
-    uint256 public stakeAmount;
-
     uint public cooldownPeriod;
 
+    LERC20 public losslessToken;
     ControllerV2 public controllerV2;
 
     struct ReceiveCheckpoint {
@@ -135,6 +137,10 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         controllerV2 = ControllerV2(_controllerV2);
     }
 
+    function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
+        losslessToken = LERC20(_losslessToken);
+    }
+    
     // GET STAKE INFO
 
     function getAccountStakes(address account) public view returns(Stake[] memory) {
@@ -157,25 +163,21 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     
     function stake(uint256 reportId) public {
-        console.log("Enters stake()");        
         address reporter = controllerV2.getReporter(reportId);
-        console.log("Got reporter %s", reporter);
         require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
-        console.log("Passed not staking");        
         require(reporter != _msgSender(), "LSS: reporter can not stake");
-        console.log("Passed not being reporter");
+
         uint256 reportLifetime = controllerV2.getReportLifetime();
-        console.log("Got report lifetime: %s", reportLifetime);
-        uint256 reportTimestamp = controllerV2.getReportTimestamps(reportId);
-        console.log("Got report timestamp: %s", reportTimestamp);
-        
+        uint256 reportTimestamp = controllerV2.getReportTimestamps(reportId);        
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
-        console.log("Passed report ID existance");
+
+        uint256 stakeAmount = controllerV2.getStakeAmount();
+        require(losslessToken.balanceOf(_msgSender()) >= stakeAmount, "LSS: Not enough $LSS to stake");
 
         stakers[reportId].push(_msgSender());
         stakes[_msgSender()].push(Stake(reportId, block.timestamp));
 
-        //controllerV2.sendStake(_msgSender(), address(this), stakeAmount);
+        losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
         
         emit Staked(controllerV2.getTokenFromReport(reportId), _msgSender(), reportId);
     }
@@ -270,7 +272,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     function getAvailableAmount(address token, address account) public view returns (uint256 amount) {
-        uint256 total = IERC20(token).balanceOf(account);
+        uint256 total = LERC20(token).balanceOf(account);
         uint256 locked = getLockedAmount(token, account);
         return total - locked;
     }

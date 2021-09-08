@@ -32,7 +32,7 @@ const symbol = 'MTKN';
 
 const supply = 100;
 const initialSupply = 1000000;
-const stakeAmount = 5000;
+const stakeAmount = 2500;
 const reportLifetime = time.duration.days(1);
 
 const { ZERO_ADDRESS } = constants;
@@ -118,6 +118,7 @@ describe.only('Lossless Governance', () => {
       .connect(lssAdmin)
       .setReportLifetime(Number(reportLifetime));
     await controller.connect(lssAdmin).setLosslessToken(erc20.address);
+    await losslessStaking.connect(lssAdmin).setLosslessToken(erc20.address);
   });
 
   describe('contructor', () => {
@@ -1095,26 +1096,88 @@ describe.only('Lossless Governance', () => {
           beforeEach(async () => {
             await erc20
               .connect(initialHolder)
-              .approve(controller.address, stakeAmount);
+              .approve(controller.address, stakeAmount*3);
   
             await controller
               .connect(initialHolder)
               .report(erc20.address, anotherAccount.address);
+            
+            await controller
+            .connect(initialHolder)
+            .report(erc20.address, member2.address);
+
+            await erc20
+            .connect(initialHolder)
+            .transfer(oneMoreAccount.address, stakeAmount*2);
+
+            await erc20
+            .connect(initialHolder)
+            .transfer(member1.address, stakeAmount);
           });
-  
-          it('should stake', async () => {
+          
+          describe('if sender has no balance', () => {
+            it('should revert', async () => {
 
-            await losslessStaking.connect(anotherAccount).stake(1);
-            console.log('staked');
+              await expect(
+                losslessStaking.connect(anotherAccount).stake(1),
+              ).to.be.revertedWith("LSS: Not enough $LSS to stake");
+            });
+          });
 
-            expect(await losslessStaking.getIsAccountStaked(1, anotherAccount.address),
-            ).to.be.equal(true);
+          describe('if sender has balance', () => {
+            it('should stake', async () => {
+            
+              await erc20
+              .connect(oneMoreAccount)
+              .approve(losslessStaking.address, stakeAmount);
 
+              await losslessStaking.connect(oneMoreAccount).stake(1);
+              
+              expect(
+                await losslessStaking.getIsAccountStaked(1, oneMoreAccount.address),
+              ).to.be.equal(true);
+            });
+          });
+
+          describe('if report has been staked multiple times', () => {
+            it('should get all staking addresses', async () => {
+            
+              await erc20
+              .connect(oneMoreAccount)
+              .approve(losslessStaking.address, stakeAmount);
+
+              await losslessStaking.connect(oneMoreAccount).stake(1);
+
+              await erc20
+              .connect(member1)
+              .approve(losslessStaking.address, stakeAmount);
+
+              await losslessStaking.connect(member1).stake(1);
+              
+              expect(
+                await losslessStaking.getReportStakes(1),
+              ).to.have.same.members([oneMoreAccount.address, member1.address]);
+            });
+          });
+
+          describe('if account has staked multiple times', () => {
+            it('should get all reports', async () => {
+            
+              await erc20
+              .connect(oneMoreAccount)
+              .approve(losslessStaking.address, stakeAmount*2);
+
+              await losslessStaking.connect(oneMoreAccount).stake(1);
+
+              await losslessStaking.connect(oneMoreAccount).stake(2);
+            
+              expect(
+                await losslessStaking.getAccountStakes(oneMoreAccount.address),
+              ).to.be.an('array').that.is.not.empty;
+            });
           });
         });
-
       });
-
     });
   });
 });
