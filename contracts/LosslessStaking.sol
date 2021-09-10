@@ -25,7 +25,7 @@ interface ILERC20 {
     function admin() external view returns (address);
 }
 
-interface ControllerV2 {
+interface ILssController {
     function getReporter(uint256 _reportId) external view returns (address);
     
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
@@ -47,34 +47,14 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     uint public cooldownPeriod;
 
     ILERC20 public losslessToken;
-    ControllerV2 public controllerV2;
-
-    struct ReceiveCheckpoint {
-        uint amount;
-        uint timestamp;
-    }
+    ILssController public lssController;
 
     struct Stake {
         uint256 reportId;
         uint256 timestamp;
     }
 
-    struct LocksQueue {
-        mapping(uint256 => ReceiveCheckpoint) lockedFunds;
-        uint256 touchedTimestamp;
-        uint256 first;
-        uint256 last;
-    }
-
-    struct TokenLockedFunds {
-        mapping(address => LocksQueue) queue;
-    }
-
-    mapping(address => TokenLockedFunds) tokenScopedLockedFunds;
-    mapping(address => bool) dexList;
     mapping(address => bool) whitelist;
-    uint256 dexTranferThreshold;
-
     
     mapping(address => Stake[]) public stakes;
     mapping(uint256 => address[]) public stakers;
@@ -85,13 +65,12 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
-    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin, address _controllerV2) public initializer {
+    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin, address _lssController) public initializer {
        cooldownPeriod = 5 minutes;
-       dexTranferThreshold = 2;
        admin = _admin;
        recoveryAdmin = _recoveryAdmin;
        pauseAdmin = _pauseAdmin;
-       controllerV2 = ControllerV2(_controllerV2);
+       lssController = ILssController(_lssController);
     }
 
     // --- MODIFIERS ---
@@ -106,15 +85,18 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         _;
     }
 
+    modifier onlyLosslessPauseAdmin() {
+        require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
+        _;
+    }
+
     // --- SETTERS ---
 
-    function pause() public {
-        require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
+    function pause() public onlyLosslessPauseAdmin {
         _pause();
     }    
     
-    function unpause() public {
-        require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
+    function unpause() public onlyLosslessPauseAdmin {
         _unpause();
     }
 
@@ -133,8 +115,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         pauseAdmin = newPauseAdmin;
     }
 
-    function setControllerV2(address _controllerV2) public onlyLosslessRecoveryAdmin {
-        controllerV2 = ControllerV2(_controllerV2);
+    function setILssController(address _lssController) public onlyLosslessRecoveryAdmin {
+        lssController = ILssController(_lssController);
     }
 
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
@@ -161,17 +143,16 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         return false;
     }
 
-    
     function stake(uint256 reportId) public {
-        address reporter = controllerV2.getReporter(reportId);
+        address reporter = lssController.getReporter(reportId);
         require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
         require(reporter != _msgSender(), "LSS: reporter can not stake");
 
-        uint256 reportLifetime = controllerV2.getReportLifetime();
-        uint256 reportTimestamp = controllerV2.getReportTimestamps(reportId);        
+        uint256 reportLifetime = lssController.getReportLifetime();
+        uint256 reportTimestamp = lssController.getReportTimestamps(reportId);        
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
 
-        uint256 stakeAmount = controllerV2.getStakeAmount();
+        uint256 stakeAmount = lssController.getStakeAmount();
         require(losslessToken.balanceOf(_msgSender()) >= stakeAmount, "LSS: Not enough $LSS to stake");
 
         stakers[reportId].push(_msgSender());
@@ -179,72 +160,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
         
-        emit Staked(controllerV2.getTokenFromReport(reportId), _msgSender(), reportId);
-    }
-
-
-    function removeExpiredLocks (address recipient) private {
-        LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
-        uint i = queue.first;
-        ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
-
-        while (checkpoint.timestamp <= block.timestamp && i <= queue.last) {
-            delete queue.lockedFunds[i];
-            i += 1;
-            checkpoint = queue.lockedFunds[i];
-        }
-    }
-
-    function removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
-        LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[account];
-        require(queue.touchedTimestamp + 5 minutes <= block.timestamp, "ILERC20: transfers limit reached");
-        uint256 amountLeft = amount - availableAmount;
-        uint i = queue.first;
-
-        while (amountLeft > 0 && i <= queue.last) {
-            // console.log("---queue.last---", queue.last);
-            ReceiveCheckpoint storage checkpoint = queue.lockedFunds[i];
-            if (checkpoint.amount > amountLeft) {
-                // console.log("B");
-                // console.log("removing", checkpoint.timestamp);
-                // console.log("amountLeft", checkpoint.amount);
-                // console.log("amountLeft", amountLeft);
-                checkpoint.amount -= amountLeft;
-                amountLeft = 0;
-            } else {
-                // console.log("A");
-                // console.log("removing", checkpoint.timestamp);
-                // console.log("amountLeft", checkpoint.amount);
-                // console.log("amountLeft", amountLeft);
-                amountLeft -= checkpoint.amount;
-                checkpoint.amount = 0;
-            }
-            
-            i += 1;
-        }
-
-        queue.touchedTimestamp = block.timestamp;
-    }
-
-    function enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
-        console.log("EnqueuesLock");
-        LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
-        if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
-            queue.lockedFunds[queue.last].amount += checkpoint.amount;
-        } else {
-            queue.last += 1;
-            queue.lockedFunds[queue.last] = checkpoint;
-        }
-    }
-
-    function dequeueLockedFunds(address recipient) private {
-        LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
-        delete queue.lockedFunds[queue.first];
-        queue.first += 1;
-    }
-
-    function addToDexList(address dexAddress) public onlyLosslessAdmin {
-        dexList[dexAddress] = true;
+        emit Staked(lssController.getTokenFromReport(reportId), _msgSender(), reportId);
     }
 
     function addToWhitelist(address allowedAddress) public onlyLosslessAdmin {
@@ -254,82 +170,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     // --- GETTERS ---
 
     function getVersion() public pure returns (uint256) {
-        return 3;
+        return 1;
     }
-    
-    function getLockedAmount(address token, address account) public view returns (uint256) {
-        uint256 lockedAmount = 0;
-        LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
-        uint i = queue.first;
-        while (i <= queue.last) {
-            ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
-            if (checkpoint.timestamp > block.timestamp) {
-                lockedAmount = lockedAmount + checkpoint.amount;
-            }
-            i += 1;
-        }
-        console.log("Locked amount is %s", lockedAmount);
-        return lockedAmount;
-    }
-
-    function getAvailableAmount(address token, address account) public view returns (uint256 amount) {
-        uint256 total = ILERC20(token).balanceOf(account);
-        uint256 locked = getLockedAmount(token, account);
-        return total - locked;
-    }
-
-    function getQueueTail(address token, address account) public view returns (uint256) {
-        LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
-        return queue.last;
-    }
-
-    // --- BEFORE HOOKS ---
-
-    function beforeTransfer(address sender, address recipient, uint256 amount) external {
-        uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
-        if (dexList[recipient] && amount > 2) {
-            require(availableAmount >= amount, "ILERC20: transfer amount exceeds settled balance");
-        } else if (availableAmount < amount) {
-            removeUsedUpLocks(availableAmount, sender, amount);
-        }
-    }
-
-    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
-        uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
-        if (dexList[recipient]  && amount > dexTranferThreshold) {
-            require(availableAmount >= amount, "ILERC20: transfer amount exceeds settled balance");
-        } else if (availableAmount < amount) {
-            removeUsedUpLocks(availableAmount, sender, amount);
-        }
-    }
-
-    function beforeApprove(address sender, address spender, uint256 amount) external {}
-
-    function beforeIncreaseAllowance(address msgSender, address spender, uint256 addedValue) external {}
-
-    function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external {}
-
-    // --- AFTER HOOKS ---
-
-    function afterApprove(address sender, address spender, uint256 amount) external {}
-
-    function afterTransfer(address sender, address recipient, uint256 amount) external {
-        console.log("Enters after transfer");
-        if (dexList[recipient]) {
-            removeExpiredLocks(recipient);
-        }
-        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + 5 minutes);
-        enqueueLockedFunds(newCheckpoint, recipient);
-    }
-
-    function afterTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
-        console.log("Enters after transfer");
-        removeExpiredLocks(recipient);
-        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + 5 minutes);
-        enqueueLockedFunds(newCheckpoint, recipient);
-    }
-
-    function afterIncreaseAllowance(address sender, address spender, uint256 addedValue) external {}
-
-    function afterDecreaseAllowance(address sender, address spender, uint256 subtractedValue) external {}
 }

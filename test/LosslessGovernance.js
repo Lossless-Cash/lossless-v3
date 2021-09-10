@@ -1072,11 +1072,11 @@ describe.only('Lossless Governance', () => {
     });
   });
 
-  describe('LosslessV3 Contoller', () => {
-    it('should get controller V3 version', async () => {
+  describe('LosslessStaking', () => {
+    it('should get staking contract version', async () => {
       expect(
          await losslessStaking.getVersion(),
-      ).to.be.equal(3);
+      ).to.be.equal(1);
     });
 
     describe('Account staking', () => {
@@ -1168,6 +1168,10 @@ describe.only('Lossless Governance', () => {
 
           describe('if account has staked multiple times', () => {
             it('should get all reports', async () => {
+
+              await ethers.provider.send('evm_increaseTime', [
+                Number(time.duration.minutes(10)),
+              ]);
             
               await lerc20
               .connect(oneMoreAccount)
@@ -1182,29 +1186,124 @@ describe.only('Lossless Governance', () => {
               ).to.be.an('array').that.is.not.empty;
             });
           });
-
-          it('should return the locked amount', async () =>{
-            await lerc20.connect(initialHolder).transfer(recipient.address, 10);
-            await lerc20.connect(initialHolder).transfer(recipient.address, 10);
-            await lerc20.connect(initialHolder).transfer(recipient.address, 10);
-
-            /*await ethers.provider.send('evm_increaseTime', [
-              Number(time.duration.minutes(5)),
-            ]);*/
-
-            await lerc20.connect(initialHolder).transfer(recipient.address, 5);
-            await lerc20.connect(initialHolder).transfer(recipient.address, 6);
-
-            expect(
-              await losslessStaking.getLockedAmount(
-                lerc20.address,
-                recipient.address,
-              ),
-            ).to.be.equal(11);
-          });
-
         });
       });
+    });
+  });
+
+  describe('Lossless Controller funds lock', () =>{
+    beforeEach( async () =>{
+      await lerc20
+      .connect(initialHolder)
+      .approve(controller.address, initialSupply);
+      
+      await lerc20
+      .connect(oneMoreAccount)
+      .approve(controller.address, 500);
+    });
+
+    describe('when trasnfering multiple times', () =>{
+      it('should lock funds', async () => {
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 1);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 2);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 3);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 4);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        expect(
+          await controller.getLockedAmount(lerc20.address, oneMoreAccount.address),
+        ).to.be.equal(15);
+
+      });
+
+      it('should not be able to transfer funds', async () => {
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await expect(
+          lerc20.connect(oneMoreAccount).transfer(member5.address, 40),
+        ).to.be.revertedWith("ILERC20: transfer amount exceeds settled balance");
+
+      });
+
+      it('should lock funds for five minutes only', async () => {
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 1);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 2);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 3);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 4);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+
+        await lerc20
+        .connect(oneMoreAccount)
+        .transfer(initialHolder.address, 15);
+
+        expect(
+          await controller.getLockedAmount(lerc20.address, oneMoreAccount.address),
+        ).to.be.equal(0);
+
+      });
+
     });
   });
 });
