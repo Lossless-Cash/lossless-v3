@@ -67,10 +67,6 @@ describe.only('Lossless Governance', () => {
       'LosslessController',
     );
 
-    /*const LosslessControllerV2 = await ethers.getContractFactory(
-      'LosslessControllerV2',
-    );*/
-
     const LosslessStaking = await ethers.getContractFactory(
       'LosslessStaking',
     );
@@ -80,12 +76,6 @@ describe.only('Lossless Governance', () => {
       [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address],
       { initializer: 'initialize' },
     );
-
-    /*controller = await upgrades.upgradeProxy(
-      losslessControllerV1.address,
-      LosslessControllerV2,
-      { initializer: 'initialize' },
-    );*/
 
     losslessStaking = await upgrades.deployProxy(
       LosslessStaking,
@@ -1119,6 +1109,11 @@ describe.only('Lossless Governance', () => {
             await lerc20
             .connect(initialHolder)
             .transfer(member1.address, stakeAmount);
+
+            await ethers.provider.send('evm_increaseTime', [
+              Number(time.duration.minutes(5)),
+            ]);
+    
           });
           
           describe('if sender has no balance', () => {
@@ -1304,6 +1299,140 @@ describe.only('Lossless Governance', () => {
 
       });
 
+      it('should unlock every transfer after the five minute mark', async () => {
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 1);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 2);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 3);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 4);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, 5);
+
+        expect(
+          await controller.getLockedAmount(lerc20.address, oneMoreAccount.address),
+        ).to.be.equal(10);
+
+      });
+
+      
+
+    });
+
+    describe('when blacklisting addresses', () => {
+
+      it('should blacklist address', async () =>{
+        
+        await controller.connect(lssAdmin).addToBlacklist(oneMoreAccount.address);
+
+        expect(
+          await controller.isBlacklisted(oneMoreAccount.address),
+        ).to.be.equal(true);
+
+      });
+
+      it('should deblacklist address', async () =>{
+        
+        await controller.connect(lssAdmin).addToBlacklist(oneMoreAccount.address);
+
+        await controller.connect(lssAdmin).removeFromBlacklist(oneMoreAccount.address);
+
+        expect(
+          await controller.isBlacklisted(oneMoreAccount.address),
+        ).to.be.equal(false);
+
+      });
+
+      it('should prevent from blacklisting twice', async () =>{
+        
+        await controller.connect(lssAdmin).addToBlacklist(oneMoreAccount.address);
+        
+        await expect(
+          controller.connect(lssAdmin).addToBlacklist(oneMoreAccount.address),
+        ).to.be.revertedWith("LSS: Recipient is already blacklisted");
+
+      });
+
+      it('should prevent from deblacklisting a whitelisted account', async () =>{
+
+        await expect(
+          controller.connect(lssAdmin).removeFromBlacklist(oneMoreAccount.address),
+        ).to.be.revertedWith("LSS: Recipient is not blacklisted");
+
+      });
+      
+    });
+
+    describe('when an address is blacklisted', () =>{
+      beforeEach( async () =>{
+
+        await lerc20
+        .connect(initialHolder)
+        .transfer(oneMoreAccount.address, stakeAmount);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+        
+        await controller.connect(lssAdmin).addToBlacklist(oneMoreAccount.address);
+
+        expect(
+          await controller.isBlacklisted(oneMoreAccount.address),
+        ).to.be.equal(true);
+      });
+
+      it('should prevent from reporting', async () =>{
+        await expect(
+          controller.connect(oneMoreAccount).report(lerc20.address, member1.address),
+        ).to.be.revertedWith("LSS: You cannot operate");
+      });
+      
+      it('should prevent from staking', async () =>{
+          await controller.connect(initialHolder).report(lerc20.address, member1.address);
+
+          await expect(
+            losslessStaking.connect(oneMoreAccount).stake(1),
+          ).to.be.revertedWith("LSS: You cannot operate");
+      });
+
+      it('should prevent from receiving funds', async () =>{
+        await expect(
+          lerc20
+         .connect(initialHolder)
+         .transfer(oneMoreAccount.address, 500),
+        ).to.be.revertedWith("LSS: Recipient is blacklisted");
+      });
+
+      it('should prevent from sending funds', async () =>{
+        await expect(
+          lerc20
+         .connect(oneMoreAccount)
+         .transfer(initialHolder.address, 500),
+        ).to.be.revertedWith("LSS: You cannot operate");
+      });
     });
   });
 });

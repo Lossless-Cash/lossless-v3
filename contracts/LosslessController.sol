@@ -60,6 +60,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     
     mapping(address => bool) dexList;
 
+    mapping(address => bool) blacklist;
+
     mapping(uint256 => address) public reporter;
     mapping(address => TokenReports) tokenReports;
     mapping(uint256 => uint256) public reportTimestamps;
@@ -87,6 +89,11 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     modifier onlyPauseAdmin() {
         require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
+        _;
+    }
+
+    modifier notBlacklisted() {
+        require(!blacklist[_msgSender()], "LSS: You cannot operate");
         _;
     }
 
@@ -138,6 +145,16 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         dexList[dexAddress] = true;
     }
 
+    function addToBlacklist(address _adr) public onlyLosslessAdmin {
+        require(!isBlacklisted(_adr), "LSS: Recipient is already blacklisted");
+        blacklist[_adr] = true;
+    }
+
+    function removeFromBlacklist(address _adr) public onlyLosslessAdmin {
+        require(isBlacklisted(_adr), "LSS: Recipient is not blacklisted");
+        blacklist[_adr] = false;
+    }
+
     // --- GETTERS ---
 
     function getVersion() public pure returns (uint256) {
@@ -162,6 +179,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     function getStakeAmount() public view returns (uint256) {
         return stakeAmount;
+    }
+
+    function isBlacklisted(address _adr) public view returns (bool) {
+        return blacklist[_adr];
     }
     
     function getLockedAmount(address token, address account) public view returns (uint256) {
@@ -191,7 +212,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     // --- REPORTS ---
 
-    function report(address token, address account) public {
+    function report(address token, address account) public notBlacklisted {
         uint256 reportId = tokenReports[token].reports[account];
         uint256 reportTimestamp = reportTimestamps[reportId];
         require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LSS: report already exists");
@@ -210,7 +231,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         emit ReportSubmitted(token, account, reportId);
     }
 
-    function reportAnother(uint256 reportId, address token, address account) public {
+    function reportAnother(uint256 reportId, address token, address account) public notBlacklisted {
         uint256 reportTimestamp = reportTimestamps[reportId];
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(anotherReports[reportId] == false, "LSS: another report already submitted");
@@ -279,7 +300,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     // --- BEFORE HOOKS ---
 
-    function beforeTransfer(address sender, address recipient, uint256 amount) external {
+    function beforeTransfer(address sender, address recipient, uint256 amount) external notBlacklisted {
+        require(!isBlacklisted(sender), "LSS: You cannot operate");
+        require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
+
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
 
         if (dexList[recipient] && amount > dexTranferThreshold) {
@@ -291,12 +315,18 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         }
     }
 
-    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
+    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external notBlacklisted {
+        require(!isBlacklisted(sender), "LSS: You cannot operate");
+        require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
+
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
+
         if (dexList[recipient]  && amount > dexTranferThreshold) {
             require(availableAmount >= amount, "ILERC20: transfer amount exceeds settled balance");
         } else if (availableAmount < amount) {
             removeUsedUpLocks(availableAmount, sender, amount);
+            availableAmount = getAvailableAmount(_msgSender(), sender);
+            require(getAvailableAmount(_msgSender(), sender) >= amount, "ILERC20: transfer amount exceeds settled balance");
         }
     }
 

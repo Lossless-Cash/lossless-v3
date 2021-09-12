@@ -37,6 +37,8 @@ interface ILssController {
     function getLSSBalance(address _adr) external view returns(uint256);
 
     function getStakeAmount() external view returns (uint256);
+
+    function isBlacklisted(address _adr) external view returns (bool);
 }
 
 contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -87,6 +89,11 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     modifier onlyLosslessPauseAdmin() {
         require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
+        _;
+    }
+
+    modifier notBlacklisted() {
+        require(!lssController.isBlacklisted(_msgSender()), "LSS: You cannot operate");
         _;
     }
 
@@ -143,7 +150,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         return false;
     }
 
-    function stake(uint256 reportId) public {
+    function stake(uint256 reportId) public notBlacklisted {
         address reporter = lssController.getReporter(reportId);
         require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
         require(reporter != _msgSender(), "LSS: reporter can not stake");
