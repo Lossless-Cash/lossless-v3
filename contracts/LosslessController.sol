@@ -33,7 +33,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     uint256 public reportLifetime;
     uint256 public reportCount;
-    uint256 dexTranferThreshold;
+    uint256 public dexTranferThreshold;
     ILERC20 public losslessToken;
 
     struct TokenReports {
@@ -52,18 +52,17 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     struct ReceiveCheckpoint {
-        uint amount;
-        uint timestamp;
+        uint256 amount;
+        uint256 timestamp;
     }
 
-    mapping(address => TokenLockedFunds) tokenScopedLockedFunds;
+    mapping(address => TokenLockedFunds) private tokenScopedLockedFunds;
     
-    mapping(address => bool) dexList;
-
-    mapping(address => bool) blacklist;
+    mapping(address => bool) private dexList;
+    mapping(address => bool) private blacklist;
+    mapping(address => TokenReports) private tokenReports;
 
     mapping(uint256 => address) public reporter;
-    mapping(address => TokenReports) tokenReports;
     mapping(uint256 => uint256) public reportTimestamps;
     mapping(uint256 => address) public reportTokens;
     mapping(uint256 => bool) public anotherReports;
@@ -146,12 +145,12 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     function addToBlacklist(address _adr) public onlyLosslessAdmin {
-        require(!isBlacklisted(_adr), "LSS: Recipient is already blacklisted");
+        require(!isBlacklisted(_adr), "LSS: Already blacklisted");
         blacklist[_adr] = true;
     }
 
     function removeFromBlacklist(address _adr) public onlyLosslessAdmin {
-        require(isBlacklisted(_adr), "LSS: Recipient is not blacklisted");
+        require(isBlacklisted(_adr), "LSS: Not blacklisted");
         blacklist[_adr] = false;
     }
 
@@ -186,8 +185,11 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
     
     function getLockedAmount(address token, address account) public view returns (uint256) {
-        uint256 lockedAmount = 0;
-        LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
+        uint256 lockedAmount;
+        
+        LocksQueue storage queue;
+        queue = tokenScopedLockedFunds[token].queue[account];
+
         uint i = queue.first;
         while (i <= queue.last) {
             ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
@@ -206,7 +208,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     function getQueueTail(address token, address account) public view returns (uint256) {
-        LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
+        LocksQueue storage queue;
+        queue = tokenScopedLockedFunds[token].queue[account];
         return queue.last;
     }    
 
@@ -214,8 +217,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     function report(address token, address account) public notBlacklisted {
         uint256 reportId = tokenReports[token].reports[account];
-        uint256 reportTimestamp = reportTimestamps[reportId];
-        require(reportId == 0 || reportTimestamp + reportLifetime < block.timestamp, "LSS: report already exists");
+        require(reportId == 0 || reportTimestamps[reportId] + reportLifetime < block.timestamp, "LSS: Report already exists");
 
         reportCount += 1;
         reportId = reportCount;
@@ -234,7 +236,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     function reportAnother(uint256 reportId, address token, address account) public notBlacklisted {
         uint256 reportTimestamp = reportTimestamps[reportId];
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
-        require(anotherReports[reportId] == false, "LSS: another report already submitted");
+        require(anotherReports[reportId] == false, "LSS: Another already submitted");
         require(_msgSender() == reporter[reportId], "LSS: invalid reporter");
 
         anotherReports[reportId] = true;
@@ -245,7 +247,9 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     // LOCKs & QUEUES
     function removeExpiredLocks (address recipient) private {
-        LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
+        LocksQueue storage queue;
+        queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
+
         uint i = queue.first;
         ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
 
@@ -257,21 +261,25 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     function removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
-        LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[account];
-        require(queue.touchedTimestamp + 5 minutes <= block.timestamp, "ILERC20: transfers limit reached");
+        LocksQueue storage queue;
+        queue = tokenScopedLockedFunds[_msgSender()].queue[account];
+
+        require(queue.touchedTimestamp + 5 minutes <= block.timestamp, "LSS: Transfers limit reached");
 
         uint256 amountLeft = amount - availableAmount;
         uint i = 1;
 
         while (amountLeft > 0 && i <= queue.last) {
-            ReceiveCheckpoint storage checkpoint = queue.lockedFunds[i];
+            ReceiveCheckpoint memory checkpoint;
+            checkpoint = queue.lockedFunds[i];
+
             if ((checkpoint.timestamp - block.timestamp) >= 300)  {
                 if (checkpoint.amount > amountLeft) {
                     checkpoint.amount -= amountLeft;
-                    amountLeft = 0;
+                    delete amountLeft;
                 } else {
                     amountLeft -= checkpoint.amount;
-                    checkpoint.amount = 0;
+                    delete checkpoint.amount;
                 }
             }
             
@@ -282,7 +290,9 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     function enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
-        LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
+        LocksQueue storage queue;
+        queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
+
         if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
             queue.lockedFunds[queue.last].amount += checkpoint.amount;
         } else {
@@ -292,7 +302,9 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     function dequeueLockedFunds(address recipient) private {
-        LocksQueue storage queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
+        LocksQueue storage queue;
+        queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
+
         delete queue.lockedFunds[queue.first];
         queue.first += 1;
     }
@@ -307,11 +319,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
 
         if (dexList[recipient] && amount > dexTranferThreshold) {
-            require(availableAmount >= amount, "ILERC20: transfer amount exceeds settled balance");
+            require(availableAmount >= amount, "LSS: Amt exceeds settled balance");
         } else if (availableAmount < amount) {
             removeUsedUpLocks(availableAmount, sender, amount);
-            availableAmount = getAvailableAmount(_msgSender(), sender);
-            require(getAvailableAmount(_msgSender(), sender) >= amount, "ILERC20: transfer amount exceeds settled balance");
+            require(getAvailableAmount(_msgSender(), sender) >= amount, "LSS: Amt exceeds settled balance");
         }
     }
 
@@ -322,11 +333,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
 
         if (dexList[recipient]  && amount > dexTranferThreshold) {
-            require(availableAmount >= amount, "ILERC20: transfer amount exceeds settled balance");
+            require(availableAmount >= amount, "LSS: Amt exceeds settled balance");
         } else if (availableAmount < amount) {
             removeUsedUpLocks(availableAmount, sender, amount);
-            availableAmount = getAvailableAmount(_msgSender(), sender);
-            require(getAvailableAmount(_msgSender(), sender) >= amount, "ILERC20: transfer amount exceeds settled balance");
+            require(getAvailableAmount(_msgSender(), sender) >= amount, "LSS: Amt exceeds settled balance");
         }
     }
 

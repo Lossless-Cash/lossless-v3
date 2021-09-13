@@ -27,6 +27,11 @@ let member8;
 let member9;
 let member10;
 
+const lssTeamVoteIndex = 0;
+const projectTeamVoteIndex = 1;
+const committeeVoteIndex = 2;
+
+
 const name = 'My Token';
 const symbol = 'MTKN';
 
@@ -510,7 +515,7 @@ describe.only('Lossless Governance', () => {
 
         describe('when voting for the first time', () => {
           it('should mark as voted', async () => {
-            const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+            //const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
             expect(
               await governance.getIsVoted(1, lssTeamVoteIndex),
             ).to.be.equal(false);
@@ -523,7 +528,7 @@ describe.only('Lossless Governance', () => {
           });
 
           it('should save positive vote correctly', async () => {
-            const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+            //const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
             await governance.connect(lssAdmin).losslessVote(1, true);
 
             expect(await governance.getVote(1, lssTeamVoteIndex)).to.be.equal(
@@ -532,7 +537,7 @@ describe.only('Lossless Governance', () => {
           });
 
           it('should save negative vote correctly', async () => {
-            const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+            //const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
             await governance.connect(lssAdmin).losslessVote(1, false);
 
             expect(await governance.getVote(1, lssTeamVoteIndex)).to.be.equal(
@@ -543,7 +548,7 @@ describe.only('Lossless Governance', () => {
 
         describe('when voting second time for the same report', () => {
           it('should revert', async () => {
-            const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+            //const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
             
             expect(await governance.connect(lssAdmin).losslessVote(1, false));
 
@@ -565,7 +570,7 @@ describe.only('Lossless Governance', () => {
               .connect(initialHolder)
               .report(lerc20.address, oneMoreAccount.address);
 
-            const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+            //const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
             expect(
               await governance.getIsVoted(1, lssTeamVoteIndex),
             ).to.be.equal(false);
@@ -642,7 +647,7 @@ describe.only('Lossless Governance', () => {
       describe('when report is valid', () => {
         describe('when voting for the first time', () => {
           it('should mark as voted', async () => {
-            const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+            //const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
             expect(
               await governance.getIsVoted(1, projectTeamVoteIndex),
             ).to.be.equal(false);
@@ -655,7 +660,7 @@ describe.only('Lossless Governance', () => {
           });
 
           it('should save positive vote correctly', async () => {
-            const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+            //const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
             await governance.connect(admin).projectTeamVote(1, true);
 
             expect(
@@ -664,7 +669,7 @@ describe.only('Lossless Governance', () => {
           });
 
           it('should save negative vote correctly', async () => {
-            const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+            //const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
             await governance.connect(admin).projectTeamVote(1, false);
 
             expect(
@@ -693,7 +698,7 @@ describe.only('Lossless Governance', () => {
               .connect(initialHolder)
               .report(lerc20.address, oneMoreAccount.address);
 
-            const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+            //const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
             expect(
               await governance.getIsVoted(1, projectTeamVoteIndex),
             ).to.be.equal(false);
@@ -759,7 +764,7 @@ describe.only('Lossless Governance', () => {
       it('should revert', async () => {
         await expect(
           governance.connect(recipient).committeeMemberVote(1, true),
-        ).to.be.revertedWith('LSS: Caller is not committee member');
+        ).to.be.revertedWith('LSS: Caller is not member');
       });
     });
 
@@ -824,7 +829,7 @@ describe.only('Lossless Governance', () => {
         });
 
         it('should set committee decision when majority is reached', async () => {
-          const committeeVoteIndex = await governance.committeeVoteIndex();
+          //const committeeVoteIndex = await governance.committeeVoteIndex();
           await governance.connect(member1).committeeMemberVote(1, true);
           await governance.connect(member2).committeeMemberVote(1, true);
           await governance.connect(member3).committeeMemberVote(1, true);
@@ -833,6 +838,7 @@ describe.only('Lossless Governance', () => {
           expect(
             await governance.getIsVoted(1, committeeVoteIndex),
           ).to.be.equal(false);
+          
           expect(await governance.getVote(1, committeeVoteIndex)).to.be.equal(
             false,
           );
@@ -853,7 +859,7 @@ describe.only('Lossless Governance', () => {
 
           await expect(
             governance.connect(member1).committeeMemberVote(1, false),
-          ).to.be.revertedWith('LSS: Committee member already voted.');
+          ).to.be.revertedWith('LSS: Member already voted.');
         });
       });
 
@@ -934,7 +940,7 @@ describe.only('Lossless Governance', () => {
 
       //Project Team Vote
       it('should save Team vote', async () => {
-        const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+        //const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
         await governance.connect(admin).projectTeamVote(1, true);
 
         expect(
@@ -944,7 +950,7 @@ describe.only('Lossless Governance', () => {
       
       //LossLess Team Vote
       it('should save LSS vote', async () => {
-        const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+        //const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
 
         await governance.connect(lssAdmin).losslessVote(1, true);
 
@@ -954,8 +960,8 @@ describe.only('Lossless Governance', () => {
       });
 
       it('should resolve report with everyone agreeing', async () => {
-        const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
-        const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+        //const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+        //const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
 
         await governance.connect(lssAdmin).losslessVote(1, true);
 
@@ -1000,8 +1006,8 @@ describe.only('Lossless Governance', () => {
       });
 
       it('should resolve report negatively if mayority doesnt agree', async () => {
-        const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
-        const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+        //const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+        //const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
 
         await governance.connect(lssAdmin).losslessVote(1, false);
         
@@ -1040,8 +1046,8 @@ describe.only('Lossless Governance', () => {
       });
 
       it('should revert with committee not voting', async () => {
-        const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
-        const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
+        //const lssTeamVoteIndex = await governance.lssTeamVoteIndex();
+        //const projectTeamVoteIndex = await governance.projectTeamVoteIndex();
 
         await governance.connect(lssAdmin).losslessVote(1, false);
         
@@ -1057,7 +1063,7 @@ describe.only('Lossless Governance', () => {
 
         await expect(
            governance.connect(lssAdmin).resolveReport(1),
-        ).to.be.revertedWith('LSS: Committee hasnt reached a resolution.');
+        ).to.be.revertedWith('LSS: Committee resolve pending');
       });
     });
   });
@@ -1260,7 +1266,7 @@ describe.only('Lossless Governance', () => {
 
         await expect(
           lerc20.connect(oneMoreAccount).transfer(member5.address, 40),
-        ).to.be.revertedWith("ILERC20: transfer amount exceeds settled balance");
+        ).to.be.revertedWith("LSS: Amt exceeds settled balance");
 
       });
 
@@ -1372,7 +1378,7 @@ describe.only('Lossless Governance', () => {
         
         await expect(
           controller.connect(lssAdmin).addToBlacklist(oneMoreAccount.address),
-        ).to.be.revertedWith("LSS: Recipient is already blacklisted");
+        ).to.be.revertedWith("LSS: Already blacklisted");
 
       });
 
@@ -1380,7 +1386,7 @@ describe.only('Lossless Governance', () => {
 
         await expect(
           controller.connect(lssAdmin).removeFromBlacklist(oneMoreAccount.address),
-        ).to.be.revertedWith("LSS: Recipient is not blacklisted");
+        ).to.be.revertedWith("LSS: Not blacklisted");
 
       });
       

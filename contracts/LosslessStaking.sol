@@ -42,19 +42,19 @@ interface ILssController {
 }
 
 contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
-    address public pauseAdmin;
-    address public admin;
-    address public recoveryAdmin;
 
-    uint public cooldownPeriod;
-
-    ILERC20 public losslessToken;
-    ILssController public lssController;
+    uint256 public cooldownPeriod;
 
     struct Stake {
         uint256 reportId;
         uint256 timestamp;
     }
+
+    ILERC20 public losslessToken;
+    ILssController public lssController;
+    address public pauseAdmin;
+    address public admin;
+    address public recoveryAdmin;
 
     mapping(address => bool) whitelist;
     
@@ -141,7 +141,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     function getIsAccountStaked(uint256 reportId, address account) public view returns(bool) {
-        for(uint256 i = 0; i < stakes[account].length; i++) {
+        for(uint256 i; i < stakes[account].length; i++) {
             if (stakes[account][i].reportId == reportId) {
                 return true;
             }
@@ -151,13 +151,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     function stake(uint256 reportId) public notBlacklisted {
-        address reporter = lssController.getReporter(reportId);
         require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
-        require(reporter != _msgSender(), "LSS: reporter can not stake");
-
-        uint256 reportLifetime = lssController.getReportLifetime();
-        uint256 reportTimestamp = lssController.getReportTimestamps(reportId);        
-        require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
+        require(lssController.getReporter(reportId) != _msgSender(), "LSS: reporter can not stake");   
+        require(reportId > 0 && lssController.getReportTimestamps(reportId) + lssController.getReportLifetime() > block.timestamp, "LSS: report does not exists");
 
         uint256 stakeAmount = lssController.getStakeAmount();
         require(losslessToken.balanceOf(_msgSender()) >= stakeAmount, "LSS: Not enough $LSS to stake");
