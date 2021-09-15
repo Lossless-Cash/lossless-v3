@@ -230,6 +230,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
         losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
 
+        blacklist[account] = true;
+
         emit ReportSubmitted(token, account, reportId);
     }
 
@@ -241,6 +243,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
         anotherReports[reportId] = true;
         tokenReports[token].reports[account] = reportId;
+
+        blacklist[account] = true;
 
         emit AnotherReportSubmitted(token, account, reportId);
     }
