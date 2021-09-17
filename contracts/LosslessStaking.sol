@@ -25,20 +25,20 @@ interface ILERC20 {
     function admin() external view returns (address);
 }
 
-interface ILssController {
+interface ILssReporting {
     function getReporter(uint256 _reportId) external view returns (address);
     
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
 
     function getTokenFromReport(uint256 _reportId) external view returns (address);
+}
 
-    function getReportLifetime() external view returns (uint256);
-
-    function getLSSBalance(address _adr) external view returns(uint256);
-
+interface ILssController {
     function getStakeAmount() external view returns (uint256);
 
     function isBlacklisted(address _adr) external view returns (bool);
+
+    function getReportLifetime() external returns (uint256);
 }
 
 contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -52,7 +52,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     ILERC20 public losslessToken;
-    ILssController public lssController;
+    ILssReporting public losslessReporting;
+    ILssController public losslessController;
+
     address public pauseAdmin;
     address public admin;
     address public recoveryAdmin;
@@ -70,13 +72,14 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
-    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin, address _lssController) public initializer {
+    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin, address _losslessReporting, address _losslessController) public initializer {
        cooldownPeriod = 5 minutes;
        admin = _admin;
        recoveryAdmin = _recoveryAdmin;
        pauseAdmin = _pauseAdmin;
-       lssController = ILssController(_lssController);
-       controllerAddress = _lssController;
+       losslessReporting = ILssReporting(_losslessReporting);
+       losslessController = ILssController(_losslessController);
+       controllerAddress = _losslessReporting;
     }
 
     // --- MODIFIERS ---
@@ -97,7 +100,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     modifier notBlacklisted() {
-        require(!lssController.isBlacklisted(_msgSender()), "LSS: You cannot operate");
+        require(!losslessController.isBlacklisted(_msgSender()), "LSS: You cannot operate");
         _;
     }
 
@@ -126,8 +129,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         pauseAdmin = newPauseAdmin;
     }
 
-    function setILssController(address _lssController) public onlyLosslessRecoveryAdmin {
-        lssController = ILssController(_lssController);
+    function setILssReporting(address _losslessReporting) public onlyLosslessRecoveryAdmin {
+        losslessReporting = ILssReporting(_losslessReporting);
     }
 
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
@@ -161,20 +164,18 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     function stake(uint256 reportId) public notBlacklisted {
         require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
-        require(lssController.getReporter(reportId) != _msgSender(), "LSS: reporter can not stake");   
-        require(reportId > 0 && lssController.getReportTimestamps(reportId) + lssController.getReportLifetime() > block.timestamp, "LSS: report does not exists");
+        require(losslessReporting.getReporter(reportId) != _msgSender(), "LSS: reporter can not stake");   
+        require(reportId > 0 && losslessReporting.getReportTimestamps(reportId) + losslessController.getReportLifetime() > block.timestamp, "LSS: report does not exists");
 
-        uint256 stakeAmount = lssController.getStakeAmount();
+        uint256 stakeAmount = losslessController.getStakeAmount();
         require(losslessToken.balanceOf(_msgSender()) >= stakeAmount, "LSS: Not enough $LSS to stake");
 
         stakers[reportId].push(_msgSender());
         stakes[_msgSender()].push(Stake(reportId, block.timestamp, false));
 
-        //losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
-        //console.log("Sending %s to %s from token %s", stakeAmount, controllerAddress, tokenAddress);
         losslessToken.transferFrom(_msgSender(), controllerAddress, stakeAmount);
         
-        emit Staked(lssController.getTokenFromReport(reportId), _msgSender(), reportId);
+        emit Staked(losslessReporting.getTokenFromReport(reportId), _msgSender(), reportId);
     }
 
     function addToWhitelist(address allowedAddress) public onlyLosslessAdmin {

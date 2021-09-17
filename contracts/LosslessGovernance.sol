@@ -4,15 +4,18 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "hardhat/console.sol";
 
-interface LosslessControllerInterface {
+interface ILssReporting {
     function reportedProject(uint256 reportId) external view returns (address);
     function admin() external view returns (address);
-    function reportTimestamps(uint256 reportId) external view returns (uint256);
-    function reportLifetime() external view returns(uint256);
-    function reportTokens(uint256 reportId) external view returns(address);
+    function getReportTimestamps(uint256 reportId) external view returns (uint256);
+    function getTokenFromReport(uint256 reportId) external view returns(address);
 }
 
-interface LERC20Interface {
+interface ILssController {
+    function getReportLifetime() external view returns(uint256);
+}
+
+interface ILERC20 {
     function admin() external view returns (address);
 } 
 
@@ -33,7 +36,8 @@ contract LosslessGovernance is AccessControl {
     uint256 public committeeMembersCount;
     uint256 public quorumSize;
 
-    LosslessControllerInterface public controller;
+    ILssReporting public losslessReporting;
+    ILssController public losslessController;
 
     struct Vote {
         mapping(address => bool) committeeMemberVoted;
@@ -47,13 +51,14 @@ contract LosslessGovernance is AccessControl {
     mapping(uint256 => Vote) reportVotes;
     mapping(address => address) projectOwners;
 
-    constructor(address _controller) {
-        controller = LosslessControllerInterface(_controller);
-        _setupRole(DEFAULT_ADMIN_ROLE, controller.admin());
+    constructor(address _losslessReporting, address _losslessController) {
+        losslessReporting = ILssReporting(_losslessReporting);
+        losslessController = ILssController(_losslessController);
+        _setupRole(DEFAULT_ADMIN_ROLE, losslessReporting.admin());
     }
 
     modifier onlyLosslessAdmin() {
-        require(controller.admin() == _msgSender(), "LSS: must be admin");
+        require(losslessReporting.admin() == _msgSender(), "LSS: must be admin");
         _;
     }
 
@@ -156,8 +161,8 @@ contract LosslessGovernance is AccessControl {
     function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
-        uint256 reportTimestamp = controller.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LSS: report is not valid");
+        uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
+        require(reportTimestamp != 0 && reportTimestamp + losslessController.getReportLifetime() > block.timestamp, "LSS: report is not valid");
         
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -172,11 +177,10 @@ contract LosslessGovernance is AccessControl {
     function projectTeamVote(uint256 reportId, bool vote) public {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
-        uint256 reportTimestamp = controller.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LSS: report is not valid");
+        uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
+        require(reportTimestamp != 0 && reportTimestamp + losslessController.getReportLifetime() > block.timestamp, "LSS: report is not valid");
 
-        //address projectTeam = LERC20Interface(controller.reportTokens(reportId)).admin();
-        require(LERC20Interface(controller.reportTokens(reportId)).admin() == msg.sender, "LSS: must be project team");
+        require(ILERC20(losslessReporting.getTokenFromReport(reportId)).admin() == msg.sender, "LSS: must be project team");
 
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -192,8 +196,8 @@ contract LosslessGovernance is AccessControl {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
         require(isCommitteeMember(msg.sender), "LSS: Caller is not member");
 
-        uint256 reportTimestamp = controller.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + controller.reportLifetime() > block.timestamp, "LSS: report is not valid");
+        uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
+        require(reportTimestamp != 0 && reportTimestamp + losslessController.getReportLifetime() > block.timestamp, "LSS: report is not valid");
 
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -216,8 +220,8 @@ contract LosslessGovernance is AccessControl {
     function resolveReport(uint256 reportId) public {
 
         require(hasRole(COMMITTEE_ROLE, msg.sender) 
-                || msg.sender == controller.admin() 
-                || msg.sender == LERC20Interface(controller.reportTokens(reportId)).admin(),
+                || msg.sender == losslessReporting.admin() 
+                || msg.sender == ILERC20(losslessReporting.getTokenFromReport(reportId)).admin(),
                 "LSS: Role cannot resolve.");
         
         Vote storage reportVote;
