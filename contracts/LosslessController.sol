@@ -24,6 +24,10 @@ interface ILERC20 {
     function admin() external view returns (address);
 }
 
+interface ILssStaking {
+    function getReportStakes(uint256 reportId) external returns(address[] memory);
+}
+
 contract LosslessController is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
     address public admin;
@@ -34,7 +38,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     uint256 public reportLifetime;
     uint256 public reportCount;
     uint256 public dexTranferThreshold;
+
     ILERC20 public losslessToken;
+
+    ILssStaking public losslessStaking;
 
     struct TokenReports {
         mapping(address => uint256) reports;
@@ -60,9 +67,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     
     mapping(address => bool) private dexList;
     mapping(address => bool) private blacklist;
-    mapping(address => TokenReports) private tokenReports;
+    mapping(address => TokenReports) private tokenReports; // Address. reported X address, on report ID
 
     mapping(uint256 => address) public reporter;
+    mapping(uint256 => address) public reportedAddress;
     mapping(uint256 => uint256) public reportTimestamps;
     mapping(uint256 => address) public reportTokens;
     mapping(uint256 => bool) public anotherReports;
@@ -154,6 +162,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         blacklist[_adr] = false;
     }
 
+    function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
+        losslessStaking = ILssStaking(_adr);
+    }
+
     // --- GETTERS ---
 
     function getVersion() public pure returns (uint256) {
@@ -231,6 +243,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
 
         blacklist[account] = true;
+        reportedAddress[reportId] = account;
 
         emit ReportSubmitted(token, account, reportId);
     }
@@ -311,6 +324,39 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
         delete queue.lockedFunds[queue.first];
         queue.first += 1;
+    }
+
+    // --- REPORT RESOLUTION ---
+
+    function payout(uint256 reportId) public onlyLosslessAdmin {
+
+        uint256 amountOfStakers;
+        uint256 amountStakedOnReport;
+        uint256 balanceFreezed;
+        address reportedToken;
+
+        //Get stakers
+        amountOfStakers = losslessStaking.getReportStakes(reportId).length;
+        
+        //Get total staked = (stakeAmount * lenght of stakers)
+        amountStakedOnReport = amountOfStakers * stakeAmount;
+
+        //Get reported token
+        reportedToken = reportTokens[reportId];
+        //Get balance freezed
+        balanceFreezed = ILERC20(reportedToken).balanceOf(reportedAddress[reportId]);
+        
+        console.log("--------- Report %s ---------", reportId);
+        console.log("Reported Token: %s", reportedToken);
+        console.log("Reported Wallet: %s", reportedAddress[reportId]);
+        console.log("Wallet Balance: %s", balanceFreezed);
+        console.log("Amount of stakers: %s", amountOfStakers);
+        console.log("Total staked on report: %s", amountStakedOnReport);
+        //Loop over
+        //  Check timestamp
+        //  Get Amount depending on time
+        //  Transfer amount
+        //  Mark as sent
     }
 
 

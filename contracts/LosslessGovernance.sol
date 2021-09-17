@@ -21,6 +21,13 @@ contract LosslessGovernance is AccessControl {
     uint256 public lssTeamVoteIndex;
     uint256 public projectTeamVoteIndex = 1;
     uint256 public committeeVoteIndex = 2;
+
+    uint256 public firstWavePayout  = 60;
+    uint256 public secondWavePayout = 20;
+    uint256 public thirdWavePayout  = 10;
+    uint256 public fourthWavePayout = 5;
+    uint256 public payoutReserved   = 5;
+
     bytes32 private constant COMMITTEE_ROLE = keccak256("COMMITTEE_ROLE");
 
     uint256 public committeeMembersCount;
@@ -238,10 +245,10 @@ contract LosslessGovernance is AccessControl {
         
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
-            reportVote.resolved = true;
         }else{
             reportVote.resolution = false;
-            reportVote.resolved = true;
         }
+        
+        reportVote.resolved = true;
     }
 }

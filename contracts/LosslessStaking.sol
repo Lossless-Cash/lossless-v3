@@ -48,6 +48,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     struct Stake {
         uint256 reportId;
         uint256 timestamp;
+        bool payed;
     }
 
     ILERC20 public losslessToken;
@@ -55,6 +56,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     address public pauseAdmin;
     address public admin;
     address public recoveryAdmin;
+    address public controllerAddress;
+    address public tokenAddress;
 
     mapping(address => bool) whitelist;
     
@@ -73,6 +76,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
        recoveryAdmin = _recoveryAdmin;
        pauseAdmin = _pauseAdmin;
        lssController = ILssController(_lssController);
+       controllerAddress = _lssController;
     }
 
     // --- MODIFIERS ---
@@ -128,12 +132,17 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
         losslessToken = ILERC20(_losslessToken);
+        tokenAddress = _losslessToken;
     }
     
     // GET STAKE INFO
 
     function getAccountStakes(address account) public view returns(Stake[] memory) {
         return stakes[account];
+    }
+
+    function getPayoutStatus(address _address, uint256 reportId) public view returns (bool) {
+        return stakes[_address][reportId].payed;
     }
 
     function getReportStakes(uint256 reportId) public view returns(address[] memory) {
@@ -159,9 +168,11 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(losslessToken.balanceOf(_msgSender()) >= stakeAmount, "LSS: Not enough $LSS to stake");
 
         stakers[reportId].push(_msgSender());
-        stakes[_msgSender()].push(Stake(reportId, block.timestamp));
+        stakes[_msgSender()].push(Stake(reportId, block.timestamp, false));
 
-        losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
+        //losslessToken.transferFrom(_msgSender(), address(this), stakeAmount);
+        //console.log("Sending %s to %s from token %s", stakeAmount, controllerAddress, tokenAddress);
+        losslessToken.transferFrom(_msgSender(), controllerAddress, stakeAmount);
         
         emit Staked(lssController.getTokenFromReport(reportId), _msgSender(), reportId);
     }

@@ -26,6 +26,8 @@ let member7;
 let member8;
 let member9;
 let member10;
+let initialControllerBalance;
+let finalControllerBalance;
 
 const lssTeamVoteIndex = 0;
 const projectTeamVoteIndex = 1;
@@ -113,12 +115,21 @@ describe.only('Lossless Governance', () => {
       .setReportLifetime(Number(reportLifetime));
     await controller.connect(lssAdmin).setLosslessToken(lerc20.address);
     await losslessStaking.connect(lssAdmin).setLosslessToken(lerc20.address);
-  });
 
+    await controller.connect(lssAdmin).setStakingContractAddress(losslessStaking.address);
+
+  });
+  
+  
   describe('contructor', () => {
     it('should set lossless controller correctly', async () => {
       expect(await governance.controller()).to.be.equal(controller.address);
     });
+
+    it('should return initial Controller balance', async () => {
+      initialControllerBalance = await lerc20.balanceOf(controller.address);
+    });
+
   });
 
   describe('reporting', () =>{
@@ -144,7 +155,7 @@ describe.only('Lossless Governance', () => {
         await controller
         .connect(initialHolder)
         .report(lerc20.address, anotherAccount.address);
-        
+
         await controller
             .connect(initialHolder)
             .reportAnother(1, lerc20.address, member3.address);
@@ -1112,7 +1123,11 @@ describe.only('Lossless Governance', () => {
           beforeEach(async () => {
             await lerc20
             .connect(initialHolder)
-            .approve(controller.address, stakeAmount*3);
+            .approve(controller.address, stakeAmount* 3 + 1000);
+
+            await lerc20
+            .connect(initialHolder)
+            .transfer(member5.address, 1000);
   
             await controller
             .connect(initialHolder)
@@ -1186,7 +1201,10 @@ describe.only('Lossless Governance', () => {
               .approve(losslessStaking.address, stakeAmount);
 
               await losslessStaking.connect(member1).stake(1);
-              
+
+              let amountOfStakers;
+              amountOfStakers = await controller.connect(lssAdmin).payout(1);
+
               expect(
                 await losslessStaking.getReportStakes(1),
               ).to.have.same.members([oneMoreAccount.address, member1.address]);
@@ -1207,7 +1225,16 @@ describe.only('Lossless Governance', () => {
               await losslessStaking.connect(oneMoreAccount).stake(1);
 
               await losslessStaking.connect(oneMoreAccount).stake(2);
-            
+
+              expect(
+                await losslessStaking.getPayoutStatus(oneMoreAccount.address, 1),
+              ).to.be.equal(false);
+
+              finalControllerBalance = await lerc20.balanceOf(controller.address);
+
+              console.log("Balance of Controller at the beggining of staking: %s", initialControllerBalance);
+              console.log("Balance of Controller at the end of staking:       %s", finalControllerBalance);
+           
               expect(
                 await losslessStaking.getAccountStakes(oneMoreAccount.address),
               ).to.be.an('array').that.is.not.empty;
