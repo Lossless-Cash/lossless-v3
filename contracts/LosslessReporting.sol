@@ -127,7 +127,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         controllerAddress = _adr;
     }
 
-
     // --- GETTERS ---
 
     function getVersion() public pure returns (uint256) {
@@ -156,8 +155,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         uint256 reportId = tokenReports[token].reports[account];
         uint256 reportLifetime;
         uint256 stakeAmount;
-
-        console.log("_msgSEnder(): %s", _msgSender());
 
         reportLifetime = losslessController.getReportLifetime();
         stakeAmount = losslessController.getStakeAmount();

@@ -26,11 +26,17 @@ interface ILERC20 {
 
 interface ILssStaking {
     function getReportStakes(uint256 reportId) external returns(address[] memory);
+    function getIsAccountStaked(uint256 reportId, address account) external returns(bool);
+    function getStakingTimestamp(address _address, uint256 reportId) external returns (uint256);
+    function getPayoutStatus(address _address, uint256 reportId) external returns (bool);
+    function getStakerCoefficient(uint256 reportId, address _address) external returns (uint256);
 }
 
 interface ILssReporting {
     function getTokenFromReport(uint256 _reportId) external returns (address);
     function getReportedAddress(uint256 _reportId) external returns (address);
+    function getReporter(uint256 _reportId) external returns (address);
+    function getReportTimestamps(uint256 _reportId) external view returns (uint256);
 }
 
 contract LosslessController is Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -48,6 +54,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     ILssReporting public losslessReporting;
 
     address losslessReportingAddress;
+    address losslessStakingingAddress;
 
     struct LocksQueue {
         mapping(uint256 => ReceiveCheckpoint) lockedFunds;
@@ -66,6 +73,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     mapping(address => TokenLockedFunds) private tokenScopedLockedFunds;
+
+    mapping(uint256 => uint256) public reportCoefficient;
     
     mapping(address => bool) private dexList;
     mapping(address => bool) private blacklist;
@@ -92,9 +101,12 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     modifier onlyFromAdminOrReporting {
-        console.log("Controlle _msgSender(): %s", _msgSender());
-        console.log("Controller lssReporting: %s", losslessReportingAddress);
-        require((_msgSender() == losslessReportingAddress) || (_msgSender() == admin), "LSS: Admin or Reporting only");
+        require((_msgSender() == losslessReportingAddress) || (_msgSender() == admin), "LSS: Admin or Reporting SC only");
+        _;
+    }
+
+    modifier onlyFromAdminOrStaking {
+        require((_msgSender() == losslessStakingingAddress) || (_msgSender() == admin), "LSS: Admin or Staking SC only");
         _;
     }
 
@@ -155,6 +167,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
         losslessStaking = ILssStaking(_adr);
+        losslessStakingingAddress = _adr;
     }
 
     function setReportingContractAddress(address _adr) public onlyLosslessAdmin {
@@ -168,6 +181,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     function setReportLifetime(uint256 _lifetime) public onlyLosslessAdmin {
         reportLifetime = _lifetime;
+    }
+
+    function addToReportCoefficient(uint256 reportId, uint256 _amt) external onlyFromAdminOrStaking {
+        reportCoefficient[reportId] += _amt;
     }
 
     // --- GETTERS ---
@@ -283,37 +300,66 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     // --- REPORT RESOLUTION ---
+    
+    function claimableAmount(uint256 reportId) public returns (uint256) {
 
-    function distributeRewards(uint256 reportId) public onlyLosslessAdmin {
+        require(!losslessStaking.getPayoutStatus(_msgSender(), reportId), "LSS: You already claimed");
 
-        uint256 amountOfStakers;
+        address reporter;
+        reporter = losslessReporting.getReporter(reportId);
+
+        if (_msgSender() == reporter) {
+            console.log("--------- Report %s ---------", reportId);
+            console.log("Reporter is asking");
+            console.log("Staker amount to claim: %s + %s", ILERC20(losslessReporting.getTokenFromReport(reportId)).balanceOf(losslessReporting.getReportedAddress(reportId)) * 2 / 10**2, stakeAmount);
+            return ILERC20(losslessReporting.getTokenFromReport(reportId)).balanceOf(losslessReporting.getReportedAddress(reportId)) * 2 / 10**2;
+        }
+
+        require(losslessStaking.getIsAccountStaked(reportId, _msgSender()), "LSS: You're not staking");
+
         uint256 amountStakedOnReport;
-        uint256 balanceFreezed;
+        uint256 stakerCoefficient;
+        uint256 stakerPercentage;
+        uint256 stakerAmountToClaim;
         address reportedToken;
-
-        //Get stakers
-        //Should return with timestamps
-        amountOfStakers = losslessStaking.getReportStakes(reportId).length;
-        
-        //Get total staked = (stakeAmount * lenght of stakers)
-        amountStakedOnReport = amountOfStakers * stakeAmount;
-
+        address reportedWallet;
+               
         //Get reported token
         reportedToken = losslessReporting.getTokenFromReport(reportId);
+
+        //Get reported Wallet
+        reportedWallet = losslessReporting.getReportedAddress(reportId);
+
         //Get balance freezed
-        balanceFreezed = ILERC20(reportedToken).balanceOf(losslessReporting.getReportedAddress(reportId));
+        amountStakedOnReport = ILERC20(reportedToken).balanceOf(reportedWallet);
+
+        //Remove 10% corresponding to LossLess Treasury and 2% for reporter
+        amountStakedOnReport = amountStakedOnReport * 88 / 10**2;
+
+        //Get staker coefficient
+        stakerCoefficient = losslessStaking.getStakerCoefficient(reportId, _msgSender());
+
+        uint256 secondsCoefficient;
+        secondsCoefficient = 10**4/reportCoefficient[reportId];
+
+        stakerPercentage = (secondsCoefficient * stakerCoefficient);
+
+        //Get amount to claim
+        stakerAmountToClaim = (amountStakedOnReport * stakerPercentage) / 10**4;
         
         console.log("--------- Report %s ---------", reportId);
         console.log("Reported Token: %s", reportedToken);
-        console.log("Reported Wallet: %s", losslessReporting.getReportedAddress(reportId));
-        console.log("Wallet Balance: %s", balanceFreezed);
-        console.log("Amount of stakers: %s", amountOfStakers);
-        console.log("Total staked on report: %s", amountStakedOnReport);
-        //Loop over
-        //  Check timestamp
-        //  Get Amount depending on time
-        //  Transfer amount
-        //  Mark as sent
+        console.log("Reported Wallet: %s", reportedWallet);
+        console.log("Wallet Balance: %s", ILERC20(reportedToken).balanceOf(reportedWallet));
+        console.log("Total to distribute: %s", amountStakedOnReport);
+        console.log("Report Coefficient: %s", reportCoefficient[reportId]);
+        console.log("Seconds coefficient: %s", secondsCoefficient);
+        console.log("Current consulting staker: %s", _msgSender());
+        console.log("Staker coefficient: %s", stakerCoefficient);
+        console.log("Staker percentage: %s", stakerPercentage);
+        console.log("Staker amount to claim: %s + %s", stakerAmountToClaim, stakeAmount);
+
+        return stakerAmountToClaim;
     }
 
 

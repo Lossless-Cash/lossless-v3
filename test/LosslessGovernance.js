@@ -156,10 +156,6 @@ describe.only('Lossless Governance', () => {
 
     describe('when reporting', () => {
       it('should generate report', async () => {
-
-        console.log("caller address: %s", initialHolder.address);
-        console.log("reporting address: %s", reporting.address);
-
         await reporting
             .connect(initialHolder)
             .report(lerc20.address, anotherAccount.address);
@@ -1219,10 +1215,11 @@ describe.only('Lossless Governance', () => {
               .connect(member1)
               .approve(losslessStaking.address, stakeAmount);
 
-              await losslessStaking.connect(member1).stake(1);
+              await ethers.provider.send('evm_increaseTime', [
+                Number(time.duration.minutes(10)),
+              ]);
 
-              let amountOfStakers;
-              amountOfStakers = await controller.connect(lssAdmin).distributeRewards(1);
+              await losslessStaking.connect(member1).stake(1);
 
               expect(
                 await losslessStaking.getReportStakes(1),
@@ -1248,11 +1245,6 @@ describe.only('Lossless Governance', () => {
               expect(
                 await losslessStaking.getPayoutStatus(oneMoreAccount.address, 1),
               ).to.be.equal(false);
-
-              finalControllerBalance = await lerc20.balanceOf(controller.address);
-
-              console.log("Balance of Controller at the beggining of staking: %s", initialControllerBalance);
-              console.log("Balance of Controller at the end of staking:       %s", finalControllerBalance);
            
               expect(
                 await losslessStaking.getAccountStakes(oneMoreAccount.address),
@@ -1510,6 +1502,120 @@ describe.only('Lossless Governance', () => {
          .connect(oneMoreAccount)
          .transfer(initialHolder.address, 500),
         ).to.be.revertedWith("LSS: You cannot operate");
+      });
+    });
+
+  });
+
+
+  describe('Lossless controller claming', () =>{
+    beforeEach(async () => {
+      await lerc20
+      .connect(initialHolder)
+      .approve(reporting.address, initialSupply);
+
+      await lerc20
+      .connect(initialHolder)
+      .transfer(member5.address, 1000);
+
+      await lerc20
+      .connect(oneMoreAccount)
+      .approve(reporting.address, stakeAmount);
+
+      await lerc20
+      .connect(initialHolder)
+      .transfer(oneMoreAccount.address, stakeAmount);
+     
+      await lerc20
+      .connect(member1)
+      .approve(losslessStaking.address, stakeAmount);
+
+      await lerc20
+      .connect(initialHolder)
+      .transfer(member1.address, stakeAmount);
+
+      await lerc20
+      .connect(member2)
+      .approve(losslessStaking.address, stakeAmount);
+
+      await lerc20
+      .connect(initialHolder)
+      .transfer(member2.address, stakeAmount);
+
+      await lerc20
+      .connect(member3)
+      .approve(losslessStaking.address, stakeAmount);
+
+      await lerc20
+      .connect(initialHolder)
+      .transfer(member3.address, stakeAmount);
+
+      await lerc20
+      .connect(member4)
+      .approve(losslessStaking.address, stakeAmount);
+
+      await lerc20
+      .connect(initialHolder)
+      .transfer(member4.address, stakeAmount);
+
+      await lerc20
+      .connect(member6)
+      .approve(losslessStaking.address, stakeAmount);
+
+      await lerc20
+      .connect(initialHolder)
+      .transfer(member6.address, stakeAmount);
+    });
+
+    describe('when multiple are staking', () =>{
+      it('distribute rewards properly', async () => {
+        
+        await reporting
+            .connect(initialHolder)
+            .report(lerc20.address, member5.address);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+
+        expect(
+            await reporting.getReportTimestamps(1),
+        ).to.not.be.empty;
+
+        await losslessStaking.connect(member1).stake(1);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(30)),
+        ]);
+
+        await losslessStaking.connect(member2).stake(1);
+        
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.hours(2)),
+        ]);
+
+        await losslessStaking.connect(member3).stake(1);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.hours(12)),
+        ]);
+
+        await losslessStaking.connect(member4).stake(1);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.hours(8)),
+        ]);
+
+        await losslessStaking.connect(member6).stake(1);
+        
+        console.log("Reporter: %s", initialHolder.address);
+        await controller.connect(initialHolder).claimableAmount(1);
+        await controller.connect(member1).claimableAmount(1);
+        await controller.connect(member2).claimableAmount(1);
+        await controller.connect(member3).claimableAmount(1);
+        await controller.connect(member4).claimableAmount(1);
+        await controller.connect(member6).claimableAmount(1);
+
       });
     });
   });

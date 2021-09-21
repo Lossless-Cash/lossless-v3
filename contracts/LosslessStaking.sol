@@ -31,6 +31,7 @@ interface ILssReporting {
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
 
     function getTokenFromReport(uint256 _reportId) external view returns (address);
+
 }
 
 interface ILssController {
@@ -39,6 +40,8 @@ interface ILssController {
     function isBlacklisted(address _adr) external view returns (bool);
 
     function getReportLifetime() external returns (uint256);
+
+    function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
 }
 
 contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -48,6 +51,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     struct Stake {
         uint256 reportId;
         uint256 timestamp;
+        uint256 coefficient;
         bool payed;
     }
 
@@ -65,7 +69,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     
     mapping(address => Stake[]) public stakes;
     mapping(uint256 => address[]) public stakers;
-
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -144,8 +147,20 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         return stakes[account];
     }
 
+    function getStakingTimestamp(address _address, uint256 reportId) public view returns (uint256){
+        for(uint256 i; i < stakes[_address].length; i++) {
+            if (stakes[_address][i].reportId == reportId) {
+                return stakes[_address][i].timestamp;
+            }
+        }
+    }
+
     function getPayoutStatus(address _address, uint256 reportId) public view returns (bool) {
-        return stakes[_address][reportId].payed;
+        for(uint256 i; i < stakes[_address].length; i++) {
+            if (stakes[_address][i].reportId == reportId) {
+                return stakes[_address][i].payed;
+            }
+        }
     }
 
     function getReportStakes(uint256 reportId) public view returns(address[] memory) {
@@ -162,17 +177,39 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         return false;
     }
 
+    function calculateCoefficient(uint256 _timestamp) private view returns (uint256) {
+        return 86400/((block.timestamp - _timestamp));
+    }
+
+    function getStakerCoefficient(uint256 reportId, address _address) public view returns (uint256) {
+        for(uint256 i; i < stakes[_address].length; i++) {
+            if (stakes[_address][i].reportId == reportId) {
+                return stakes[_address][i].coefficient;
+            }
+        }
+    }
+
     function stake(uint256 reportId) public notBlacklisted {
         require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
         require(losslessReporting.getReporter(reportId) != _msgSender(), "LSS: reporter can not stake");   
-        require(reportId > 0 && losslessReporting.getReportTimestamps(reportId) + losslessController.getReportLifetime() > block.timestamp, "LSS: report does not exists");
+
+        uint256 reportTimestamp;
+        reportTimestamp = losslessReporting.getReportTimestamps(reportId);
+
+        require(reportTimestamp + 1 minutes < block.timestamp, "LSS: Must wait 1 minute to stake");
+        require(reportId > 0 && (reportTimestamp + losslessController.getReportLifetime()) > block.timestamp, "LSS: report does not exists");
 
         uint256 stakeAmount = losslessController.getStakeAmount();
         require(losslessToken.balanceOf(_msgSender()) >= stakeAmount, "LSS: Not enough $LSS to stake");
 
-        stakers[reportId].push(_msgSender());
-        stakes[_msgSender()].push(Stake(reportId, block.timestamp, false));
+        uint256 stakerCoefficient;
+        stakerCoefficient = calculateCoefficient(reportTimestamp);
 
+        stakers[reportId].push(_msgSender());
+        stakes[_msgSender()].push(Stake(reportId, block.timestamp, stakerCoefficient, false));
+
+        losslessController.addToReportCoefficient(reportId, stakerCoefficient);
+        
         losslessToken.transferFrom(_msgSender(), controllerAddress, stakeAmount);
         
         emit Staked(losslessReporting.getTokenFromReport(reportId), _msgSender(), reportId);
