@@ -128,10 +128,13 @@ describe.only('Lossless Governance', () => {
     await controller.connect(lssAdmin).setLosslessToken(lerc20.address);
     await losslessStaking.connect(lssAdmin).setLosslessToken(lerc20.address);
     await reporting.connect(lssAdmin).setLosslessToken(lerc20.address);
-    
+
     await reporting.connect(lssAdmin).setControllerContractAddress(controller.address);
     await controller.connect(lssAdmin).setStakingContractAddress(losslessStaking.address);
     await controller.connect(lssAdmin).setReportingContractAddress(reporting.address);
+
+    await reporting.connect(lssAdmin).setReporterReward(2);
+    await reporting.connect(lssAdmin).setLosslessFee(10);
 
   });
   
@@ -1615,6 +1618,8 @@ describe.only('Lossless Governance', () => {
         await controller.connect(member3).claimableAmount(1);
         await controller.connect(member4).claimableAmount(1);
         await controller.connect(member6).claimableAmount(1);
+
+        //await controller.connect(member1).claim(1);
 
       });
     });

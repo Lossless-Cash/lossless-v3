@@ -39,6 +39,9 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     address public admin;
     address public recoveryAdmin;
 
+    uint256 public reporterReward;
+    uint256 public losslessFee;
+
     uint256 public reportCount;
 
     ILERC20 public losslessToken;
@@ -127,6 +130,14 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         controllerAddress = _adr;
     }
 
+    function setReporterReward(uint256 reward) public onlyLosslessAdmin {
+        reporterReward = reward;
+    }
+
+    function setLosslessFee(uint256 fee) public onlyLosslessAdmin {
+        reporterReward = fee;
+    }
+
     // --- GETTERS ---
 
     function getVersion() public pure returns (uint256) {
@@ -147,6 +158,10 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     function getReportedAddress(uint256 _reportId) public view returns (address) {
         return reportedAddress[_reportId];
+    }
+
+    function getReporterRewardAndLSSFee() public view returns (uint256 reward, uint256 fee) {
+        return (reporterReward, losslessFee);
     }
 
     // --- REPORTS ---

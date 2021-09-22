@@ -26,17 +26,18 @@ interface ILERC20 {
 
 interface ILssStaking {
     function getReportStakes(uint256 reportId) external returns(address[] memory);
-    function getIsAccountStaked(uint256 reportId, address account) external returns(bool);
-    function getStakingTimestamp(address _address, uint256 reportId) external returns (uint256);
-    function getPayoutStatus(address _address, uint256 reportId) external returns (bool);
-    function getStakerCoefficient(uint256 reportId, address _address) external returns (uint256);
+    function getIsAccountStaked(uint256 reportId, address account) external view returns(bool);
+    function getStakingTimestamp(address _address, uint256 reportId) external view returns (uint256);
+    function getPayoutStatus(address _address, uint256 reportId) external view returns (bool);
+    function getStakerCoefficient(uint256 reportId, address _address) external view returns (uint256);
 }
 
 interface ILssReporting {
-    function getTokenFromReport(uint256 _reportId) external returns (address);
-    function getReportedAddress(uint256 _reportId) external returns (address);
-    function getReporter(uint256 _reportId) external returns (address);
+    function getTokenFromReport(uint256 _reportId) external view returns (address);
+    function getReportedAddress(uint256 _reportId) external view returns (address);
+    function getReporter(uint256 _reportId) external view returns (address);
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
+    function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
 }
 
 contract LosslessController is Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -164,6 +165,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         require(isBlacklisted(_adr), "LSS: Not blacklisted");
         blacklist[_adr] = false;
     }
+    
 
     function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
         losslessStaking = ILssStaking(_adr);
@@ -301,18 +303,23 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     // --- REPORT RESOLUTION ---
     
-    function claimableAmount(uint256 reportId) public returns (uint256) {
+    function claimableAmount(uint256 reportId) public view returns (uint256) {
 
         require(!losslessStaking.getPayoutStatus(_msgSender(), reportId), "LSS: You already claimed");
 
         address reporter;
         reporter = losslessReporting.getReporter(reportId);
 
+        uint256 reporterReward;
+        uint256 losslessFee;
+
+        (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
+
         if (_msgSender() == reporter) {
             console.log("--------- Report %s ---------", reportId);
             console.log("Reporter is asking");
             console.log("Staker amount to claim: %s + %s", ILERC20(losslessReporting.getTokenFromReport(reportId)).balanceOf(losslessReporting.getReportedAddress(reportId)) * 2 / 10**2, stakeAmount);
-            return ILERC20(losslessReporting.getTokenFromReport(reportId)).balanceOf(losslessReporting.getReportedAddress(reportId)) * 2 / 10**2;
+            return ILERC20(losslessReporting.getTokenFromReport(reportId)).balanceOf(losslessReporting.getReportedAddress(reportId)) * reporterReward / 10**2;
         }
 
         require(losslessStaking.getIsAccountStaked(reportId, _msgSender()), "LSS: You're not staking");
@@ -324,19 +331,14 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         address reportedToken;
         address reportedWallet;
                
-        //Get reported token
         reportedToken = losslessReporting.getTokenFromReport(reportId);
 
-        //Get reported Wallet
         reportedWallet = losslessReporting.getReportedAddress(reportId);
 
-        //Get balance freezed
         amountStakedOnReport = ILERC20(reportedToken).balanceOf(reportedWallet);
 
-        //Remove 10% corresponding to LossLess Treasury and 2% for reporter
-        amountStakedOnReport = amountStakedOnReport * 88 / 10**2;
+        amountStakedOnReport = amountStakedOnReport * (100 - reporterReward - losslessFee) / 10**2;
 
-        //Get staker coefficient
         stakerCoefficient = losslessStaking.getStakerCoefficient(reportId, _msgSender());
 
         uint256 secondsCoefficient;
@@ -344,7 +346,6 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
         stakerPercentage = (secondsCoefficient * stakerCoefficient);
 
-        //Get amount to claim
         stakerAmountToClaim = (amountStakedOnReport * stakerPercentage) / 10**4;
         
         console.log("--------- Report %s ---------", reportId);
@@ -356,10 +357,27 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         console.log("Seconds coefficient: %s", secondsCoefficient);
         console.log("Current consulting staker: %s", _msgSender());
         console.log("Staker coefficient: %s", stakerCoefficient);
-        console.log("Staker percentage: %s", stakerPercentage);
         console.log("Staker amount to claim: %s + %s", stakerAmountToClaim, stakeAmount);
 
         return stakerAmountToClaim;
+    }
+
+    function claim(uint256 reportId) public notBlacklisted{
+
+        require(!losslessStaking.getPayoutStatus(_msgSender(), reportId), "LSS: You already claimed");
+
+        address reportedAddress = losslessReporting.getReportedAddress(reportId);
+
+        console.log("will transfer %s staking amount + %s rewards", stakeAmount, claimableAmount(reportId));
+
+        losslessToken.transfer(_msgSender(), stakeAmount);
+        console.log("Transfered stakeamount");
+
+        removeFromBlacklist(reportedAddress);
+        losslessToken.transferFrom(reportedAddress, _msgSender(), claimableAmount(reportId));
+        addToBlacklist(reportedAddress);
+        console.log("Transfered reward");
+
     }
 
 
