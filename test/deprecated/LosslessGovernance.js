@@ -26,8 +26,7 @@ let member7;
 let member8;
 let member9;
 let member10;
-let initialControllerBalance;
-let finalControllerBalance;
+let balance;
 
 const lssTeamVoteIndex = 0;
 const projectTeamVoteIndex = 1;
@@ -98,6 +97,7 @@ describe.only('Lossless Governance', () => {
       [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address],
       { initializer: 'initialize' },
     );
+    
 
     losslessStaking = await upgrades.deployProxy(
       LosslessStaking,
@@ -132,6 +132,7 @@ describe.only('Lossless Governance', () => {
     await reporting.connect(lssAdmin).setControllerContractAddress(controller.address);
     await controller.connect(lssAdmin).setStakingContractAddress(losslessStaking.address);
     await controller.connect(lssAdmin).setReportingContractAddress(reporting.address);
+    await controller.connect(lssAdmin).setGovernanceContractAddress(governance.address);
 
     await reporting.connect(lssAdmin).setReporterReward(2);
     await reporting.connect(lssAdmin).setLosslessFee(10);
@@ -1572,10 +1573,32 @@ describe.only('Lossless Governance', () => {
 
     describe('when multiple are staking', () =>{
       it('distribute rewards properly', async () => {
+
+        expect (
+          balance = await lerc20.balanceOf(controller.address),
+        );
+        console.log("Initial balance: %s", balance);
         
         await reporting
             .connect(initialHolder)
             .report(lerc20.address, member5.address);
+
+        expect (
+          balance = await lerc20.balanceOf(controller.address),
+        );
+        console.log("Balance after reporting: %s", balance);
+
+        await governance
+        .connect(lssAdmin)
+        .addCommitteeMembers(
+          [
+            member1.address,
+            member2.address,
+            member3.address,
+            member4.address,
+          ],
+          2
+        );
 
         await ethers.provider.send('evm_increaseTime', [
           Number(time.duration.minutes(5)),
@@ -1610,8 +1633,30 @@ describe.only('Lossless Governance', () => {
         ]);
 
         await losslessStaking.connect(member6).stake(1);
-        
-        console.log("Reporter: %s", initialHolder.address);
+
+        expect (
+          balance = await lerc20.balanceOf(controller.address),
+        );
+
+        console.log("Balance after staking: %s", balance);
+
+        await expect(
+          controller.connect(member1).claim(1),
+        ).to.be.revertedWith("LSS: Report still open");
+
+        await governance.connect(lssAdmin).losslessVote(1, true);
+        await governance.connect(admin).projectTeamVote(1, true);
+        await governance.connect(member1).committeeMemberVote(1, true);
+        await governance.connect(member2).committeeMemberVote(1, true);
+        await governance.connect(member3).committeeMemberVote(1, true);
+
+        await governance.connect(lssAdmin).resolveReport(1);
+
+        expect (
+          balance = await lerc20.balanceOf(controller.address),
+        );
+        console.log("Balance after resolve: %s", balance);
+  
         await controller.connect(initialHolder).claimableAmount(1);
         await controller.connect(member1).claimableAmount(1);
         await controller.connect(member2).claimableAmount(1);
@@ -1619,7 +1664,16 @@ describe.only('Lossless Governance', () => {
         await controller.connect(member4).claimableAmount(1);
         await controller.connect(member6).claimableAmount(1);
 
-        //await controller.connect(member1).claim(1);
+        await controller.connect(member1).claim(1);
+
+        await expect(
+          controller.connect(member1).claim(1),
+        ).to.be.revertedWith("LSS: You already claimed");
+
+        expect (
+          balance = await lerc20.balanceOf(controller.address),
+        );
+        console.log("Balance after claim: %s", balance);
 
       });
     });

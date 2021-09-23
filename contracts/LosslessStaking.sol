@@ -31,7 +31,6 @@ interface ILssReporting {
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
 
     function getTokenFromReport(uint256 _reportId) external view returns (address);
-
 }
 
 interface ILssController {
@@ -82,7 +81,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
        pauseAdmin = _pauseAdmin;
        losslessReporting = ILssReporting(_losslessReporting);
        losslessController = ILssController(_losslessController);
-       controllerAddress = _losslessReporting;
+       controllerAddress = _losslessController;
     }
 
     // --- MODIFIERS ---
@@ -106,6 +105,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(!losslessController.isBlacklisted(_msgSender()), "LSS: You cannot operate");
         _;
     }
+
+    modifier onlyFromAdminOrLssSC {
+        require(_msgSender() == controllerAddress ||
+                _msgSender() == admin, "LSS: Admin or LSS SC only");
+        _;
+    }
+
 
     // --- SETTERS ---
 
@@ -177,6 +183,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         return false;
     }
 
+
+    // STAKING
+
     function calculateCoefficient(uint256 _timestamp) private view returns (uint256) {
         return 86400/((block.timestamp - _timestamp));
     }
@@ -217,6 +226,15 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     function addToWhitelist(address allowedAddress) public onlyLosslessAdmin {
         whitelist[allowedAddress] = true;
+    }
+
+    function setPayoutStatus(uint256 reportId, address _adr) public onlyFromAdminOrLssSC {
+
+        for(uint256 i; i < stakes[_adr].length; i++) {
+            if (stakes[_adr][i].reportId == reportId) {
+                stakes[_adr][i].payed = true;
+            }
+        }
     }
 
     // --- GETTERS ---

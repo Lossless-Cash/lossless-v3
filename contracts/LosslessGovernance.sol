@@ -5,18 +5,22 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "hardhat/console.sol";
 
 interface ILssReporting {
+    function getReportTimestamps(uint256 reportId) external view returns (uint256);
+    function getReportedAddress(uint256 _reportId) external view returns (address);
+    function getTokenFromReport(uint256 reportId) external view returns(address);
     function reportedProject(uint256 reportId) external view returns (address);
     function admin() external view returns (address);
-    function getReportTimestamps(uint256 reportId) external view returns (uint256);
-    function getTokenFromReport(uint256 reportId) external view returns(address);
 }
 
 interface ILssController {
     function getReportLifetime() external view returns(uint256);
+    function retreiveBlacklistedFunds(address[] calldata _addresses) external;
+    function resolvedNegatively(address _adr) external;
 }
 
 interface ILERC20 {
     function admin() external view returns (address);
+    function balanceOf(address account) external view returns (uint256);
 } 
 
 contract LosslessGovernance is AccessControl {
@@ -50,6 +54,9 @@ contract LosslessGovernance is AccessControl {
 
     mapping(uint256 => Vote) reportVotes;
     mapping(address => address) projectOwners;
+    mapping(uint256 => uint256) amountReported;
+
+    address[] private reportedAddresses;
 
     constructor(address _losslessReporting, address _losslessController) {
         losslessReporting = ILssReporting(_losslessReporting);
@@ -247,12 +254,20 @@ contract LosslessGovernance is AccessControl {
 
         require(voteCount > 2, "LSS: Not enough votes");
         
+        address reportedAddress;
+        reportedAddress = losslessReporting.getReportedAddress(reportId);
+
+        reportedAddresses.push(reportedAddress);
+
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
+            losslessController.retreiveBlacklistedFunds(reportedAddresses);
         }else{
             reportVote.resolution = false;
+            losslessController.resolvedNegatively(reportedAddress);
         }
         
         reportVote.resolved = true;
+        delete reportedAddresses;
     }
 }

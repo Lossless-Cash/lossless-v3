@@ -60,6 +60,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     mapping(uint256 => uint256) public reportTimestamps;
     mapping(uint256 => address) public reportTokens;
     mapping(uint256 => bool) public anotherReports;
+    mapping(uint256 => uint256) public amountReported;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -135,7 +136,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
     function setLosslessFee(uint256 fee) public onlyLosslessAdmin {
-        reporterReward = fee;
+        losslessFee = fee;
     }
 
     // --- GETTERS ---
@@ -164,6 +165,10 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         return (reporterReward, losslessFee);
     }
 
+    function getAmountReported(uint256 reportId) public view returns (uint256) {
+        return amountReported[reportId];
+    }
+
     // --- REPORTS ---
 
     function report(address token, address account) public notBlacklisted {
@@ -189,6 +194,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
+        amountReported[reportId] = losslessToken.balanceOf(account);
 
         emit ReportSubmitted(token, account, reportId);
     }
