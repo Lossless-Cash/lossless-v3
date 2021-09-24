@@ -38,6 +38,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     ILERC20 public losslessToken;
     ILssController public losslessController;
     address controllerAddress;
+    address stakingAddress;
 
     struct TokenReports {
         mapping(address => uint256) reports;
@@ -122,6 +123,10 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         controllerAddress = _adr;
     }
 
+    function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
+        stakingAddress = _adr;
+    }
+
     function setReporterReward(uint256 reward) public onlyLosslessAdmin {
         reporterReward = reward;
     }
@@ -184,7 +189,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportTimestamps[reportId] = block.timestamp;
         reportTokens[reportId] = token;
 
-        losslessToken.transferFrom(_msgSender(), controllerAddress, stakeAmount);
+        losslessToken.transferFrom(_msgSender(), stakingAddress, stakeAmount);
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
@@ -196,11 +201,13 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     function reportAnother(uint256 reportId, address token, address account) public notBlacklisted {
         uint256 reportLifetime;
         uint256 reportTimestamp;
+        uint256 stakeAmount;
 
         require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
 
         reportTimestamp = reportTimestamps[reportId];
         reportLifetime = losslessController.getReportLifetime();
+        stakeAmount = losslessController.getStakeAmount();
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(anotherReports[reportId] == false, "LSS: Another already submitted");
@@ -212,6 +219,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
+
+        losslessToken.transferFrom(_msgSender(), stakingAddress, stakeAmount);
 
         emit AnotherReportSubmitted(token, account, reportId);
     }

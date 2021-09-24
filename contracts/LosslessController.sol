@@ -241,6 +241,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     function getAvailableAmount(address token, address account) public view returns (uint256 amount) {
         uint256 total = ILERC20(token).balanceOf(account);
         uint256 locked = getLockedAmount(token, account);
+        console.log("total: %s locked: %s", total, locked);
         return total - locked;
     }
 
@@ -256,6 +257,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     
     function getStakeAmount() public view returns (uint256) {
         return stakeAmount;
+    }
+
+    function getReportCoefficient(uint256 reportId) public view returns (uint256) {
+        return reportCoefficient[reportId];
     }
 
     // LOCKs & QUEUES
@@ -326,9 +331,21 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     // --- REPORT RESOLUTION ---
 
     function retreiveBlacklistedFunds(address[] calldata _addresses) public onlyFromAdminOrLssSC {
+        uint256 blacklistedAmount;
+
+        for(uint256 i; i < _addresses.length; i++) {
+            blacklistedAmount += losslessToken.balanceOf(_addresses[i]);
+            console.log("taking out %s from %s", blacklistedAmount, _addresses[i]);
+        }
         losslessToken.transferOutBlacklistedFunds(_addresses);
     }
 
+    function retrieveBlacklistedToStaking(uint256 reportId) public onlyFromAdminOrLssSC{
+        uint256 retrieveAmount = losslessReporting.getAmountReported(reportId);
+        losslessToken.transfer(losslessStakingingAddress, retrieveAmount);
+    }
+    
+    /*
     function reporterClaimableAmount(uint256 reportId) public view returns (uint256) {
 
         require(!losslessStaking.getPayoutStatus(_msgSender(), reportId), "LSS: You already claimed");
@@ -439,7 +456,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         losslessStaking.setPayoutStatus(reportId, _msgSender());
 
     }
-
+*/
 
     // --- BEFORE HOOKS ---
 
@@ -460,6 +477,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external notBlacklisted {
         require(!isBlacklisted(sender), "LSS: You cannot operate");
         require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
+
+        console.log("msgSender() %s", _msgSender());
 
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
 

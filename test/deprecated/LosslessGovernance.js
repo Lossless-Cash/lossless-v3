@@ -91,23 +91,21 @@ describe.only('Lossless Governance', () => {
       { initializer: 'initialize' },
     );
 
-
     reporting = await upgrades.deployProxy(
       LosslessReporting,
       [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address],
       { initializer: 'initialize' },
     );
     
-
-    losslessStaking = await upgrades.deployProxy(
-      LosslessStaking,
+    governance = await upgrades.deployProxy(
+      LosslessGovernance,
       [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address, reporting.address, controller.address],
       { initializer: 'initialize' },
     );
 
-    governance = await upgrades.deployProxy(
-      LosslessGovernance,
-      [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address, reporting.address, controller.address],
+    losslessStaking = await upgrades.deployProxy(
+      LosslessStaking,
+      [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address, reporting.address, controller.address, governance.address],
       { initializer: 'initialize' },
     );
 
@@ -137,6 +135,7 @@ describe.only('Lossless Governance', () => {
     await reporting.connect(lssAdmin).setLosslessToken(lerc20.address);
 
     await reporting.connect(lssAdmin).setControllerContractAddress(controller.address);
+    await reporting.connect(lssAdmin).setStakingContractAddress(losslessStaking.address);
     await controller.connect(lssAdmin).setStakingContractAddress(losslessStaking.address);
     await controller.connect(lssAdmin).setReportingContractAddress(reporting.address);
     await controller.connect(lssAdmin).setGovernanceContractAddress(governance.address);
@@ -1582,7 +1581,7 @@ describe.only('Lossless Governance', () => {
       it('distribute rewards properly', async () => {
 
         expect (
-          balance = await lerc20.balanceOf(controller.address),
+          balance = await lerc20.balanceOf(losslessStaking.address),
         );
         console.log("Initial balance: %s", balance);
         
@@ -1591,7 +1590,7 @@ describe.only('Lossless Governance', () => {
             .report(lerc20.address, member5.address);
 
         expect (
-          balance = await lerc20.balanceOf(controller.address),
+          balance = await lerc20.balanceOf(losslessStaking.address),
         );
         console.log("Balance after reporting: %s", balance);
 
@@ -1642,13 +1641,14 @@ describe.only('Lossless Governance', () => {
         await losslessStaking.connect(member6).stake(1);
 
         expect (
-          balance = await lerc20.balanceOf(controller.address),
+          balance = await lerc20.balanceOf(losslessStaking.address),
         );
 
         console.log("Balance after staking: %s", balance);
+        console.log("Staker contract address: %s", losslessStaking.address);
 
         await expect(
-          controller.connect(member1).stakerClaim(1),
+          losslessStaking.connect(member1).stakerClaim(1),
         ).to.be.revertedWith("LSS: Report still open");
 
         await governance.connect(lssAdmin).losslessVote(1, true);
@@ -1659,27 +1659,31 @@ describe.only('Lossless Governance', () => {
 
         await governance.connect(lssAdmin).resolveReport(1);
 
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.hours(1)),
+        ]);
+
         expect (
-          balance = await lerc20.balanceOf(controller.address),
+          balance = await lerc20.balanceOf(losslessStaking.address),
         );
         console.log("Balance after resolve: %s", balance);
   
-        await controller.connect(initialHolder).reporterClaimableAmount(1);
-        await controller.connect(member1).stakerClaimableAmount(1);
-        await controller.connect(member2).stakerClaimableAmount(1);
-        await controller.connect(member3).stakerClaimableAmount(1);
-        await controller.connect(member4).stakerClaimableAmount(1);
-        await controller.connect(member6).stakerClaimableAmount(1);
+        await losslessStaking.connect(initialHolder).reporterClaimableAmount(1);
+        await losslessStaking.connect(member1).stakerClaimableAmount(1);
+        await losslessStaking.connect(member2).stakerClaimableAmount(1);
+        await losslessStaking.connect(member3).stakerClaimableAmount(1);
+        await losslessStaking.connect(member4).stakerClaimableAmount(1);
+        await losslessStaking.connect(member6).stakerClaimableAmount(1);
 
-        await controller.connect(member1).stakerClaim(1);
-        await controller.connect(initialHolder).reporterClaim(1);
+        await losslessStaking.connect(member1).stakerClaim(1);
+        await losslessStaking.connect(initialHolder).reporterClaim(1);
 
         await expect(
-          controller.connect(member1).stakerClaim(1),
+          losslessStaking.connect(member1).stakerClaim(1),
         ).to.be.revertedWith("LSS: You already claimed");
 
         expect (
-          balance = await lerc20.balanceOf(controller.address),
+          balance = await lerc20.balanceOf(losslessStaking.address),
         );
         console.log("Balance after claim: %s", balance);
 

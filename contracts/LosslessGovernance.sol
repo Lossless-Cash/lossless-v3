@@ -17,6 +17,7 @@ interface ILssController {
     function getReportLifetime() external view returns(uint256);
     function retreiveBlacklistedFunds(address[] calldata _addresses) external;
     function resolvedNegatively(address _adr) external;
+    function retrieveBlacklistedToStaking(uint256 reportId) external;
 }
 
 interface ILERC20 {
@@ -273,6 +274,7 @@ contract LosslessGovernance is Initializable, AccessControl {
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
             losslessController.retreiveBlacklistedFunds(reportedAddresses);
+            losslessController.retrieveBlacklistedToStaking(reportId);
         }else{
             reportVote.resolution = false;
             losslessController.resolvedNegatively(reportedAddress);
