@@ -38,7 +38,7 @@ interface ILssController {
 
     function isBlacklisted(address _adr) external view returns (bool);
 
-    function getReportLifetime() external returns (uint256);
+    function getReportLifetime() external view returns (uint256);
 
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
 }
@@ -187,7 +187,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     // STAKING
 
     function calculateCoefficient(uint256 _timestamp) private view returns (uint256) {
-        return 86400/((block.timestamp - _timestamp));
+        return  losslessController.getReportLifetime()/((block.timestamp - _timestamp));
     }
 
     function getStakerCoefficient(uint256 reportId, address _address) public view returns (uint256) {

@@ -58,7 +58,17 @@ contract LosslessGovernance is AccessControl {
 
     address[] private reportedAddresses;
 
-    constructor(address _losslessReporting, address _losslessController) {
+    // constructor(address _losslessReporting, address _losslessController) {
+    //     losslessReporting = ILssReporting(_losslessReporting);
+    //     losslessController = ILssController(_losslessController);
+    //     _setupRole(DEFAULT_ADMIN_ROLE, losslessReporting.admin());
+    // }
+    
+
+    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin, address _losslessReporting, address _losslessController) public initializer {
+        admin = _admin;
+        recoveryAdmin = _recoveryAdmin;
+        pauseAdmin = _pauseAdmin;
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
         _setupRole(DEFAULT_ADMIN_ROLE, losslessReporting.admin());
@@ -145,10 +155,15 @@ contract LosslessGovernance is AccessControl {
 
     //Remove Committee members
     function removeCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin  {
+        
         require(committeeMembersCount != 0, "LSS: committee has no members");
+        require(newQuorum > 0, "LSS: Quorum cannot be zero");
+
         committeeMembersCount -= members.length;
         quorumSize = newQuorum;
+
         //_updateQuorum(committeeMembersCount);
+        
         for (uint256 i; i < members.length; ++i) {
             require(isCommitteeMember(members[i]), "LSS: An address is not member");
             revokeRole(COMMITTEE_ROLE, members[i]);
@@ -221,7 +236,6 @@ contract LosslessGovernance is AccessControl {
             reportVote.voted[committeeVoteIndex] = true;
         }
     }
-
 
     //Report resolution
     function resolveReport(uint256 reportId) public {
