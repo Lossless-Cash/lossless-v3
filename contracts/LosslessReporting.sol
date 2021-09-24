@@ -8,30 +8,21 @@ import "hardhat/console.sol";
 
 interface ILERC20 {
     function totalSupply() external view returns (uint256);
-
     function balanceOf(address account) external view returns (uint256);
-
     function transfer(address recipient, uint256 amount) external returns (bool);
-
     function allowance(address owner, address spender) external view returns (uint256);
-
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
-
     function approve(address spender, uint256 amount) external returns (bool);
-
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    
     function admin() external view returns (address);
 }
 
 interface ILssController {
     function isBlacklisted(address _adr) external returns (bool);
-
     function getReportLifetime() external returns (uint256);
-
     function getStakeAmount() external returns (uint256);
-
     function addToBlacklist(address _adr) external;
+    function isWhitelisted(address _adr) external view returns (bool);
 }
 
 contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -172,6 +163,9 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     // --- REPORTS ---
 
     function report(address token, address account) public notBlacklisted {
+
+        require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
+
         uint256 reportId = tokenReports[token].reports[account];
         uint256 reportLifetime;
         uint256 stakeAmount;
@@ -203,6 +197,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         uint256 reportLifetime;
         uint256 reportTimestamp;
 
+        require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
+
         reportTimestamp = reportTimestamps[reportId];
         reportLifetime = losslessController.getReportLifetime();
 
@@ -212,11 +208,11 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         anotherReports[reportId] = true;
         tokenReports[token].reports[account] = reportId;
+        amountReported[reportId] += losslessToken.balanceOf(account);
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
 
         emit AnotherReportSubmitted(token, account, reportId);
     }
-
 }

@@ -29,7 +29,7 @@ let member10;
 let balance;
 
 const lssTeamVoteIndex = 0;
-const projectTeamVoteIndex = 1;
+const tokenOwnersVoteIndex = 1;
 const committeeVoteIndex = 2;
 
 
@@ -105,7 +105,14 @@ describe.only('Lossless Governance', () => {
       { initializer: 'initialize' },
     );
 
-    governance = await LosslessGovernance.deploy(reporting.address, controller.address);
+    governance = await upgrades.deployProxy(
+      LosslessGovernance,
+      [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address, reporting.address, controller.address],
+      { initializer: 'initialize' },
+    );
+
+
+  //governance = await LosslessGovernance.deploy(reporting.address, controller.address);
 
     const Lerc20Deploy = await ethers.getContractFactory('LERC20');
 
@@ -402,7 +409,7 @@ describe.only('Lossless Governance', () => {
               ],
               2
             );
-          await governance.connect(lssAdmin).removeCommitteeMembers([], 0);
+          await governance.connect(lssAdmin).removeCommitteeMembers([], 1);
         });
       });
 
@@ -658,7 +665,7 @@ describe.only('Lossless Governance', () => {
     });
   });
 
-  describe('projectTeamVote', () => {
+  describe('tokenOwnersVote', () => {
     beforeEach(async () => {
       await lerc20
         .connect(initialHolder)
@@ -676,7 +683,7 @@ describe.only('Lossless Governance', () => {
     describe('when sender is not project team', () => {
       it('should revert', async () => {
         await expect(
-          governance.connect(anotherAccount).projectTeamVote(1, true),
+          governance.connect(anotherAccount).tokenOwnersVote(1, true),
         ).to.be.revertedWith('LSS: must be project team');
       });
     });
@@ -685,7 +692,7 @@ describe.only('Lossless Governance', () => {
       describe('when report does not exist', () => {
         it('should revert', async () => {
           await expect(
-            governance.connect(admin).projectTeamVote(10, true),
+            governance.connect(admin).tokenOwnersVote(10, true),
           ).to.be.revertedWith('LSS: report is not valid');
         });
       });
@@ -697,7 +704,7 @@ describe.only('Lossless Governance', () => {
           ]);
 
           await expect(
-            governance.connect(admin).projectTeamVote(1, true),
+            governance.connect(admin).tokenOwnersVote(1, true),
           ).to.be.revertedWith('LSS: report is not valid');
         });
       });
@@ -706,39 +713,39 @@ describe.only('Lossless Governance', () => {
         describe('when voting for the first time', () => {
           it('should mark as voted', async () => {
             expect(
-              await governance.getIsVoted(1, projectTeamVoteIndex),
+              await governance.getIsVoted(1, tokenOwnersVoteIndex),
             ).to.be.equal(false);
 
-            await governance.connect(admin).projectTeamVote(1, true);
+            await governance.connect(admin).tokenOwnersVote(1, true);
 
             expect(
-              await governance.getIsVoted(1, projectTeamVoteIndex),
+              await governance.getIsVoted(1, tokenOwnersVoteIndex),
             ).to.be.equal(true);
           });
 
           it('should save positive vote correctly', async () => {
-            await governance.connect(admin).projectTeamVote(1, true);
+            await governance.connect(admin).tokenOwnersVote(1, true);
 
             expect(
-              await governance.getVote(1, projectTeamVoteIndex),
+              await governance.getVote(1, tokenOwnersVoteIndex),
             ).to.be.equal(true);
           });
 
           it('should save negative vote correctly', async () => {
-            await governance.connect(admin).projectTeamVote(1, false);
+            await governance.connect(admin).tokenOwnersVote(1, false);
 
             expect(
-              await governance.getVote(1, projectTeamVoteIndex),
+              await governance.getVote(1, tokenOwnersVoteIndex),
             ).to.be.equal(false);
           });
         });
 
         describe('when voting second time for the same report', () => {
           it('should revert', async () => {
-            await governance.connect(admin).projectTeamVote(1, false);
+            await governance.connect(admin).tokenOwnersVote(1, false);
 
             await expect(
-              governance.connect(admin).projectTeamVote(1, true),
+              governance.connect(admin).tokenOwnersVote(1, true),
             ).to.be.revertedWith('LSS: team already voted');
           });
         });
@@ -754,27 +761,27 @@ describe.only('Lossless Governance', () => {
               .report(lerc20.address, oneMoreAccount.address);
 
             expect(
-              await governance.getIsVoted(1, projectTeamVoteIndex),
+              await governance.getIsVoted(1, tokenOwnersVoteIndex),
             ).to.be.equal(false);
 
-            await governance.connect(admin).projectTeamVote(1, false);
+            await governance.connect(admin).tokenOwnersVote(1, false);
 
             expect(
-              await governance.getIsVoted(1, projectTeamVoteIndex),
+              await governance.getIsVoted(1, tokenOwnersVoteIndex),
             ).to.be.equal(true);
 
             expect(
-              await governance.getVote(1, projectTeamVoteIndex),
+              await governance.getVote(1, tokenOwnersVoteIndex),
             ).to.be.equal(false);
 
-            await governance.connect(admin).projectTeamVote(2, true);
+            await governance.connect(admin).tokenOwnersVote(2, true);
 
             expect(
-              await governance.getIsVoted(2, projectTeamVoteIndex),
+              await governance.getIsVoted(2, tokenOwnersVoteIndex),
             ).to.be.equal(true);
 
             expect(
-              await governance.getVote(2, projectTeamVoteIndex),
+              await governance.getVote(2, tokenOwnersVoteIndex),
             ).to.be.equal(true);
           });
         });
@@ -993,10 +1000,10 @@ describe.only('Lossless Governance', () => {
 
       //Project Team Vote
       it('should save Team vote', async () => {
-        await governance.connect(admin).projectTeamVote(1, true);
+        await governance.connect(admin).tokenOwnersVote(1, true);
 
         expect(
-          await governance.getVote(1, projectTeamVoteIndex),
+          await governance.getVote(1, tokenOwnersVoteIndex),
         ).to.be.equal(true);
       });
       
@@ -1017,10 +1024,10 @@ describe.only('Lossless Governance', () => {
           await governance.getIsVoted(1, lssTeamVoteIndex),
         ).to.be.equal(true);
 
-        await governance.connect(admin).projectTeamVote(1, true);
+        await governance.connect(admin).tokenOwnersVote(1, true);
 
         expect(
-          await governance.getVote(1, projectTeamVoteIndex),
+          await governance.getVote(1, tokenOwnersVoteIndex),
         ).to.be.equal(true);
 
         await governance.connect(member1).committeeMemberVote(1, true);
@@ -1061,10 +1068,10 @@ describe.only('Lossless Governance', () => {
           await governance.getIsVoted(1, lssTeamVoteIndex),
           ).to.be.equal(true);
 
-        await governance.connect(admin).projectTeamVote(1, false);
+        await governance.connect(admin).tokenOwnersVote(1, false);
 
         expect(
-          await governance.getIsVoted(1, projectTeamVoteIndex),
+          await governance.getIsVoted(1, tokenOwnersVoteIndex),
         ).to.be.equal(true);
 
         await governance.connect(member1).committeeMemberVote(1, true);
@@ -1099,10 +1106,10 @@ describe.only('Lossless Governance', () => {
           await governance.getIsVoted(1, lssTeamVoteIndex),
           ).to.be.equal(true);
 
-        await governance.connect(admin).projectTeamVote(1, true);
+        await governance.connect(admin).tokenOwnersVote(1, true);
 
         expect(
-          await governance.getIsVoted(1, projectTeamVoteIndex),
+          await governance.getIsVoted(1, tokenOwnersVoteIndex),
         ).to.be.equal(true);
 
         await expect(
@@ -1641,11 +1648,11 @@ describe.only('Lossless Governance', () => {
         console.log("Balance after staking: %s", balance);
 
         await expect(
-          controller.connect(member1).claim(1),
+          controller.connect(member1).stakerClaim(1),
         ).to.be.revertedWith("LSS: Report still open");
 
         await governance.connect(lssAdmin).losslessVote(1, true);
-        await governance.connect(admin).projectTeamVote(1, true);
+        await governance.connect(admin).tokenOwnersVote(1, true);
         await governance.connect(member1).committeeMemberVote(1, true);
         await governance.connect(member2).committeeMemberVote(1, true);
         await governance.connect(member3).committeeMemberVote(1, true);
@@ -1657,17 +1664,18 @@ describe.only('Lossless Governance', () => {
         );
         console.log("Balance after resolve: %s", balance);
   
-        await controller.connect(initialHolder).claimableAmount(1);
-        await controller.connect(member1).claimableAmount(1);
-        await controller.connect(member2).claimableAmount(1);
-        await controller.connect(member3).claimableAmount(1);
-        await controller.connect(member4).claimableAmount(1);
-        await controller.connect(member6).claimableAmount(1);
+        await controller.connect(initialHolder).reporterClaimableAmount(1);
+        await controller.connect(member1).stakerClaimableAmount(1);
+        await controller.connect(member2).stakerClaimableAmount(1);
+        await controller.connect(member3).stakerClaimableAmount(1);
+        await controller.connect(member4).stakerClaimableAmount(1);
+        await controller.connect(member6).stakerClaimableAmount(1);
 
-        await controller.connect(member1).claim(1);
+        await controller.connect(member1).stakerClaim(1);
+        await controller.connect(initialHolder).reporterClaim(1);
 
         await expect(
-          controller.connect(member1).claim(1),
+          controller.connect(member1).stakerClaim(1),
         ).to.be.revertedWith("LSS: You already claimed");
 
         expect (

@@ -9,37 +9,25 @@ import "hardhat/console.sol";
 
 interface ILERC20 {
     function totalSupply() external view returns (uint256);
-
     function balanceOf(address account) external view returns (uint256);
-
     function transfer(address recipient, uint256 amount) external returns (bool);
-
     function allowance(address owner, address spender) external view returns (uint256);
-
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
-
     function approve(address spender, uint256 amount) external returns (bool);
-
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    
     function admin() external view returns (address);
 }
 
 interface ILssReporting {
     function getReporter(uint256 _reportId) external view returns (address);
-    
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
-
     function getTokenFromReport(uint256 _reportId) external view returns (address);
 }
 
 interface ILssController {
     function getStakeAmount() external view returns (uint256);
-
     function isBlacklisted(address _adr) external view returns (bool);
-
     function getReportLifetime() external view returns (uint256);
-
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
 }
 

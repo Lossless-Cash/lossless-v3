@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Unlicensed
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "hardhat/console.sol";
 
@@ -23,17 +24,14 @@ interface ILERC20 {
     function balanceOf(address account) external view returns (uint256);
 } 
 
-contract LosslessGovernance is AccessControl {
+contract LosslessGovernance is Initializable, AccessControl {
+    address public pauseAdmin;
+    address public admin;
+    address public recoveryAdmin;
 
     uint256 public lssTeamVoteIndex;
-    uint256 public projectTeamVoteIndex = 1;
-    uint256 public committeeVoteIndex = 2;
-
-    uint256 public firstWavePayout  = 60;
-    uint256 public secondWavePayout = 20;
-    uint256 public thirdWavePayout  = 10;
-    uint256 public fourthWavePayout = 5;
-    uint256 public payoutReserved   = 5;
+    uint256 public tokenOwnersVoteIndex;
+    uint256 public committeeVoteIndex;
 
     bytes32 private constant COMMITTEE_ROLE = keccak256("COMMITTEE_ROLE");
 
@@ -58,19 +56,14 @@ contract LosslessGovernance is AccessControl {
 
     address[] private reportedAddresses;
 
-    // constructor(address _losslessReporting, address _losslessController) {
-    //     losslessReporting = ILssReporting(_losslessReporting);
-    //     losslessController = ILssController(_losslessController);
-    //     _setupRole(DEFAULT_ADMIN_ROLE, losslessReporting.admin());
-    // }
-    
-
     function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin, address _losslessReporting, address _losslessController) public initializer {
         admin = _admin;
         recoveryAdmin = _recoveryAdmin;
         pauseAdmin = _pauseAdmin;
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
+        tokenOwnersVoteIndex = 1;
+        committeeVoteIndex = 2;
         _setupRole(DEFAULT_ADMIN_ROLE, losslessReporting.admin());
     }
 
@@ -143,10 +136,14 @@ contract LosslessGovernance is AccessControl {
 
     //Add committee members
     function addCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin  {
+        
         require(newQuorum > 0, "LSS: Quorum cannot be zero");
+
         committeeMembersCount += members.length;
         quorumSize = newQuorum;
+
         //_updateQuorum(committeeMembersCount);
+
         for (uint256 i; i < members.length; ++i) {
             require(!isCommitteeMember(members[i]), "LSS: duplicate members");
             grantRole(COMMITTEE_ROLE, members[i]);
@@ -163,7 +160,7 @@ contract LosslessGovernance is AccessControl {
         quorumSize = newQuorum;
 
         //_updateQuorum(committeeMembersCount);
-        
+
         for (uint256 i; i < members.length; ++i) {
             require(isCommitteeMember(members[i]), "LSS: An address is not member");
             revokeRole(COMMITTEE_ROLE, members[i]);
@@ -196,7 +193,7 @@ contract LosslessGovernance is AccessControl {
     }
 
     //Token Team voting
-    function projectTeamVote(uint256 reportId, bool vote) public {
+    function tokenOwnersVote(uint256 reportId, bool vote) public {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
         uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
@@ -207,10 +204,10 @@ contract LosslessGovernance is AccessControl {
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
 
-        require(!reportVote.voted[projectTeamVoteIndex], "LSS: team already voted");
+        require(!reportVote.voted[tokenOwnersVoteIndex], "LSS: team already voted");
         
-        reportVote.voted[projectTeamVoteIndex] = true;
-        reportVote.votes[projectTeamVoteIndex] = vote;
+        reportVote.voted[tokenOwnersVoteIndex] = true;
+        reportVote.votes[tokenOwnersVoteIndex] = vote;
     }
 
     //Committee members voting
@@ -254,8 +251,8 @@ contract LosslessGovernance is AccessControl {
 
         if (getIsVoted(reportId, lssTeamVoteIndex)){voteCount += 1;
         if (getVote(reportId, lssTeamVoteIndex)){ aggreeCount += 1;}}
-        if (getIsVoted(reportId, projectTeamVoteIndex)){voteCount += 1;
-        if (getVote(reportId, projectTeamVoteIndex)){ aggreeCount += 1;}}
+        if (getIsVoted(reportId, tokenOwnersVoteIndex)){voteCount += 1;
+        if (getVote(reportId, tokenOwnersVoteIndex)){ aggreeCount += 1;}}
 
         (bool comitteeResoluted, bool committeeResolution) = getCommitteeMajorityReachedResult(reportId);
         require(comitteeResoluted, "LSS: Committee resolve pending");

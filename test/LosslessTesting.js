@@ -55,7 +55,8 @@ const lerc20InitialSupply = 2000000;
 
 const { ZERO_ADDRESS } = constants;
 
-describe.only('Lossless Environment', () => {
+
+/*describe('Lossless Environment', () => {
     beforeEach(async () => {
       [
         member1,
@@ -122,4 +123,4 @@ describe.only('Lossless Environment', () => {
       );
 
 
-});
+});*/
