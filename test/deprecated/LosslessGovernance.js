@@ -43,7 +43,7 @@ const reportLifetime = time.duration.days(1);
 
 const { ZERO_ADDRESS } = constants;
 
-describe.only('Lossless Governance', () => {
+describe('Lossless Governance', () => {
   beforeEach(async () => {
     [
       deployer,
@@ -548,15 +548,15 @@ describe.only('Lossless Governance', () => {
 
           await lerc20
           .connect(initialHolder)
-          .approve(initialHolder.address, stakeAmount);
+          .approve(initialHolder.address, stakeAmount*2);
 
           await lerc20
             .connect(initialHolder)
-            .transfer(oneMoreAccount.address, stakeAmount);
+            .transfer(oneMoreAccount.address, stakeAmount*2);
 
           await lerc20
           .connect(initialHolder)
-          .approve(reporting.address, stakeAmount);
+          .approve(reporting.address, stakeAmount*2);
 
           await reporting
             .connect(initialHolder)
@@ -668,11 +668,11 @@ describe.only('Lossless Governance', () => {
     beforeEach(async () => {
       await lerc20
         .connect(initialHolder)
-        .transfer(oneMoreAccount.address, stakeAmount);
+        .transfer(oneMoreAccount.address, stakeAmount*2);
 
       await lerc20
         .connect(initialHolder)
-        .approve(reporting.address, stakeAmount);
+        .approve(reporting.address, stakeAmount*2);
 
       await reporting
         .connect(initialHolder)
@@ -753,7 +753,7 @@ describe.only('Lossless Governance', () => {
           it('should mark as voted', async () => {
             await lerc20
               .connect(initialHolder)
-              .approve(reporting.address, stakeAmount);
+              .approve(reporting.address, stakeAmount*2);
 
             await reporting
               .connect(initialHolder)
@@ -809,11 +809,11 @@ describe.only('Lossless Governance', () => {
 
       await lerc20
         .connect(initialHolder)
-        .transfer(oneMoreAccount.address, stakeAmount);
+        .transfer(oneMoreAccount.address, stakeAmount*2);
 
       await lerc20
         .connect(initialHolder)
-        .approve(reporting.address, stakeAmount);
+        .approve(reporting.address, stakeAmount*2);
 
       await reporting
         .connect(initialHolder)
@@ -964,11 +964,11 @@ describe.only('Lossless Governance', () => {
 
       await lerc20
         .connect(initialHolder)
-        .transfer(oneMoreAccount.address, stakeAmount);
+        .transfer(oneMoreAccount.address, stakeAmount*2);
 
       await lerc20
         .connect(initialHolder)
-        .approve(reporting.address, stakeAmount);
+        .approve(reporting.address, stakeAmount*2);
 
       await reporting
         .connect(initialHolder)
@@ -1148,7 +1148,7 @@ describe.only('Lossless Governance', () => {
           beforeEach(async () => {
             await lerc20
             .connect(initialHolder)
-            .approve(reporting.address, stakeAmount* 3 + 1000);
+            .approve(reporting.address, stakeAmount*2* 3 + 1000);
 
             await lerc20
             .connect(initialHolder)
@@ -1168,11 +1168,11 @@ describe.only('Lossless Governance', () => {
 
             await lerc20
             .connect(oneMoreAccount)
-            .approve(reporting.address, stakeAmount*2);
+            .approve(reporting.address, stakeAmount*4);
 
             await lerc20
             .connect(initialHolder)
-            .transfer(oneMoreAccount.address, stakeAmount*2);
+            .transfer(oneMoreAccount.address, stakeAmount*4);
            
             await lerc20
             .connect(member1)
@@ -1180,7 +1180,7 @@ describe.only('Lossless Governance', () => {
 
             await lerc20
             .connect(initialHolder)
-            .transfer(member1.address, stakeAmount);
+            .transfer(member1.address, stakeAmount*2);
 
             await ethers.provider.send('evm_increaseTime', [
               Number(time.duration.minutes(5)),
@@ -1202,7 +1202,7 @@ describe.only('Lossless Governance', () => {
             
               await lerc20
               .connect(oneMoreAccount)
-              .approve(losslessStaking.address, stakeAmount);
+              .approve(losslessStaking.address, stakeAmount*2);
 
               await losslessStaking.connect(oneMoreAccount).stake(1);
               
@@ -1217,13 +1217,13 @@ describe.only('Lossless Governance', () => {
             
               await lerc20
               .connect(oneMoreAccount)
-              .approve(losslessStaking.address, stakeAmount);
+              .approve(losslessStaking.address, stakeAmount*2);
 
               await losslessStaking.connect(oneMoreAccount).stake(1);
 
               await lerc20
               .connect(member1)
-              .approve(losslessStaking.address, stakeAmount);
+              .approve(losslessStaking.address, stakeAmount*2);
 
               await ethers.provider.send('evm_increaseTime', [
                 Number(time.duration.minutes(10)),
@@ -1246,7 +1246,7 @@ describe.only('Lossless Governance', () => {
             
               await lerc20
               .connect(oneMoreAccount)
-              .approve(losslessStaking.address, stakeAmount*2);
+              .approve(losslessStaking.address, stakeAmount*2*2);
 
               await losslessStaking.connect(oneMoreAccount).stake(1);
 
@@ -1471,7 +1471,7 @@ describe.only('Lossless Governance', () => {
 
         await lerc20
         .connect(initialHolder)
-        .transfer(oneMoreAccount.address, stakeAmount);
+        .transfer(oneMoreAccount.address, stakeAmount*2);
 
         await ethers.provider.send('evm_increaseTime', [
           Number(time.duration.minutes(5)),
@@ -1530,51 +1530,51 @@ describe.only('Lossless Governance', () => {
 
       await lerc20
       .connect(oneMoreAccount)
-      .approve(reporting.address, stakeAmount);
+      .approve(reporting.address, stakeAmount*2);
 
       await lerc20
       .connect(initialHolder)
-      .transfer(oneMoreAccount.address, stakeAmount);
+      .transfer(oneMoreAccount.address, stakeAmount*2);
      
       await lerc20
       .connect(member1)
-      .approve(losslessStaking.address, stakeAmount);
+      .approve(losslessStaking.address, stakeAmount*2);
 
       await lerc20
       .connect(initialHolder)
-      .transfer(member1.address, stakeAmount);
+      .transfer(member1.address, stakeAmount*2);
 
       await lerc20
       .connect(member2)
-      .approve(losslessStaking.address, stakeAmount);
+      .approve(losslessStaking.address, stakeAmount*2);
 
       await lerc20
       .connect(initialHolder)
-      .transfer(member2.address, stakeAmount);
+      .transfer(member2.address, stakeAmount*2);
 
       await lerc20
       .connect(member3)
-      .approve(losslessStaking.address, stakeAmount);
+      .approve(losslessStaking.address, stakeAmount*2);
 
       await lerc20
       .connect(initialHolder)
-      .transfer(member3.address, stakeAmount);
+      .transfer(member3.address, stakeAmount*2);
 
       await lerc20
       .connect(member4)
-      .approve(losslessStaking.address, stakeAmount);
+      .approve(losslessStaking.address, stakeAmount*2);
 
       await lerc20
       .connect(initialHolder)
-      .transfer(member4.address, stakeAmount);
+      .transfer(member4.address, stakeAmount*2);
 
       await lerc20
       .connect(member6)
-      .approve(losslessStaking.address, stakeAmount);
+      .approve(losslessStaking.address, stakeAmount*2);
 
       await lerc20
       .connect(initialHolder)
-      .transfer(member6.address, stakeAmount);
+      .transfer(member6.address, stakeAmount*2);
     });
 
     describe('when multiple are staking', () =>{

@@ -18,6 +18,7 @@ interface ILssController {
     function retreiveBlacklistedFunds(address[] calldata _addresses) external;
     function resolvedNegatively(address _adr) external;
     function retrieveBlacklistedToStaking(uint256 reportId) external;
+    function deactivateEmergency(address token) external;
 }
 
 interface ILERC20 {
@@ -280,6 +281,7 @@ contract LosslessGovernance is Initializable, AccessControl {
             losslessController.resolvedNegatively(reportedAddress);
         }
         
+        losslessController.deactivateEmergency(losslessReporting.getTokenFromReport(reportId));
         reportVote.resolved = true;
         delete reportedAddresses;
     }

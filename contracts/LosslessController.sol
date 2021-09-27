@@ -55,6 +55,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     uint256 lockTimeframe;
 
+    uint256 emergencyCooldown;
+
     ILERC20 public losslessToken;
     ILssStaking public losslessStaking;
     ILssReporting public losslessReporting;
@@ -87,6 +89,14 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     mapping(address => bool) private dexList;
     mapping(address => bool) private whitelist;
     mapping(address => bool) private blacklist;
+
+    struct EmergencyMode {
+        bool emergency;
+        uint256 emergencyTimestamp;
+        mapping(address => uint256) emergencyAddressCooldown;
+    }
+
+    mapping(address => EmergencyMode) private emergencyMode;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -138,6 +148,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         pauseAdmin = _pauseAdmin;
         dexTranferThreshold = 2;
         lockTimeframe = 5 minutes;
+        emergencyCooldown = 15 minutes;
         whitelist[_admin] = true;
         whitelist[_recoveryAdmin]  = true;
         whitelist[_pauseAdmin]  = true;
@@ -227,6 +238,15 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external onlyFromAdminOrLssSC {
         reportCoefficient[reportId] += _amt;
+    }
+
+    function activateEmergency(address token) external onlyFromAdminOrLssSC {
+        emergencyMode[token].emergency = true;
+        emergencyMode[token].emergencyTimestamp = block.timestamp;
+    }
+
+    function deactivateEmergency(address token) external onlyFromAdminOrLssSC {
+        emergencyMode[token].emergency = false;
     }
 
     // --- GETTERS ---
@@ -386,7 +406,6 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
         for(uint256 i; i < _addresses.length; i++) {
             blacklistedAmount += losslessToken.balanceOf(_addresses[i]);
-            console.log("taking out %s from %s", blacklistedAmount, _addresses[i]);
         }
         losslessToken.transferOutBlacklistedFunds(_addresses);
     }
@@ -398,11 +417,14 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     // --- BEFORE HOOKS ---
 
-    function beforeTransfer(address sender, address recipient, uint256 amount) external notBlacklisted {
-        require(!isBlacklisted(sender), "LSS: You cannot operate");
-        require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
-
+    function evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
+        
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
+
+        if (emergencyMode[_msgSender()].emergency) {
+            require(amount <= (availableAmount/2), "LSS: Emergency mode active, can only transfer half of the available amount");
+            require((block.timestamp - emergencyMode[_msgSender()].emergencyAddressCooldown[sender]) > 15 minutes, "LSS: Emergency mode active, can only transfer every 15 minutes");
+        }
 
         if (dexList[recipient] && amount > dexTranferThreshold) {
             require(availableAmount >= amount, "LSS: Amt exceeds settled balance");
@@ -410,22 +432,32 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
             removeUsedUpLocks(availableAmount, sender, amount);
             require(getAvailableAmount(_msgSender(), sender) >= amount, "LSS: Amt exceeds settled balance");
         }
+
+        if (dexList[recipient]) {
+            removeExpiredLocks(recipient);
+        }
+
+        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + 5 minutes);
+        enqueueLockedFunds(newCheckpoint, recipient);
+        emergencyMode[_msgSender()].emergencyAddressCooldown[sender] = block.timestamp;
+
+        return true;
+    }
+
+    function beforeTransfer(address sender, address recipient, uint256 amount) external notBlacklisted {
+        require(!isBlacklisted(sender), "LSS: You cannot operate");
+        require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
+
+        require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+
     }
 
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external notBlacklisted {
         require(!isBlacklisted(sender), "LSS: You cannot operate");
         require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
+        require(!isBlacklisted(msgSender), "LSS: Recipient is blacklisted");
 
-        console.log("msgSender() %s", _msgSender());
-
-        uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
-
-        if (dexList[recipient]  && amount > dexTranferThreshold) {
-            require(availableAmount >= amount, "LSS: Amt exceeds settled balance"); 
-        } else if (availableAmount < amount) {
-            removeUsedUpLocks(availableAmount, sender, amount);
-            require(getAvailableAmount(_msgSender(), sender) >= amount, "LSS: Amt exceeds settled balance");
-        }
+        require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
     }
 
     function beforeApprove(address sender, address spender, uint256 amount) external {}
@@ -439,18 +471,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     function afterApprove(address sender, address spender, uint256 amount) external {}
 
     function afterTransfer(address sender, address recipient, uint256 amount) external {
-        if (dexList[recipient]) {
-            removeExpiredLocks(recipient);
-        }
-        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + 5 minutes);
-        enqueueLockedFunds(newCheckpoint, recipient);
+
     }
 
-    function afterTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
-        removeExpiredLocks(recipient);
-        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + 5 minutes);
-        enqueueLockedFunds(newCheckpoint, recipient);
-    }
+    function afterTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {}
 
     function afterIncreaseAllowance(address sender, address spender, uint256 addedValue) external {}
 

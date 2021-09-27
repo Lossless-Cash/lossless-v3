@@ -259,9 +259,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
-        console.log("--------- Report %s ---------", reportId);
-        console.log("Reporter is asking");
-        console.log("Staker amount to claim: %s + %s", amountStakedOnReport * reporterReward / 10**2, stakeAmount);
         return amountStakedOnReport * reporterReward / 10**2;
     }
     
@@ -302,16 +299,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakerPercentage = (secondsCoefficient * stakerCoefficient);
 
         stakerAmountToClaim = (amountStakedOnReport * stakerPercentage) / 10**4;
-        
-        console.log("--------- Report %s ---------", reportId);
-        console.log("Reported Token: %s", reportedToken);
-        console.log("Reported Wallet: %s", reportedWallet);
-        console.log("Total to distribute: %s", amountStakedOnReport);
-        console.log("Report Coefficient: %s", reportCoefficient);
-        console.log("Seconds coefficient: %s", secondsCoefficient);
-        console.log("Current consulting staker: %s", _msgSender());
-        console.log("Staker coefficient: %s", stakerCoefficient);
-        console.log("Staker amount to claim: %s + %s", stakerAmountToClaim, stakeAmount);
 
         return stakerAmountToClaim;
     }
@@ -329,12 +316,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         amountToClaim = stakerClaimableAmount(reportId);
         stakeAmount = losslessController.getStakeAmount();
 
-        console.log("Sending %s from rewards and %s from stakeAmount", amountToClaim, stakeAmount);
-
         ILERC20(losslessReporting.getTokenFromReport(reportId)).transfer(_msgSender(), amountToClaim);
-        console.log("Sent reward");
         losslessToken.transfer( _msgSender(), stakeAmount);
-        console.log("Sent stakeAmount");
 
         setPayoutStatus(reportId, _msgSender());
     }
@@ -351,12 +334,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         amountToClaim = reporterClaimableAmount(reportId);
         stakeAmount = losslessController.getStakeAmount();
 
-        console.log("Sending %s from rewards and %s from stakeAmount", amountToClaim, stakeAmount);
-
         ILERC20(losslessReporting.getTokenFromReport(reportId)).transfer(_msgSender(), amountToClaim);
-        console.log("Sent reward");
         losslessToken.transfer(_msgSender(), stakeAmount);
-        console.log("Sent stakeAmount");
 
         setPayoutStatus(reportId, _msgSender());
 

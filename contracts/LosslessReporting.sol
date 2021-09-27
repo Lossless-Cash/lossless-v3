@@ -23,6 +23,7 @@ interface ILssController {
     function getStakeAmount() external returns (uint256);
     function addToBlacklist(address _adr) external;
     function isWhitelisted(address _adr) external view returns (bool);
+    function activateEmergency(address token) external;
 }
 
 contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -169,6 +170,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     function report(address token, address account) public notBlacklisted {
 
+        console.log("Reported %s", token);
+        
         require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
 
         uint256 reportId = tokenReports[token].reports[account];
@@ -195,6 +198,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportedAddress[reportId] = account;
         amountReported[reportId] = losslessToken.balanceOf(account);
 
+        losslessController.activateEmergency(token);
         emit ReportSubmitted(token, account, reportId);
     }
 

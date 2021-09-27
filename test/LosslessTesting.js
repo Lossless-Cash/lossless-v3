@@ -20,6 +20,12 @@ let staker3;
 let staker4;
 let staker5;
 
+let regularUser1;
+let regularUser2;
+let regularUser3;
+let regularUser4;
+let regularUser5;
+
 const stakeAmount = 2500;
 const reportLifetime = time.duration.days(1);
 
@@ -56,9 +62,19 @@ const lerc20InitialSupply = 2000000;
 const { ZERO_ADDRESS } = constants;
 
 
-/*describe('Lossless Environment', () => {
+describe.only('Lossless TestSuite', () => {
     beforeEach(async () => {
       [
+        lssInitialHolder,
+        lssAdmin,
+        lssPauseAdmin,
+        lssRecoveryAdmin,
+        lssBackupAdmin,
+        lerc20InitialHolder,
+        lerc20Admin,
+        lerc20PauseAdmin,
+        lerc20RecoveryAdmin,
+        lerc20BackupAdmin,
         member1,
         member2,
         member3,
@@ -74,18 +90,13 @@ const { ZERO_ADDRESS } = constants;
         staker3,
         staker4,
         staker5,
-        lssInitialHolder,
-        lssAdmin,
-        lssPauseAdmin,
-        lssRecoveryAdmin,
-        lssBackupAdmin,
-        lerc20InitialHolder,
-        lerc20Admin,
-        lerc20PauseAdmin,
-        lerc20RecoveryAdmin,
-        lerc20BackupAdmin,
+        regularUser1,
+        regularUser2,
+        regularUser3,
+        regularUser4,
+        regularUser5,
       ] = await ethers.getSigners();
-    });
+
 
     const LosslessController = await ethers.getContractFactory(
         'LosslessController',
@@ -105,22 +116,169 @@ const { ZERO_ADDRESS } = constants;
   
       lssController = await upgrades.deployProxy(
         LosslessController,
-        [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address],
+        [lssAdmin.address, lssRecoveryAdmin.address, lssPauseAdmin.address],
         { initializer: 'initialize' },
       );
   
-  
       lssReporting = await upgrades.deployProxy(
         LosslessReporting,
-        [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address],
+        [lssAdmin.address, lssRecoveryAdmin.address, lssPauseAdmin.address],
+        { initializer: 'initialize' },
+      );
+
+      lssGovernance = await upgrades.deployProxy(
+        LosslessGovernance,
+        [lssAdmin.address, lssRecoveryAdmin.address, lssPauseAdmin.address, lssReporting.address, lssController.address],
         { initializer: 'initialize' },
       );
   
       lssStaking = await upgrades.deployProxy(
         LosslessStaking,
-        [lssAdmin.address, lssRecoveryAdmin.address, pauseAdmin.address, reporting.address, controller.address],
+        [lssAdmin.address, lssRecoveryAdmin.address, lssPauseAdmin.address, lssReporting.address, lssController.address, lssGovernance.address],
         { initializer: 'initialize' },
       );
 
+      const LosslessToken = await ethers.getContractFactory('LERC20');
 
-});*/
+      lssToken = await LosslessToken.deploy(
+        lssInitialSupply,
+        lssName,
+        lssSymbol,
+        lssInitialHolder.address,
+        lssAdmin.address,
+        lssBackupAdmin.address,
+        Number(time.duration.days(1)),
+        lssController.address,
+      );
+
+      const randomToken = await ethers.getContractFactory('LERC20');
+
+      randToken = await randomToken.deploy(
+        lerc20InitialSupply,
+        lerc20Name,
+        lerc20Symbol,
+        lerc20InitialHolder.address,
+        lerc20Admin.address,
+        lerc20BackupAdmin.address,
+        Number(time.duration.days(1)),
+        lssController.address,
+      );
+
+    await lssController.connect(lssAdmin).setStakeAmount(stakeAmount);
+    await lssController.connect(lssAdmin).setReportLifetime(Number(reportLifetime));
+    await lssController.connect(lssAdmin).setLosslessToken(lssToken.address);
+    await lssController.connect(lssAdmin).setStakingContractAddress(lssStaking.address);
+    await lssController.connect(lssAdmin).setReportingContractAddress(lssReporting.address);
+    await lssController.connect(lssAdmin).setGovernanceContractAddress(lssGovernance.address);
+
+    await lssStaking.connect(lssAdmin).setLosslessToken(lssToken.address);
+
+    await lssReporting.connect(lssAdmin).setLosslessToken(lssToken.address);
+    await lssReporting.connect(lssAdmin).setControllerContractAddress(lssController.address);
+    await lssReporting.connect(lssAdmin).setStakingContractAddress(lssStaking.address);
+    await lssReporting.connect(lssAdmin).setReporterReward(2);
+    await lssReporting.connect(lssAdmin).setLosslessFee(10);
+
+    console.log("regular user addresses %s, %s, %s", regularUser1.address, regularUser2.address, regularUser2.address);
+    });
+
+    describe('Lossless Environment', () => {
+      describe('On deployment', () =>{ 
+      describe('when the Lossless Controller contract has been set up', () =>{
+
+        it('should set the stake amount correctly', async () => {
+          expect(
+            await lssController.getStakeAmount(),
+          ).to.be.equal(stakeAmount);
+        });
+
+        it('should set the report lifetime correctly', async () => {
+          expect(
+            await lssController.getReportLifetime(),
+          ).to.be.equal(Number(reportLifetime));
+        });
+
+        it('should set the report Lossless Token address correctly', async () => {
+          expect(
+            await lssController.losslessToken(),
+          ).to.be.equal(lssToken.address);
+        });
+
+        it('should set the report Lossless Staking address correctly', async () => {
+          expect(
+            await lssController.losslessStaking(),
+          ).to.be.equal(lssStaking.address);
+        });
+
+        it('should set the report Lossless Reporting address correctly', async () => {
+          expect(
+            await lssController.losslessReporting(),
+          ).to.be.equal(lssReporting.address);
+        });
+
+        it('should set the report Lossless Governance address correctly', async () => {
+          expect(
+            await lssController.losslessGovernance(),
+          ).to.be.equal(lssGovernance.address);
+        });
+    });
+
+      describe('when the Lossless Staking Contract has been set up', () =>{
+
+      it('should set the report Lossless Token address correctly', async () => {
+        expect(
+          await lssStaking.losslessToken(),
+        ).to.be.equal(lssToken.address);
+      });
+    
+    });
+
+      describe('when the Lossless Reporting Contract has been set up', () =>{
+
+      it('should set the report Lossless Token address correctly', async () => {
+        expect(
+          await lssReporting.losslessToken(),
+        ).to.be.equal(lssToken.address);
+      });
+
+      it('should set the report Lossless Staking address correctly', async () => {
+        expect(
+          await lssReporting.losslessController(),
+        ).to.be.equal(lssController.address);
+      });
+
+      it('should set the reporter reward correctly', async () => {
+        expect(
+          await lssReporting.reporterReward(),
+        ).to.be.equal(2);
+      });
+
+      it('should set the Lossless fee correctly', async () => {
+        expect(
+          await lssReporting.losslessFee(),
+        ).to.be.equal(10);
+      });
+    
+    });
+  
+    describe('Lossless Token', () => {
+        describe('when transfering between users', ()=>{
+          beforeEach(async ()=>{
+            await lssToken.connect(lssInitialHolder).transfer(regularUser1.address, 100);
+            await lssToken.connect(lssInitialHolder).transfer(regularUser2.address, 100);
+          });
+
+          it('should not revert', async () => {
+                expect(
+                  await lssToken.connect(regularUser1).transfer(regularUser3.address, 5),
+                ).to.not.be.reverted();
+
+                expect(
+                  await lssToken.balanceOf(regularUser3.address),
+                ).to.be.equal(3);
+           });
+        });
+      });
+    });
+  }); 
+});
