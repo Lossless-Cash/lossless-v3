@@ -95,86 +95,130 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     
     // --- SETTERS ---
 
+    /// @notice This function pauses the contract
     function pause() public onlyPauseAdmin{
         _pause();
     }    
-    
+
+    /// @notice This function unpauses the contract
     function unpause() public onlyPauseAdmin{
         _unpause();
     }
 
+    /// @notice This function sets a new admin
+    /// @dev Only can be called by the Recovery admin
+    /// @param newAdmin Address corresponding to the new Lossless Admin
     function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
     }
 
+    /// @notice This function sets a new recovery admin
+    /// @dev Only can be called by the previous Recovery admin
+    /// @param newRecoveryAdmin Address corresponding to the new Lossless Recovery Admin
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
         emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
+    /// @notice This function sets a new pause admin
+    /// @dev Only can be called by the Recovery admin
+    /// @param newPauseAdmin Address corresponding to the new Lossless Pause Admin
     function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
         emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
-    
+
+    /// @notice This function sets the address of the Lossless Governance Token
+    /// @dev Only can be called by the Lossless Admin
+    /// @param _losslessToken Address corresponding to the Lossless Governance Token
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
         losslessToken = ILERC20(_losslessToken);
     }
 
+    /// @notice This function sets the address of the Lossless Controller contract
+    /// @param _adr Address corresponding to the Lossless Controller contract
     function setControllerContractAddress(address _adr) public onlyLosslessAdmin {
         losslessController = ILssController(_adr);
         controllerAddress = _adr;
     }
 
+    /// @notice This function sets the address of the Lossless Staking contract
+    /// @param _adr Address corresponding to the Lossless Staking contract
     function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
         stakingAddress = _adr;
     }
 
+    /// @notice This function sets the default reporter reward
+    /// @param reward Percentage rewarded to the reporter when a report gets resolved positively
     function setReporterReward(uint256 reward) public onlyLosslessAdmin {
         reporterReward = reward;
     }
 
+    /// @notice This function sets the default Lossless Fee
+    /// @param fee Percentage attributed to Lossless when a report gets resolved positively
     function setLosslessFee(uint256 fee) public onlyLosslessAdmin {
         losslessFee = fee;
     }
 
     // --- GETTERS ---
 
+    /// @notice This function gets the contract version
+    /// @return Version of the contract
     function getVersion() public pure returns (uint256) {
         return 1;
     }
 
+    /// @notice This function will return the address of the reporter
+    /// @param _reportId Report number
+    /// @return The address of the reporter
     function getReporter(uint256 _reportId) public view returns (address) {
         return reporter[_reportId];
     }
 
+    /// @notice This function will return when the report was created
+    /// @param _reportId Report number
+    /// @return The block timestamp when the report was generated
     function getReportTimestamps(uint256 _reportId) public view returns (uint256) {
         return reportTimestamps[_reportId];
     }
 
+    /// @notice This function will return the token associated with the report
+    /// @param _reportId Report number
+    /// @return Token address
     function getTokenFromReport(uint256 _reportId) public view returns (address) {
         return reportTokens[_reportId];
     }
 
+    /// @notice This function will return the address that was reported
+    /// @param _reportId Report number
+    /// @return Potential malicios actor address
     function getReportedAddress(uint256 _reportId) public view returns (address) {
         return reportedAddress[_reportId];
     }
 
+    /// @notice This function will return the Reporter reward and Lossless fee percentage
+    /// @return reward Returns the reporter reward
+    /// @return fee Returns the Lossless Fee
     function getReporterRewardAndLSSFee() public view returns (uint256 reward, uint256 fee) {
         return (reporterReward, losslessFee);
     }
 
+    /// @notice This function will return the amount of tokens locked by the report
+    /// @return Amount of tokens
     function getAmountReported(uint256 reportId) public view returns (uint256) {
         return amountReported[reportId];
     }
 
     // --- REPORTS ---
 
+    /// @notice This function will generate a report
+    /// @dev This funtion must be called by a non blacklisted/reported address. 
+    /// It will generate a report for and address linked to a token.
+    /// Lossless Contracts and Admin addresses cannot be reported.
+    /// @param token Token address of the stolen funds
+    /// @param account Potential malicious address
     function report(address token, address account) public notBlacklisted {
-
-        console.log("Reported %s", token);
-        
         require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
 
         uint256 reportId = tokenReports[token].reports[account];
@@ -199,12 +243,22 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
+
+        
         amountReported[reportId] = losslessToken.balanceOf(account);
 
         losslessController.activateEmergency(token);
         emit ReportSubmitted(token, account, reportId);
     }
 
+
+    /// @notice This function will generate a second report
+    /// @dev This funtion must be called by a non blacklisted/reported address. 
+    /// It will generate a second report linked to the first one created. 
+    /// This can be used in the event that the malicious actor is able to frontrun the first report by swapping the tokens or transfering.
+    /// @param reportId Report that was previously generated.
+    /// @param token Token address of the stolen funds
+    /// @param account Potential malicious address
     function reportAnother(uint256 reportId, address token, address account) public notBlacklisted {
         uint256 reportLifetime;
         uint256 reportTimestamp;

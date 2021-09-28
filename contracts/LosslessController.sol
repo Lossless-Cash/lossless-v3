@@ -189,7 +189,6 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         pauseAdmin = newPauseAdmin;
     }
     
-
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessToken Address corresponding to the Lossless Governance Token
@@ -488,6 +487,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     /// @param amount Amount to be transfered
     function evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
         
+        require(ILERC20(_msgSender()).balanceOf(sender) >= amount, "LSS: Insufficient balance");
+
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
 
         if (emergencyMode[_msgSender()].emergency) {

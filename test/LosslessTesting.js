@@ -7,9 +7,9 @@ let member3;
 let member4;
 let member5;
 
-let maliciousAddress1;
-let maliciousAddress2;
-let maliciousAddress3;
+let maliciousActor1;
+let maliciousActor2;
+let maliciousActor3;
 
 let reporter1;
 let reporter2;
@@ -80,9 +80,9 @@ describe.only('Lossless TestSuite', () => {
         member3,
         member4,
         member5,
-        maliciousAddress1,
-        maliciousAddress2,
-        maliciousAddress3,
+       maliciousActor1,
+       maliciousActor2,
+       maliciousActor3,
         reporter1,
         reporter2,
       ] = await ethers.getSigners();
@@ -319,10 +319,49 @@ describe.only('Lossless TestSuite', () => {
       });
     });
     describe('Lossless Controller', ()=>{
+      describe('when whitelisting an account', ()=>{
+        it('should not revert', async ()=>{
+          await lssController.connect(lssAdmin).addToWhitelist(lssGovernance.address);
+          await lssController.connect(lssAdmin).addToWhitelist(lssReporting.address);
+          await lssController.connect(lssAdmin).addToWhitelist(lssStaking.address);
+
+          expect(
+            await lssController.isWhitelisted(lssGovernance.address)
+          ).to.be.equal(true);
+          
+          expect(
+            await lssController.isWhitelisted(lssReporting.address)
+          ).to.be.equal(true);
+
+          expect(
+            await lssController.isWhitelisted(lssStaking.address)
+          ).to.be.equal(true);       
+
+        });
+      });
       describe('Lossless Reporting', ()=>{
-        
+        describe('when generating a report', ()=>{
+          beforeEach(async ()=>{
+            await lssController.connect(lssAdmin).addToWhitelist(lssReporting.address);
+          
+            await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount);
+            await lssToken.connect(lssInitialHolder).transfer(reporter2.address, stakeAmount);
+
+            await lssToken.connect(reporter1).approve(lssReporting.address, stakeAmount);
+
+            await ethers.provider.send('evm_increaseTime', [
+              Number(time.duration.minutes(5)),
+            ]);
+          });
+          describe('when reporting a whitelisted account', ()=>{
+            it('should revert', async ()=>{
+              await expect(
+                lssReporting.connect(reporter1).report(randToken.address, lssReporting.address),
+              ).to.be.revertedWith("LSS: Cannot report LSS protocol");
+            });
+          });
+        });
       });
     });
-
   }); 
 });
