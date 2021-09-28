@@ -26,6 +26,9 @@ interface ILssController {
     function activateEmergency(address token) external;
 }
 
+/// @title Lossless Reporting
+/// @author Lossless.cash
+/// @notice The Reporting smart contract is in charge of handling all the parts related to creating new reports
 contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
     address public admin;

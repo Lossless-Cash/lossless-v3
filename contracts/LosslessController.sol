@@ -41,7 +41,6 @@ interface ILssGovernance {
 }
 
 /// @title Lossless Controller
-/// @author Lossless.cash
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
 contract LosslessController is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
@@ -156,95 +155,154 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     // --- SETTERS ---
 
+    /// @notice This function pauses the contract
     function pause() public onlyPauseAdmin{
         _pause();
     }    
-    
+
+    /// @notice This function unpauses the contract
     function unpause() public onlyPauseAdmin{
         _unpause();
     }
 
+    /// @notice This function sets a new admin
+    /// @dev Only can be called by the Recovery admin
+    /// @param newAdmin Address corresponding to the new Lossless Admin
     function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
     }
 
+    /// @notice This function sets a new recovery admin
+    /// @dev Only can be called by the previous Recovery admin
+    /// @param newRecoveryAdmin Address corresponding to the new Lossless Recovery Admin
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
         emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
+    /// @notice This function sets a new pause admin
+    /// @dev Only can be called by the Recovery admin
+    /// @param newPauseAdmin Address corresponding to the new Lossless Pause Admin
     function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
         emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
     
+
+    /// @notice This function sets the address of the Lossless Governance Token
+    /// @dev Only can be called by the Lossless Admin
+    /// @param _losslessToken Address corresponding to the Lossless Governance Token
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
         losslessToken = ILERC20(_losslessToken);
     }
 
+    /// @notice This function adds an address to the Decentralized Exchanges mapping
+    /// @dev Only can be called by the Lossless Admin
+    /// @param dexAddress Address corresponding to the DEX
     function addToDexList(address dexAddress) public onlyLosslessAdmin {
         dexList[dexAddress] = true;
     }
 
+    /// @notice This function adds an address to the whitelst
+    /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
+    /// @param _adr Address corresponding to be added to the whitelist mapping
     function addToWhitelist(address _adr) public onlyLosslessAdmin {
         whitelist[_adr] = true;
     }
 
+    /// @notice This function removes an address from the whitelst
+    /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
+    /// @param _adr Address corresponding to be removed from the whitelist mapping
     function removeFromWhitelist(address _adr) public onlyLosslessAdmin {
         whitelist[_adr] = false;
     }
 
+    /// @notice This function adds an address to the blacklist
+    /// @dev Only can be called by the Lossless Admin, and form other Lossless Contracts
+    ///            The address gets blacklisted whenever a report is created on them.
+    /// @param _adr Address corresponding to be added to the blacklist mapping
     function addToBlacklist(address _adr) public onlyFromAdminOrLssSC {
         require(!isBlacklisted(_adr), "LSS: Already blacklisted");
         blacklist[_adr] = true;
     }
 
+    /// @notice This function removes an address from the blacklist
+    /// @dev Only can be called by the Lossless Admin, and form other Lossless Contracts
+    ///           The address gets removed from the blacklist when a report gets closed and the resolution being negative.
+    /// @param _adr Address corresponding to be removed form the blacklist mapping
     function removeFromBlacklist(address _adr) public onlyFromAdminOrLssSC{
         require(isBlacklisted(_adr), "LSS: Not blacklisted");
         blacklist[_adr] = false;
     }
 
+    /// @notice This function calls removeFromBlacklist()
+    /// @param _adr Address corresponding to be removed form the blacklist mapping
     function resolvedNegatively(address _adr) public onlyFromAdminOrLssSC {
         removeFromBlacklist(_adr);
     }
     
+    /// @notice This function sets the address of the Lossless Staking contract
+    /// @param _adr Address corresponding to the Lossless Staking contract
     function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
         losslessStaking = ILssStaking(_adr);
         losslessStakingingAddress = _adr;
     }
 
+    /// @notice This function sets the address of the Lossless Reporting contract
+    /// @param _adr Address corresponding to the Lossless Reporting contract
     function setReportingContractAddress(address _adr) public onlyLosslessAdmin {
         losslessReporting = ILssReporting(_adr);
         losslessReportingAddress = _adr;
     }
 
+    /// @notice This function sets the address of the Lossless Governance contract
+    /// @param _adr Address corresponding to the Lossless Governance contract
     function setGovernanceContractAddress(address _adr) public onlyLosslessAdmin {
         losslessGovernance = ILssGovernance(_adr);
         losslessGovernanceAddress = _adr;
     }
 
+    /// @notice This function sets the amount of tokens to be staked when reporting or staking
+    /// @param _stakeAmount Amount to be staked
     function setStakeAmount(uint256 _stakeAmount) public onlyLosslessAdmin {
         stakeAmount = _stakeAmount;
     }
 
+    /// @notice This function sets the default lifetime of the reports
+    /// @param _lifetime Time frame of which a report is active
     function setReportLifetime(uint256 _lifetime) public onlyLosslessAdmin {
         reportLifetime = _lifetime;
     }
 
+    /// @notice This function sets the default time that the recieved funds get locked
+    /// @dev This function should be called in seconds
+    /// @param _seconds Time frame of the recieved funds will be locked
     function setLockTimeframe(uint256 _seconds) public onlyLosslessAdmin {
         lockTimeframe = _seconds * 1 seconds;
     }
 
+    /// @notice This function adds to the total coefficient per report
+    /// @dev It takes part on the claimableAmount calculation of the Lossless Staking contract
+    /// @param reportId Report to be added the coefficient
+    /// @param _amt Coefficient amount
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external onlyFromAdminOrLssSC {
         reportCoefficient[reportId] += _amt;
     }
 
+    /// @notice This function activates the emergency mode
+    /// @dev When a report gets generated for a token, it enters an emergency state globally.
+    /// This means that the transfers get limited to a 15 minutes cooldown and only for half of the locked funds at a time.
+    /// It gets activated by the Lossless Reporting contract .
+    /// It deactivated when a resolution has been reached by the Lossless Governance contract.
+    /// @param token Token on which the emergency mode must get activated
     function activateEmergency(address token) external onlyFromAdminOrLssSC {
         emergencyMode[token].emergency = true;
         emergencyMode[token].emergencyTimestamp = block.timestamp;
     }
 
+    /// @notice This function deactivates the emergency mode
+    /// @param token Token on which the emergency mode must get deactivated
     function deactivateEmergency(address token) external onlyFromAdminOrLssSC {
         emergencyMode[token].emergency = false;
     }
@@ -379,6 +437,9 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         queue.touchedTimestamp = block.timestamp;
     }
 
+    /// @notice This function add transfers to the lock queues
+    /// @param checkpoint Address to lift the locks
+    /// @param recipient Address to lift the locks
     function enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
@@ -391,6 +452,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         }
     }
 
+    /// @notice This function deletes the queue of locked funds
+    /// @param recipient Address to lift the locks
     function dequeueLockedFunds(address recipient) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
@@ -401,6 +464,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     // --- REPORT RESOLUTION ---
 
+    /// @notice This function retrieves the funds of the reported account
+    /// @param _addresses Array of addreses to retrieve the locked funds
     function retreiveBlacklistedFunds(address[] calldata _addresses) public onlyFromAdminOrLssSC {
         uint256 blacklistedAmount;
 
@@ -417,6 +482,10 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     // --- BEFORE HOOKS ---
 
+    /// @notice This function evaluates if the transfer can be made
+    /// @param sender Address sending the funds
+    /// @param recipient Address recieving the funds
+    /// @param amount Amount to be transfered
     function evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
         
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);

@@ -63,7 +63,7 @@ const { ZERO_ADDRESS } = constants;
 
 
 describe.only('Lossless TestSuite', () => {
-    beforeEach(async () => {
+  beforeEach(async () => {
       [
         lssInitialHolder,
         lssAdmin,
@@ -85,6 +85,9 @@ describe.only('Lossless TestSuite', () => {
         maliciousAddress3,
         reporter1,
         reporter2,
+      ] = await ethers.getSigners();
+
+      [
         staker1,
         staker2,
         staker3,
@@ -96,7 +99,6 @@ describe.only('Lossless TestSuite', () => {
         regularUser4,
         regularUser5,
       ] = await ethers.getSigners();
-
 
     const LosslessController = await ethers.getContractFactory(
         'LosslessController',
@@ -178,50 +180,47 @@ describe.only('Lossless TestSuite', () => {
     await lssReporting.connect(lssAdmin).setStakingContractAddress(lssStaking.address);
     await lssReporting.connect(lssAdmin).setReporterReward(2);
     await lssReporting.connect(lssAdmin).setLosslessFee(10);
+    
+  });
+  describe('Lossless Environment', () => {
+    describe('On deployment', () =>{ 
+        describe('when the Lossless Controller contract has been set up', () =>{
+          it('should set the stake amount correctly', async () => {
+            expect(
+              await lssController.getStakeAmount(),
+            ).to.be.equal(stakeAmount);
+          });
 
-    console.log("regular user addresses %s, %s, %s", regularUser1.address, regularUser2.address, regularUser2.address);
-    });
+          it('should set the report lifetime correctly', async () => {
+            expect(
+              await lssController.getReportLifetime(),
+            ).to.be.equal(Number(reportLifetime));
+          });
 
-    describe('Lossless Environment', () => {
-      describe('On deployment', () =>{ 
-      describe('when the Lossless Controller contract has been set up', () =>{
+          it('should set the report Lossless Token address correctly', async () => {
+            expect(
+              await lssController.losslessToken(),
+            ).to.be.equal(lssToken.address);
+          });
 
-        it('should set the stake amount correctly', async () => {
-          expect(
-            await lssController.getStakeAmount(),
-          ).to.be.equal(stakeAmount);
-        });
+          it('should set the report Lossless Staking address correctly', async () => {
+            expect(
+              await lssController.losslessStaking(),
+            ).to.be.equal(lssStaking.address);
+          });
 
-        it('should set the report lifetime correctly', async () => {
-          expect(
-            await lssController.getReportLifetime(),
-          ).to.be.equal(Number(reportLifetime));
-        });
+          it('should set the report Lossless Reporting address correctly', async () => {
+            expect(
+              await lssController.losslessReporting(),
+            ).to.be.equal(lssReporting.address);
+          });
 
-        it('should set the report Lossless Token address correctly', async () => {
-          expect(
-            await lssController.losslessToken(),
-          ).to.be.equal(lssToken.address);
-        });
-
-        it('should set the report Lossless Staking address correctly', async () => {
-          expect(
-            await lssController.losslessStaking(),
-          ).to.be.equal(lssStaking.address);
-        });
-
-        it('should set the report Lossless Reporting address correctly', async () => {
-          expect(
-            await lssController.losslessReporting(),
-          ).to.be.equal(lssReporting.address);
-        });
-
-        it('should set the report Lossless Governance address correctly', async () => {
-          expect(
-            await lssController.losslessGovernance(),
-          ).to.be.equal(lssGovernance.address);
-        });
-    });
+          it('should set the report Lossless Governance address correctly', async () => {
+            expect(
+              await lssController.losslessGovernance(),
+            ).to.be.equal(lssGovernance.address);
+          });
+      });
 
       describe('when the Lossless Staking Contract has been set up', () =>{
 
@@ -258,27 +257,72 @@ describe.only('Lossless TestSuite', () => {
           await lssReporting.losslessFee(),
         ).to.be.equal(10);
       });
-    
     });
-  
+    });
     describe('Lossless Token', () => {
-        describe('when transfering between users', ()=>{
-          beforeEach(async ()=>{
-            await lssToken.connect(lssInitialHolder).transfer(regularUser1.address, 100);
-            await lssToken.connect(lssInitialHolder).transfer(regularUser2.address, 100);
-          });
-
-          it('should not revert', async () => {
-                expect(
-                  await lssToken.connect(regularUser1).transfer(regularUser3.address, 5),
-                ).to.not.be.reverted();
-
-                expect(
-                  await lssToken.balanceOf(regularUser3.address),
-                ).to.be.equal(3);
-           });
+      describe('when transfering between users', ()=>{
+        beforeEach(async ()=>{
+          await lssToken.connect(lssInitialHolder).transfer(regularUser1.address, 100);
+          await lssToken.connect(lssInitialHolder).transfer(regularUser2.address, 100);
         });
+
+        it('should revert if 5 minutes haven\'t passed', async () => {
+
+          await expect(
+            lssToken.connect(regularUser1).transfer(regularUser3.address, 5),
+          ).to.be.revertedWith("LSS: Amt exceeds settled balance");
+
+        });
+        
+        it('should not revert', async () => {
+          
+              await ethers.provider.send('evm_increaseTime', [
+                Number(time.duration.minutes(5)),
+              ]);
+
+              await expect(
+                lssToken.connect(regularUser1).transfer(regularUser3.address, 5),
+              ).to.not.be.reverted;
+
+              expect(
+                await lssToken.balanceOf(regularUser3.address),
+              ).to.be.equal(5);
+         });
       });
     });
+    describe('Random Token', () => {
+      describe('when transfering between users', ()=>{
+        beforeEach(async ()=>{
+          await randToken.connect(lerc20InitialHolder).transfer(regularUser1.address, 100);
+          await randToken.connect(lerc20InitialHolder).transfer(regularUser2.address, 100);
+        });
+
+        it('should revert if 5 minutes haven\'t passed', async () => {
+          await expect(
+            randToken.connect(regularUser2).transfer(regularUser4.address, 5),
+          ).to.be.revertedWith("LSS: Amt exceeds settled balance");
+        });
+        
+        it('should not revert', async () => {
+              await ethers.provider.send('evm_increaseTime', [
+                Number(time.duration.minutes(5)),
+              ]);
+
+              await expect(
+                randToken.connect(regularUser1).transfer(regularUser3.address, 5),
+              ).to.not.be.reverted;
+
+              expect(
+                await randToken.balanceOf(regularUser3.address),
+              ).to.be.equal(5);
+         });
+      });
+    });
+    describe('Lossless Controller', ()=>{
+      describe('Lossless Reporting', ()=>{
+        
+      });
+    });
+
   }); 
 });
