@@ -26,7 +26,7 @@ interface ILssController {
     function activateEmergency(address token) external;
 }
 
-/// @title Lossless Reporting
+/// @title Lossless Reporting Contract
 /// @author Lossless.cash
 /// @notice The Reporting smart contract is in charge of handling all the parts related to creating new reports
 contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -67,21 +67,25 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     // --- MODIFIERS ---
 
+    /// @notice Avoids execution form other than the Recovery Admin
     modifier onlyLosslessRecoveryAdmin() {
         require(_msgSender() == recoveryAdmin, "LSS: Must be recoveryAdmin");
         _;
     }
 
+    /// @notice Avoids execution form other than the Lossless Admin
     modifier onlyLosslessAdmin() {
         require(admin == _msgSender(), "LSS: Must be admin");
         _;
     }
 
+    /// @notice Avoids execution form other than the Pause Admin
     modifier onlyPauseAdmin() {
         require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
         _;
     }
 
+    /// @notice Avoids execution form blacklisted addresses
     modifier notBlacklisted() {
         require(!losslessController.isBlacklisted(_msgSender()), "LSS: You cannot operate");
         _;

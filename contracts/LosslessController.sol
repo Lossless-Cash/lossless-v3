@@ -40,7 +40,7 @@ interface ILssGovernance {
     function reportResolution(uint256 reportId) external view returns(bool);
 }
 
-/// @title Lossless Controller
+/// @title Lossless Controller Contract
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
 contract LosslessController is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
