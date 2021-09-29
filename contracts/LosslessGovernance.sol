@@ -26,6 +26,8 @@ interface ILERC20 {
     function balanceOf(address account) external view returns (uint256);
 } 
 
+/// @title Lossless Governance Contract
+/// @notice The governance contract is in charge of handling the voting process over the reports and their resolution
 contract LosslessGovernance is Initializable, AccessControl {
     address public pauseAdmin;
     address public admin;
@@ -74,46 +76,65 @@ contract LosslessGovernance is Initializable, AccessControl {
         _;
     }
 
-    //Verifies if an address is member
+    /// @notice This function determines if an address belongs to the Committee
+    /// @param account Address to be verified
+    /// @return True if the address is a committee member
     function isCommitteeMember(address account) public view returns(bool) {
         return hasRole(COMMITTEE_ROLE, account);
     }
 
-    //Returns if a vote was casted by a team on a report
+    /// @notice This function returns if a report has been voted by one of the three fundamental parts
+    /// @param reportId Report number to be checked
+    /// @param voterIndex Voter Index to be checked
+    /// @return True if it has been voted
     function getIsVoted(uint256 reportId, uint256 voterIndex) public view returns(bool) {
         return reportVotes[reportId].voted[voterIndex];
     }
 
-    //Returns if a committee member has voted
+    /// @notice This function returns if a committee member has voted    
+    /// @param reportId Report number to be checked
+    /// @param account Address of the committee member
+    /// @return True if the member has voted
     function getIsCommitteeMemberVoted(uint256 reportId, address account) public view returns(bool) {
         return reportVotes[reportId].committeeMemberVoted[account];
     }
 
-    //Returns the resolution on a report by a team
+    /// @notice This function returns the resolution on a report by a team 
+    /// @param reportId Report number to be checked
+    /// @param voterIndex Voter Index to be checked
+    /// @return True if it has voted
     function getVote(uint256 reportId, uint256 voterIndex) public view returns(bool) {
         return reportVotes[reportId].votes[voterIndex];
     }
 
-    //Returns number of votes made by the committee
+    /// @notice This function returns number of votes made by the committee
+    /// @param reportId Report number to be checked
+    /// @return Number of votes made by the committee
     function getCommitteeVotesCount(uint256 reportId) public view returns(uint256) {
         return reportVotes[reportId].committeeVotes.length;
     }
 
-    //Returns if report has been resolved
+    /// @notice This function returns if report has been resolved    
+    /// @param reportId Report number to be checked
+    /// @return True if it has been solved
     function isReportSolved(uint256 reportId) public view returns(bool){
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
         return reportVote.resolved;
     }
 
-    //Returns report resolution
+    /// @notice This function returns report resolution     
+    /// @param reportId Report number to be checked
+    /// @return True if it has been resolved positively
     function reportResolution(uint256 reportId) public view returns(bool){
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
         return reportVote.resolution;
     }
     
-    //Get if majority voted and the resolution of the votes
+    /// @notice This function returns if the majority of the commitee voted and the resolution of the votes
+    /// @param reportId Report number to be checked
+    /// @return isMajorityReached result Returns True if the majority has voted and the true if the result is positive
     function getCommitteeMajorityReachedResult(uint256 reportId) private view returns(bool isMajorityReached, bool result) {        
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -136,7 +157,9 @@ contract LosslessGovernance is Initializable, AccessControl {
         return (false, false);
     }
 
-    //Add committee members
+    /// @notice This function adds committee members    
+    /// @param members Array of members to be added
+    /// @param newQuorum New quorum number, based on the members
     function addCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin  {
         
         require(newQuorum > 0, "LSS: Quorum cannot be zero");
@@ -152,7 +175,9 @@ contract LosslessGovernance is Initializable, AccessControl {
         }
     } 
 
-    //Remove Committee members
+    /// @notice This function removes Committee members    
+    /// @param members Array of members to be added
+    /// @param newQuorum New quorum number, based on the members
     function removeCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin  {
         
         require(committeeMembersCount != 0, "LSS: committee has no members");
@@ -169,7 +194,9 @@ contract LosslessGovernance is Initializable, AccessControl {
         }
     }
 
-    //Auto change Quorum
+    /// @notice This function automatically updates the quorum number
+    /// @dev Not yet implemented
+    /// @param _newTeamSize Size of the committee 
     function _updateQuorum(uint256 _newTeamSize) private {
         if (_newTeamSize != 0) {
             quorumSize = ((_newTeamSize/2)+1);
@@ -178,7 +205,10 @@ contract LosslessGovernance is Initializable, AccessControl {
         }
     }
 
-    //LossLess Team voting
+    /// @notice This function emits a vote on a report by the Lossless Team
+    /// @dev Only can be run by the Lossless Admin
+    /// @param reportId Report to cast the vote
+    /// @param vote Resolution
     function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
@@ -194,7 +224,10 @@ contract LosslessGovernance is Initializable, AccessControl {
         reportVote.votes[lssTeamVoteIndex] = vote;
     }
 
-    //Token Team voting
+    /// @notice This function emits a vote on a report by the Token Owners
+    /// @dev Only can be run by the Token admin
+    /// @param reportId Report to cast the vote
+    /// @param vote Resolution
     function tokenOwnersVote(uint256 reportId, bool vote) public {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
@@ -212,7 +245,10 @@ contract LosslessGovernance is Initializable, AccessControl {
         reportVote.votes[tokenOwnersVoteIndex] = vote;
     }
 
-    //Committee members voting
+    /// @notice This function emits a vote on a report by a Committee member
+    /// @dev Only can be run by a committee member
+    /// @param reportId Report to cast the vote
+    /// @param vote Resolution
     function committeeMemberVote(uint256 reportId, bool vote) public {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
         require(isCommitteeMember(msg.sender), "LSS: Caller is not member");
@@ -236,7 +272,11 @@ contract LosslessGovernance is Initializable, AccessControl {
         }
     }
 
-    //Report resolution
+    /// @notice This function solves a reported based on the voting resolution of the three pilars
+    /// @dev Only can be run by the three pilars.
+    /// When the report gets resolved, if it's resolved negatively, the reported address gets removed from the blacklist
+    /// If the report is solved positively, the funds of the reported account get retrieved in order to be distributed among stakers and the reporter.
+    /// @param reportId Report to be resolved
     function resolveReport(uint256 reportId) public {
 
         require(hasRole(COMMITTEE_ROLE, msg.sender) 
