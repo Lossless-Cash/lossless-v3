@@ -339,29 +339,315 @@ describe.only('Lossless TestSuite', () => {
 
         });
       });
-      describe('Lossless Reporting', ()=>{
-        describe('when generating a report', ()=>{
-          beforeEach(async ()=>{
-            await lssController.connect(lssAdmin).addToWhitelist(lssReporting.address);
-          
-            await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount);
-            await lssToken.connect(lssInitialHolder).transfer(reporter2.address, stakeAmount);
+    });
+    describe('Lossless Reporting', ()=>{
+      describe('when generating a report', ()=>{
+        beforeEach(async ()=>{
+          await lssController.connect(lssAdmin).addToWhitelist(lssReporting.address);
+        
+          await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(reporter2.address, stakeAmount);
 
-            await lssToken.connect(reporter1).approve(lssReporting.address, stakeAmount);
+          await lssToken.connect(reporter1).approve(lssReporting.address, stakeAmount);
 
-            await ethers.provider.send('evm_increaseTime', [
-              Number(time.duration.minutes(5)),
-            ]);
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.minutes(5)),
+          ]);
+        });
+        describe('when reporting a whitelisted account', ()=>{
+          it('should revert', async ()=>{
+            await expect(
+              lssReporting.connect(reporter1).report(randToken.address, lssReporting.address),
+            ).to.be.revertedWith("LSS: Cannot report LSS protocol");
           });
-          describe('when reporting a whitelisted account', ()=>{
-            it('should revert', async ()=>{
-              await expect(
-                lssReporting.connect(reporter1).report(randToken.address, lssReporting.address),
-              ).to.be.revertedWith("LSS: Cannot report LSS protocol");
-            });
+        });
+
+        describe('when succesfully generating a report', ()=>{
+          it('should not revert', async ()=>{
+            await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+
+            expect(
+              await lssReporting.getReportTimestamps(1)
+            ).to.not.be.empty;
+          });
+
+          it('should blacklist address', async ()=>{
+
+            await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+
+            expect(
+              await lssController.isBlacklisted(maliciousActor1.address),
+            ).to.be.equal(true);
+          });
+        });
+
+        describe('when reporting the same token and address twice', ()=>{
+          it('should revert', async ()=>{
+
+            await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+
+            await expect(
+               lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address),
+            ).to.be.revertedWith("LSS: Report already exists");
+          });
+        });
+
+      });
+
+      describe('when generating another report', ()=>{
+        beforeEach(async () => {
+          await lssController.connect(lssAdmin).addToWhitelist(lssReporting.address);
+        
+          await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount*2);
+          await lssToken.connect(lssInitialHolder).transfer(reporter2.address, stakeAmount);
+
+          await lssToken.connect(reporter1).approve(lssReporting.address, stakeAmount*2);
+
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.minutes(5)),
+          ]);
+
+          await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+        });
+
+        describe('when generating another report successfully', ()=>{
+          it('should not revert', async ()=>{
+            await expect(
+              lssReporting.connect(reporter1).reportAnother(1, randToken.address, maliciousActor2.address),
+            ).to.not.be.reverted;
+          });
+        });
+
+        describe('when reporting another on a whitelisted account', ()=>{
+          it('should revert', async ()=>{
+            await expect(
+              lssReporting.connect(reporter1).reportAnother(1, randToken.address, lssReporting.address),
+            ).to.be.revertedWith("LSS: Cannot report LSS protocol");
+          });
+        });
+
+        describe('when reporting another on a non existant report', ()=>{
+          it('should revert', async ()=>{
+            await expect(
+              lssReporting.connect(reporter1).reportAnother(5, randToken.address, maliciousActor1.address),
+            ).to.be.revertedWith("LSS: report does not exists");
+          });
+        });
+
+        describe('when reporting another by other than the original reporter', ()=>{
+          it('should revert', async ()=>{
+            await expect(
+              lssReporting.connect(reporter2).reportAnother(1, randToken.address, maliciousActor1.address),
+            ).to.be.revertedWith("LSS: invalid reporter");
+          });
+        });
+
+        describe('when reporting another multiple times', ()=>{
+          it('should revert', async ()=>{
+            await expect(
+              lssReporting.connect(reporter2).reportAnother(1, randToken.address, maliciousActor1.address),
+            ).to.be.revertedWith("LSS: invalid reporter");
           });
         });
       });
+
+    });
+    describe('Lossless Staking', ()=>{
+      describe('when the staking period is active', ()=>{
+        beforeEach(async ()=>{
+          await lssController.connect(lssAdmin).addToWhitelist(lssReporting.address);
+          
+          await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(staker1.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(staker2.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(staker3.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(staker4.address, stakeAmount);
+  
+          await lssToken.connect(reporter1).approve(lssReporting.address, stakeAmount);
+          await lssToken.connect(staker1).approve(lssStaking.address, stakeAmount);
+          await lssToken.connect(staker2).approve(lssStaking.address, stakeAmount)
+          await lssToken.connect(staker3).approve(lssStaking.address, stakeAmount);
+          await lssToken.connect(staker4).approve(lssStaking.address, stakeAmount);;
+  
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.minutes(5)),
+          ]);
+  
+          await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+        });
+  
+        describe('when staking before the cooldown period', ()=> {
+          it('should revert', async ()=>{
+            await expect(
+              lssStaking.connect(staker1).stake(1),
+            ).to.be.revertedWith("LSS: Must wait 1 minute to stake");
+          });
+        });
+
+        describe('when staking successfully', ()=> {
+          it('should not revert', async ()=>{
+            await ethers.provider.send('evm_increaseTime', [
+              Number(time.duration.minutes(10)),
+            ]);
+
+            await lssStaking.connect(staker1).stake(1);
+
+            expect(
+              await lssStaking.getIsAccountStaked(1, staker1.address)
+            ).to.be.equal(true);
+            });
+          });
+
+        describe('when staking successfully with multiple addresses', ()=> {
+          it('should not revert', async ()=>{
+            await ethers.provider.send('evm_increaseTime', [
+              Number(time.duration.minutes(10)),
+            ]);
+
+            await lssStaking.connect(staker1).stake(1);
+
+            expect(
+              await lssStaking.getIsAccountStaked(1, staker1.address)
+            ).to.be.equal(true);
+
+            await lssStaking.connect(staker2).stake(1);
+
+            expect(
+              await lssStaking.getIsAccountStaked(1, staker2.address)
+            ).to.be.equal(true);
+
+            await lssStaking.connect(staker3).stake(1);
+
+            expect(
+              await lssStaking.getIsAccountStaked(1, staker3.address)
+            ).to.be.equal(true);
+
+            await lssStaking.connect(staker4).stake(1);
+
+            expect(
+              await lssStaking.getIsAccountStaked(1, staker4.address)
+            ).to.be.equal(true);
+          });
+        });
+  
+        describe('when staking on a non existant report', ()=>  {
+          it('should revert', async ()=>{
+            await ethers.provider.send('evm_increaseTime', [
+              Number(time.duration.minutes(10)),
+            ]);
+
+            await expect(
+              lssStaking.connect(staker1).stake(5),
+            ).to.be.revertedWith("LSS: report does not exists");
+          });
+        });
+  
+        describe('when staker has insufficient balance', ()=>  {
+          it('should revert', async ()=>{
+            await ethers.provider.send('evm_increaseTime', [
+              Number(time.duration.minutes(10)),
+            ]);
+
+            await expect(
+              lssStaking.connect(staker5).stake(1),
+            ).to.be.revertedWith("LSS: Not enough $LSS to stake");
+          });
+        });
+  
+        describe('when staking twice on the same report', ()=>  {
+          it('should revert', async ()=>{
+            await ethers.provider.send('evm_increaseTime', [
+              Number(time.duration.minutes(10)),
+            ]);
+
+            await lssStaking.connect(staker1).stake(1);
+
+            await expect(
+              lssStaking.connect(staker1).stake(1),
+            ).to.be.revertedWith("LSS: already staked");
+          });
+        });
+  
+        describe('when the reporter tries to stake on their report', ()=> {
+          it('should revert', async ()=>{
+            await ethers.provider.send('evm_increaseTime', [
+              Number(time.duration.minutes(10)),
+            ]);
+ 
+            await expect(
+              lssStaking.connect(reporter1).stake(1),
+            ).to.be.revertedWith( "LSS: reporter can not stake");
+          });
+        });
+      });
+
+      describe('when the staking period is inactive', ()=>{
+        beforeEach(async ()=>{
+          await lssController.connect(lssAdmin).addToWhitelist(lssReporting.address);
+          
+          await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(staker1.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(staker2.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(staker3.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(staker4.address, stakeAmount);
+  
+          await lssToken.connect(reporter1).approve(lssReporting.address, stakeAmount);
+          await lssToken.connect(staker1).approve(lssStaking.address, stakeAmount);
+          await lssToken.connect(staker2).approve(lssStaking.address, stakeAmount)
+          await lssToken.connect(staker3).approve(lssStaking.address, stakeAmount);
+          await lssToken.connect(staker4).approve(lssStaking.address, stakeAmount);;
+
+          await randToken.connect(lerc20InitialHolder).transfer(maliciousActor1.address, 1000);
+  
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.minutes(5)),
+          ]);
+            
+          await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.minutes(5)),
+          ]);
+
+          await lssStaking.connect(staker1).stake(1);
+
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.minutes(45)),
+          ]);
+
+          await lssStaking.connect(staker2).stake(1);
+
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.hours(8)),
+          ]);
+
+          await lssStaking.connect(staker3).stake(1);
+
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.hours(10)),
+          ]);
+
+          await lssStaking.connect(staker4).stake(1);
+
+          await lssGovernance.connect(lssAdmin).addCommitteeMembers([member1.address, member2.address, member3.address], 2);
+          
+          await lssGovernance.connect(lssAdmin).losslessVote(1, true);
+          await lssGovernance.connect(lerc20Admin).tokenOwnersVote(1, true);
+          await lssGovernance.connect(member1).committeeMemberVote(1, true);
+          await lssGovernance.connect(member2).committeeMemberVote(1, true);
+
+          await lssGovernance.connect(lssAdmin).resolveReport(1);
+        });
+        describe('when trying to stake', ()=>{
+          it('shold revert', async ()=> {
+            await expect(
+              lssStaking.connect(staker1).stake(1),
+            ).to.be.revertedWith("LSS: Report already resolved");
+          });
+        });
+      });
+
+
     });
   }); 
 });

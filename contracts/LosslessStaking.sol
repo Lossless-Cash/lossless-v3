@@ -37,6 +37,7 @@ interface ILssController {
 
 interface ILssGovernance {
     function reportResolution(uint256 reportId) external view returns(bool);
+    function isReportSolved(uint256 reportId) external view returns(bool);
 }
 
 /// @title Lossless Staking Contract
@@ -250,6 +251,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// A reported address cannot stake.
     /// @param reportId Report to stake
     function stake(uint256 reportId) public notBlacklisted {
+        require(!losslessGovernance.isReportSolved(reportId), "LSS: Report already resolved");
         require(!getIsAccountStaked(reportId, _msgSender()), "LSS: already staked");
         require(losslessReporting.getReporter(reportId) != _msgSender(), "LSS: reporter can not stake");   
 
@@ -365,7 +367,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         require( losslessReporting.getReporter(reportId) != _msgSender(), "LSS: Must user reporterClaim");
         require(!getPayoutStatus(_msgSender(), reportId), "LSS: You already claimed");
-        require(losslessGovernance.reportResolution(reportId), "LSS: Report still open");
+        require(!losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
         uint256 amountToClaim;
         uint256 stakeAmount;
@@ -385,7 +387,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         
         require( losslessReporting.getReporter(reportId) == _msgSender(), "LSS: Must user stakerClaim");
         require(!getPayoutStatus(_msgSender(), reportId), "LSS: You already claimed");
-        require(losslessGovernance.reportResolution(reportId), "LSS: Report still open");
+        require(!losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
         uint256 amountToClaim;
         uint256 stakeAmount;
