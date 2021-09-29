@@ -249,7 +249,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportedAddress[reportId] = account;
 
         
-        amountReported[reportId] = losslessToken.balanceOf(account);
+        amountReported[reportId] = ILERC20(token).balanceOf(account);
 
         losslessController.activateEmergency(token);
         emit ReportSubmitted(token, account, reportId);

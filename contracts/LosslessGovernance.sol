@@ -15,9 +15,9 @@ interface ILssReporting {
 
 interface ILssController {
     function getReportLifetime() external view returns(uint256);
-    function retreiveBlacklistedFunds(address[] calldata _addresses) external;
+    function retreiveBlacklistedFunds(address[] calldata _addresses, address token) external;
     function resolvedNegatively(address _adr) external;
-    function retrieveBlacklistedToStaking(uint256 reportId) external;
+    function retrieveBlacklistedToStaking(uint256 reportId, address token) external;
     function deactivateEmergency(address token) external;
 }
 
@@ -284,6 +284,9 @@ contract LosslessGovernance is Initializable, AccessControl {
                 || msg.sender == ILERC20(losslessReporting.getTokenFromReport(reportId)).admin(),
                 "LSS: Role cannot resolve.");
         
+        address token;
+        token = losslessReporting.getTokenFromReport(reportId);
+
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
         require(!isReportSolved(reportId), "LSS: Report already resolved");
@@ -312,16 +315,17 @@ contract LosslessGovernance is Initializable, AccessControl {
 
         reportedAddresses.push(reportedAddress);
 
+        losslessController.deactivateEmergency(token);
+        
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
-            losslessController.retreiveBlacklistedFunds(reportedAddresses);
-            losslessController.retrieveBlacklistedToStaking(reportId);
+            losslessController.retreiveBlacklistedFunds(reportedAddresses, token);
+            losslessController.retrieveBlacklistedToStaking(reportId, token);
         }else{
             reportVote.resolution = false;
             losslessController.resolvedNegatively(reportedAddress);
         }
         
-        losslessController.deactivateEmergency(losslessReporting.getTokenFromReport(reportId));
         reportVote.resolved = true;
         delete reportedAddresses;
     }

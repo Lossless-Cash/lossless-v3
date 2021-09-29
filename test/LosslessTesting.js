@@ -580,29 +580,28 @@ describe.only('Lossless TestSuite', () => {
           });
         });
       });
-
       describe('when the staking period is inactive', ()=>{
         beforeEach(async ()=>{
           await lssController.connect(lssAdmin).addToWhitelist(lssReporting.address);
           
-          await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount);
-          await lssToken.connect(lssInitialHolder).transfer(staker1.address, stakeAmount);
-          await lssToken.connect(lssInitialHolder).transfer(staker2.address, stakeAmount);
-          await lssToken.connect(lssInitialHolder).transfer(staker3.address, stakeAmount);
-          await lssToken.connect(lssInitialHolder).transfer(staker4.address, stakeAmount);
+          await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount*2);
+          await lssToken.connect(lssInitialHolder).transfer(staker1.address, stakeAmount*2);
+          await lssToken.connect(lssInitialHolder).transfer(staker2.address, stakeAmount*2);
+          await lssToken.connect(lssInitialHolder).transfer(staker3.address, stakeAmount*2);
+          await lssToken.connect(lssInitialHolder).transfer(staker4.address, stakeAmount*2);
   
-          await lssToken.connect(reporter1).approve(lssReporting.address, stakeAmount);
-          await lssToken.connect(staker1).approve(lssStaking.address, stakeAmount);
-          await lssToken.connect(staker2).approve(lssStaking.address, stakeAmount)
-          await lssToken.connect(staker3).approve(lssStaking.address, stakeAmount);
-          await lssToken.connect(staker4).approve(lssStaking.address, stakeAmount);;
+          await lssToken.connect(reporter1).approve(lssReporting.address, stakeAmount*2);
+          await lssToken.connect(staker1).approve(lssStaking.address, stakeAmount*2);
+          await lssToken.connect(staker2).approve(lssStaking.address, stakeAmount*2)
+          await lssToken.connect(staker3).approve(lssStaking.address, stakeAmount*2);
+          await lssToken.connect(staker4).approve(lssStaking.address, stakeAmount*2);;
 
           await randToken.connect(lerc20InitialHolder).transfer(maliciousActor1.address, 1000);
   
           await ethers.provider.send('evm_increaseTime', [
             Number(time.duration.minutes(5)),
           ]);
-            
+
           await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
 
           await ethers.provider.send('evm_increaseTime', [
@@ -638,16 +637,52 @@ describe.only('Lossless TestSuite', () => {
 
           await lssGovernance.connect(lssAdmin).resolveReport(1);
         });
+
         describe('when trying to stake', ()=>{
-          it('shold revert', async ()=> {
+          it('should revert', async ()=> {
             await expect(
               lssStaking.connect(staker1).stake(1),
             ).to.be.revertedWith("LSS: Report already resolved");
           });
         });
+
+        describe('when veryfying claim amounts', ()=>{
+
+          describe('when verifying reporter claimable amount by a non reporter', ()=>{
+            it('should revert', async ()=> {
+              await expect(
+                lssStaking.connect(staker1).reporterClaimableAmount(1),
+              ).to.be.revertedWith("LSS: Must be the reporter");
+            });
+          });
+
+          describe('when verifying staker claimable amount by the reporter', ()=>{
+            it('should revert', async ()=> {
+              await expect(
+                lssStaking.connect(reporter1).stakerClaimableAmount(1),
+              ).to.be.revertedWith("LSS: You're not staking");
+            });
+          });
+
+          describe('when verifying reporter claimable amount by the reporter', ()=>{
+            it('should return amount', async ()=> {
+              expect(
+                await lssStaking.connect(reporter1).reporterClaimableAmount(1),
+              ).to.not.be.empty;
+            });
+          });
+
+          describe('when verifying staker claimable amount by a staker', ()=>{
+            it('should return amount', async ()=> {
+              expect(
+                await lssStaking.connect(staker1).stakerClaimableAmount(1),
+              ).to.not.be.empty;
+            });
+          });
+
+
+        });
       });
-
-
     });
   }); 
 });

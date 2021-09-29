@@ -465,18 +465,18 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     /// @notice This function retrieves the funds of the reported account
     /// @param _addresses Array of addreses to retrieve the locked funds
-    function retreiveBlacklistedFunds(address[] calldata _addresses) public onlyFromAdminOrLssSC {
+    function retreiveBlacklistedFunds(address[] calldata _addresses, address token) public onlyFromAdminOrLssSC {
         uint256 blacklistedAmount;
 
         for(uint256 i; i < _addresses.length; i++) {
-            blacklistedAmount += losslessToken.balanceOf(_addresses[i]);
+            blacklistedAmount += ILERC20(token).balanceOf(_addresses[i]);
         }
-        losslessToken.transferOutBlacklistedFunds(_addresses);
+        ILERC20(token).transferOutBlacklistedFunds(_addresses);
     }
 
-    function retrieveBlacklistedToStaking(uint256 reportId) public onlyFromAdminOrLssSC{
+    function retrieveBlacklistedToStaking(uint256 reportId, address token) public onlyFromAdminOrLssSC{
         uint256 retrieveAmount = losslessReporting.getAmountReported(reportId);
-        losslessToken.transfer(losslessStakingingAddress, retrieveAmount);
+        ILERC20(token).transfer(losslessStakingingAddress, retrieveAmount);
     }
 
     // --- BEFORE HOOKS ---
