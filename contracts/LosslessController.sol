@@ -96,6 +96,13 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     mapping(address => EmergencyMode) private emergencyMode;
+    
+    struct ReporterClaimStatus {
+        uint256 reportId;
+        bool claimed;
+    }
+
+    mapping(address => ReporterClaimStatus[])  private reporterClaimStatus;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -281,6 +288,24 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         lockTimeframe = _seconds * 1 seconds;
     }
 
+    /// @notice This function sets the payout status of a reporter
+    /// @param _reporter Reporter address
+    /// @param status Payout status 
+    function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) public onlyFromAdminOrLssSC {
+        for(uint256 i; i < reporterClaimStatus[_reporter].length; i++) {
+            if (reporterClaimStatus[_reporter][i].reportId == reportId) {
+                reporterClaimStatus[_reporter][i].claimed = status;
+            }
+        }
+    }
+
+    /// @notice This function add a reporter to the claim Status
+    /// @param _reporter Reporter address
+    /// @param reportId Report ID
+    function addReporter(address _reporter, uint256 reportId) public onlyFromAdminOrLssSC {
+        reporterClaimStatus[_reporter].push(ReporterClaimStatus(reportId, false));
+    }
+
     /// @notice This function adds to the total coefficient per report
     /// @dev It takes part on the claimableAmount calculation of the Lossless Staking contract
     /// @param reportId Report to be added the coefficient
@@ -344,6 +369,17 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
             i += 1;
         }
         return lockedAmount;
+    }
+
+    /// @notice This function returns  the payout status of a reporter
+    /// @param _reporter Reporter address
+    /// @return status Payout status 
+    function getReporterPayoutStatus(address _reporter, uint256 reportId) public view returns (bool) {
+        for(uint256 i; i < reporterClaimStatus[_reporter].length; i++) {
+            if (reporterClaimStatus[_reporter][i].reportId == reportId) {
+                return reporterClaimStatus[_reporter][i].claimed ;
+            }
+        }
     }
 
     /// @notice This function will calculate the available amount that an address has to transfer. 

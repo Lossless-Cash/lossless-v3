@@ -24,6 +24,7 @@ interface ILssController {
     function addToBlacklist(address _adr) external;
     function isWhitelisted(address _adr) external view returns (bool);
     function activateEmergency(address token) external;
+    function addReporter(address _reporter, uint256 reportId) external;
 }
 
 /// @title Lossless Reporting Contract
@@ -247,11 +248,12 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
-
         
         amountReported[reportId] = ILERC20(token).balanceOf(account);
 
         losslessController.activateEmergency(token);
+
+        losslessController.addReporter(_msgSender(), reportId);
         emit ReportSubmitted(token, account, reportId);
     }
 

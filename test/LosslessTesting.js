@@ -70,29 +70,29 @@ describe.only('Lossless TestSuite', () => {
         lssPauseAdmin,
         lssRecoveryAdmin,
         lssBackupAdmin,
-        lerc20InitialHolder,
-        lerc20Admin,
-        lerc20PauseAdmin,
-        lerc20RecoveryAdmin,
-        lerc20BackupAdmin,
-        member1,
-        member2,
-        member3,
-        member4,
-        member5,
-       maliciousActor1,
-       maliciousActor2,
-       maliciousActor3,
-        reporter1,
-        reporter2,
-      ] = await ethers.getSigners();
-
-      [
         staker1,
         staker2,
         staker3,
         staker4,
         staker5,
+        member1,
+        member2,
+        member3,
+        member4,
+        member5,
+        maliciousActor1,
+        maliciousActor2,
+        maliciousActor3,
+        reporter1,
+        reporter2,
+      ] = await ethers.getSigners();
+
+      [
+        lerc20InitialHolder,
+        lerc20Admin,
+        lerc20PauseAdmin,
+        lerc20RecoveryAdmin,
+        lerc20BackupAdmin,
         regularUser1,
         regularUser2,
         regularUser3,
@@ -585,7 +585,7 @@ describe.only('Lossless TestSuite', () => {
           await lssController.connect(lssAdmin).addToWhitelist(lssReporting.address);
           
           await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount*2);
-          await lssToken.connect(lssInitialHolder).transfer(staker1.address, stakeAmount*2);
+          await lssToken.connect(lssInitialHolder).transfer(staker1.address, stakeAmount+stakeAmount);
           await lssToken.connect(lssInitialHolder).transfer(staker2.address, stakeAmount*2);
           await lssToken.connect(lssInitialHolder).transfer(staker3.address, stakeAmount*2);
           await lssToken.connect(lssInitialHolder).transfer(staker4.address, stakeAmount*2);
@@ -636,6 +636,10 @@ describe.only('Lossless TestSuite', () => {
           await lssGovernance.connect(member2).committeeMemberVote(1, true);
 
           await lssGovernance.connect(lssAdmin).resolveReport(1);
+
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.minutes(5)),
+          ]);
         });
 
         describe('when trying to stake', ()=>{
@@ -646,7 +650,7 @@ describe.only('Lossless TestSuite', () => {
           });
         });
 
-        describe('when veryfying claim amounts', ()=>{
+        describe('when claiming', ()=>{
 
           describe('when verifying reporter claimable amount by a non reporter', ()=>{
             it('should revert', async ()=> {
@@ -680,8 +684,89 @@ describe.only('Lossless TestSuite', () => {
             });
           });
 
+          describe('when stakers claims', ()=>{
+            it('should not revert', async ()=> {
 
+              let balance;
+              expect(
+                balance = await randToken.balanceOf(staker1.address),
+              ).to.be.equal(0);
+
+              expect(
+              balance = await lssToken.balanceOf(staker1.address),
+              ).to.be.equal(2500);
+
+              await lssStaking.connect(staker1).stakerClaim(1);
+
+              expect(
+                await randToken.balanceOf(staker1.address),
+              ).to.not.be.equal(0);
+
+              expect(
+                balance = await lssToken.balanceOf(staker1.address),
+              ).to.be.equal(stakeAmount*2);
+            });
+          });
+
+          describe('when stakers claims two times', ()=>{
+            it('should revert', async ()=> {
+
+              await lssStaking.connect(staker1).stakerClaim(1);
+
+              await expect(
+                 lssStaking.connect(staker1).stakerClaim(1),
+              ).to.be.revertedWith("LSS: You already claimed");
+            });
+          });
+
+          describe('when all stakers claims', ()=>{
+            it('should not revert', async ()=> {
+
+              await expect(
+                lssStaking.connect(staker1).stakerClaim(1),
+                lssStaking.connect(staker2).stakerClaim(1),
+                lssStaking.connect(staker3).stakerClaim(1),
+                lssStaking.connect(staker4).stakerClaim(1),
+              ).to.not.be.reverted;
+          });
         });
+
+        describe('when reporter claims', ()=>{
+          it('should not revert', async ()=> {
+
+            let balance;
+            expect(
+              balance = await randToken.balanceOf(reporter1.address),
+            ).to.be.equal(0);
+
+            expect(
+            balance = await lssToken.balanceOf(reporter1.address),
+            ).to.be.equal(2500);
+
+            await lssStaking.connect(reporter1).reporterClaim(1);
+
+            expect(
+              await randToken.balanceOf(reporter1.address),
+            ).to.be.equal(20);
+
+            expect(
+              balance = await lssToken.balanceOf(reporter1.address),
+            ).to.be.equal(stakeAmount*2);
+          });
+        });
+
+        describe('when reporter claims two times', ()=>{
+          it('should revert', async ()=> {
+
+            await lssStaking.connect(reporter1).reporterClaim(1);
+            
+            await expect(
+               lssStaking.connect(reporter1).reporterClaim(1),
+            ).to.be.revertedWith("LSS: You already claimed");
+          });
+        });
+
+      });
       });
     });
   }); 

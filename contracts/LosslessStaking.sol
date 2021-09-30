@@ -33,6 +33,8 @@ interface ILssController {
     function getReportLifetime() external view returns (uint256);
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
     function getReportCoefficient(uint256 reportId) external view returns (uint256);
+    function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool);
+    function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
 }
 
 interface ILssGovernance {
@@ -367,7 +369,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         require( losslessReporting.getReporter(reportId) != _msgSender(), "LSS: Must user reporterClaim");
         require(!getPayoutStatus(_msgSender(), reportId), "LSS: You already claimed");
-        require(!losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
+        require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
         uint256 amountToClaim;
         uint256 stakeAmount;
@@ -386,8 +388,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function reporterClaim(uint256 reportId) public notBlacklisted{
         
         require( losslessReporting.getReporter(reportId) == _msgSender(), "LSS: Must user stakerClaim");
-        require(!getPayoutStatus(_msgSender(), reportId), "LSS: You already claimed");
-        require(!losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
+        require(!losslessController.getReporterPayoutStatus(_msgSender(), reportId), "LSS: You already claimed");
+        require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
         uint256 amountToClaim;
         uint256 stakeAmount;
@@ -398,8 +400,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         ILERC20(losslessReporting.getTokenFromReport(reportId)).transfer(_msgSender(), amountToClaim);
         losslessToken.transfer(_msgSender(), stakeAmount);
 
-        setPayoutStatus(reportId, _msgSender());
-
+        losslessController.setReporterPayoutStatus(_msgSender(), true, reportId);
     }
 
     // --- GETTERS ---
