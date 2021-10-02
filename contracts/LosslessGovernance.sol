@@ -234,12 +234,12 @@ contract LosslessGovernance is Initializable, AccessControl {
         uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessController.getReportLifetime() > block.timestamp, "LSS: report is not valid");
 
-        require(ILERC20(losslessReporting.getTokenFromReport(reportId)).admin() == msg.sender, "LSS: must be project team");
+        require(ILERC20(losslessReporting.getTokenFromReport(reportId)).admin() == msg.sender, "LSS: must be token owner");
 
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
 
-        require(!reportVote.voted[tokenOwnersVoteIndex], "LSS: team already voted");
+        require(!reportVote.voted[tokenOwnersVoteIndex], "LSS: owners already voted");
         
         reportVote.voted[tokenOwnersVoteIndex] = true;
         reportVote.votes[tokenOwnersVoteIndex] = vote;
@@ -251,7 +251,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @param vote Resolution
     function committeeMemberVote(uint256 reportId, bool vote) public {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
-        require(isCommitteeMember(msg.sender), "LSS: Caller is not member");
+        require(isCommitteeMember(msg.sender), "LSS: must be a committee member");
 
         uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessController.getReportLifetime() > block.timestamp, "LSS: report is not valid");
