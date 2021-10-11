@@ -98,11 +98,12 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     mapping(address => EmergencyMode) private emergencyMode;
     
     struct ReporterClaimStatus {
-        uint256 reportId;
-        bool claimed;
+        mapping(uint256 => bool) reportIdClaimStatus;
+    //    uint256 reportId;
+    //    bool claimed;
     }
 
-    mapping(address => ReporterClaimStatus[])  private reporterClaimStatus;
+    mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -292,18 +293,14 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     /// @param _reporter Reporter address
     /// @param status Payout status 
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) public onlyFromAdminOrLssSC {
-        for(uint256 i; i < reporterClaimStatus[_reporter].length; i++) {
-            if (reporterClaimStatus[_reporter][i].reportId == reportId) {
-                reporterClaimStatus[_reporter][i].claimed = status;
-            }
-        }
+        reporterClaimStatus[_reporter].reportIdClaimStatus[reportId] = status;
     }
 
     /// @notice This function add a reporter to the claim Status
     /// @param _reporter Reporter address
     /// @param reportId Report ID
     function addReporter(address _reporter, uint256 reportId) public onlyFromAdminOrLssSC {
-        reporterClaimStatus[_reporter].push(ReporterClaimStatus(reportId, false));
+        reporterClaimStatus[_reporter].reportIdClaimStatus[reportId] = false;
     }
 
     /// @notice This function adds to the total coefficient per report
@@ -335,7 +332,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     /// @notice This function will return the contract version 
     function getVersion() public pure returns (uint256) {
-        return 1;
+        return 3;
     }
 
     /// @notice This function will return if the address is blacklisted/reported
@@ -375,11 +372,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     /// @param _reporter Reporter address
     /// @return status Payout status 
     function getReporterPayoutStatus(address _reporter, uint256 reportId) public view returns (bool) {
-        for(uint256 i; i < reporterClaimStatus[_reporter].length; i++) {
-            if (reporterClaimStatus[_reporter][i].reportId == reportId) {
-                return reporterClaimStatus[_reporter][i].claimed ;
-            }
-        }
+        return reporterClaimStatus[_reporter].reportIdClaimStatus[reportId];
     }
 
     /// @notice This function will calculate the available amount that an address has to transfer. 
