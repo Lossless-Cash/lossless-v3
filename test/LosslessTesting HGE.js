@@ -62,7 +62,7 @@ const lerc20InitialSupply = 2000000;
 const { ZERO_ADDRESS } = constants;
 
 
-describe('Lossless TestSuite', () => {
+describe.only('Lossless TestSuite for High Gas Environments', () => {
   beforeEach(async () => {
       [
         lssInitialHolder,
@@ -101,7 +101,7 @@ describe('Lossless TestSuite', () => {
       ] = await ethers.getSigners();
 
     const LosslessController = await ethers.getContractFactory(
-        'LosslessController',
+        'LosslessControllerHGE',
       );
   
       const LosslessStaking = await ethers.getContractFactory(
