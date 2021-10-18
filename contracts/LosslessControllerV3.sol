@@ -99,8 +99,6 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     
     struct ReporterClaimStatus {
         mapping(uint256 => bool) reportIdClaimStatus;
-    //    uint256 reportId;
-    //    bool claimed;
     }
 
     mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
@@ -111,25 +109,25 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
     // --- MODIFIERS ---
 
-    /// @notice Avoids execution form other than the Recovery Admin
+    /// @notice Avoids execution from other than the Recovery Admin
     modifier onlyLosslessRecoveryAdmin() {
         require(_msgSender() == recoveryAdmin, "LSS: Must be recoveryAdmin");
         _;
     }
 
-    /// @notice Avoids execution form other than the Lossless Admin
+    /// @notice Avoids execution from other than the Lossless Admin
     modifier onlyLosslessAdmin() {
         require(admin == _msgSender(), "LSS: Must be admin");
         _;
     }
 
-    /// @notice Avoids execution form other than the Pause Admin
+    /// @notice Avoids execution from other than the Pause Admin
     modifier onlyPauseAdmin() {
         require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
         _;
     }
 
-    /// @notice Avoids execution form other than the Lossless Admin or Lossless Environment
+    /// @notice Avoids execution from other than the Lossless Admin or Lossless Environment
     modifier onlyFromAdminOrLssSC {
         require(_msgSender() == losslessStakingingAddress ||
                 _msgSender() == losslessReportingAddress  || 
@@ -138,7 +136,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         _;
     }
 
-    /// @notice Avoids execution form blacklisted addresses
+    /// @notice Avoids execution from blacklisted addresses
     modifier notBlacklisted() {
         require(!blacklist[_msgSender()], "LSS: You cannot operate");
         _;
@@ -226,7 +224,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     /// @notice This function adds an address to the blacklist
-    /// @dev Only can be called by the Lossless Admin, and form other Lossless Contracts
+    /// @dev Only can be called by the Lossless Admin, and from other Lossless Contracts
     ///            The address gets blacklisted whenever a report is created on them.
     /// @param _adr Address corresponding to be added to the blacklist mapping
     function addToBlacklist(address _adr) public onlyFromAdminOrLssSC {
@@ -235,16 +233,16 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
     }
 
     /// @notice This function removes an address from the blacklist
-    /// @dev Only can be called by the Lossless Admin, and form other Lossless Contracts
+    /// @dev Only can be called by the Lossless Admin, and from other Lossless Contracts
     ///           The address gets removed from the blacklist when a report gets closed and the resolution being negative.
-    /// @param _adr Address corresponding to be removed form the blacklist mapping
+    /// @param _adr Address corresponding to be removed from the blacklist mapping
     function removeFromBlacklist(address _adr) public onlyFromAdminOrLssSC{
         require(isBlacklisted(_adr), "LSS: Not blacklisted");
         blacklist[_adr] = false;
     }
 
     /// @notice This function calls removeFromBlacklist()
-    /// @param _adr Address corresponding to be removed form the blacklist mapping
+    /// @param _adr Address corresponding to be removed from the blacklist mapping
     function resolvedNegatively(address _adr) public onlyFromAdminOrLssSC {
         removeFromBlacklist(_adr);
     }

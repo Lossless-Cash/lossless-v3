@@ -49,9 +49,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     uint256 public cooldownPeriod;
 
     struct Stake {
-        uint256 reportId;
+        mapping(uint256 => StakeInfo) stakeInfoOnReport;
+    }
+
+    struct StakeInfo {
         uint256 timestamp;
         uint256 coefficient;
+        bool staked;
         bool payed;
     }
 
@@ -69,7 +73,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     mapping(address => bool) whitelist;
     
-    mapping(address => Stake[]) public stakes;
+    mapping(address => Stake) private stakes;
     mapping(uint256 => address[]) public stakers;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -174,8 +178,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function returns all the reports where an address is staking
     /// @param account Staker address
     /// @return All account stakes structured as Stake[] array
-    function getAccountStakes(address account) public view returns(Stake[] memory) {
-        return stakes[account];
+    function getAccountStakes(address account, uint256 reportId) public view returns(StakeInfo memory) {
+        return stakes[account].stakeInfoOnReport[reportId];
     }
 
     /// @notice This function returns the timestamp of when the stake was made
@@ -183,11 +187,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Report being staked
     /// @return Timestamp of the staking
     function getStakingTimestamp(address _address, uint256 reportId) public view returns (uint256){
-        for(uint256 i; i < stakes[_address].length; i++) {
-            if (stakes[_address][i].reportId == reportId) {
-                return stakes[_address][i].timestamp;
-            }
-        }
+        return stakes[_address].stakeInfoOnReport[reportId].timestamp;
     }
 
     /// @notice This function returns if an address has claimed their reward funds
@@ -195,11 +195,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Report being staked
     /// @return True if the address has already claimed
     function getPayoutStatus(address _address, uint256 reportId) public view returns (bool) {
-        for(uint256 i; i < stakes[_address].length; i++) {
-            if (stakes[_address][i].reportId == reportId) {
-                return stakes[_address][i].payed;
-            }
-        }
+        return stakes[_address].stakeInfoOnReport[reportId].payed;
     }
 
     /// @notice This function returns all the stakes made on a report
@@ -214,13 +210,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param account Address to consult
     /// @return True if the account is already staking
     function getIsAccountStaked(uint256 reportId, address account) public view returns(bool) {
-        for(uint256 i; i < stakes[account].length; i++) {
-            if (stakes[account][i].reportId == reportId) {
-                return true;
-            }
-        }
-
-        return false;
+        return stakes[account].stakeInfoOnReport[reportId].staked;
     }
 
 
@@ -239,11 +229,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param _address Staking address
     /// @return The coefficient calculated for the staker
     function getStakerCoefficient(uint256 reportId, address _address) public view returns (uint256) {
-        for(uint256 i; i < stakes[_address].length; i++) {
-            if (stakes[_address][i].reportId == reportId) {
-                return stakes[_address][i].coefficient;
-            }
-        }
+        return stakes[_address].stakeInfoOnReport[reportId].coefficient;
     }
 
     /// @notice This function generates a stake on a report
@@ -270,7 +256,10 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakerCoefficient = calculateCoefficient(reportTimestamp);
 
         stakers[reportId].push(_msgSender());
-        stakes[_msgSender()].push(Stake(reportId, block.timestamp, stakerCoefficient, false));
+        stakes[_msgSender()].stakeInfoOnReport[reportId].timestamp = block.timestamp;
+        stakes[_msgSender()].stakeInfoOnReport[reportId].coefficient = stakerCoefficient;
+        stakes[_msgSender()].stakeInfoOnReport[reportId].payed = false;
+        stakes[_msgSender()].stakeInfoOnReport[reportId].staked = true;
 
         losslessController.addToReportCoefficient(reportId, stakerCoefficient);
         
@@ -282,11 +271,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function sets the payout status to true when claiming
     /// @param reportId Report to change the payout status on
     function setPayoutStatus(uint256 reportId, address _adr) private {
-        for(uint256 i; i < stakes[_adr].length; i++) {
-            if (stakes[_adr][i].reportId == reportId) {
-                stakes[_adr][i].payed = true;
-            }
-        }
+        stakes[_adr].stakeInfoOnReport[reportId].payed = true;
     }
 
     // --- CLAIM ---
