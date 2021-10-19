@@ -287,6 +287,13 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         lockTimeframe = _seconds * 1 seconds;
     }
 
+    /// @notice This function sets the default time that the recieved funds get locked when in emergency mode
+    /// @dev This function should be called in seconds
+    /// @param _seconds Time frame of the recieved funds will be locked
+    function setEmergencyTimeframe(uint256 _seconds) public onlyLosslessAdmin {
+        emergencyCooldown = _seconds * 1 seconds;
+    }
+
     /// @notice This function sets the payout status of a reporter
     /// @param _reporter Reporter address
     /// @param status Payout status 
@@ -520,7 +527,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
         if (emergencyMode[_msgSender()].emergency) {
             require(amount <= (availableAmount/2), "LSS: Emergency mode active, can only transfer half of the available amount");
-            require((block.timestamp - emergencyMode[_msgSender()].emergencyAddressCooldown[sender]) > 15 minutes, "LSS: Emergency mode active, can only transfer every 15 minutes");
+            require((block.timestamp - emergencyMode[_msgSender()].emergencyAddressCooldown[sender]) > emergencyCooldown, "LSS: Emergency mode active, can only transfer every 15 minutes");
         }
 
         if (dexList[recipient] && amount > dexTranferThreshold) {
@@ -534,7 +541,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
             removeExpiredLocks(recipient);
         }
 
-        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + 5 minutes);
+        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + lockTimeframe);
         enqueueLockedFunds(newCheckpoint, recipient);
         emergencyMode[_msgSender()].emergencyAddressCooldown[sender] = block.timestamp;
 
