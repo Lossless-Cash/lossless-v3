@@ -62,7 +62,7 @@ const lerc20InitialSupply = 2000000;
 const { ZERO_ADDRESS } = constants;
 
 
-describe.only('Lossless TestSuite for High Gas Environments', () => {
+describe('Lossless TestSuite for High Gas Environments', () => {
   beforeEach(async () => {
       [
         lssInitialHolder,

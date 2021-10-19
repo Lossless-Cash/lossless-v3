@@ -124,19 +124,19 @@ describe('Lossless TestSuite', () => {
   
       lssReporting = await upgrades.deployProxy(
         LosslessReporting,
-        [lssAdmin.address, lssRecoveryAdmin.address, lssPauseAdmin.address],
+        [lssController.address],
         { initializer: 'initialize' },
       );
 
       lssGovernance = await upgrades.deployProxy(
         LosslessGovernance,
-        [lssAdmin.address, lssRecoveryAdmin.address, lssPauseAdmin.address, lssReporting.address, lssController.address],
+        [lssReporting.address, lssController.address],
         { initializer: 'initialize' },
       );
   
       lssStaking = await upgrades.deployProxy(
         LosslessStaking,
-        [lssAdmin.address, lssRecoveryAdmin.address, lssPauseAdmin.address, lssReporting.address, lssController.address, lssGovernance.address],
+        [lssReporting.address, lssController.address, lssGovernance.address],
         { initializer: 'initialize' },
       );
 
@@ -182,7 +182,7 @@ describe('Lossless TestSuite', () => {
     await lssReporting.connect(lssAdmin).setLosslessFee(10);
     
   });
-  describe('Lossless Environment', () => {
+  describe.only('Lossless Environment', () => {
     describe('On deployment', () =>{ 
         describe('when the Lossless Controller contract has been set up', () =>{
           it('should set the stake amount correctly', async () => {

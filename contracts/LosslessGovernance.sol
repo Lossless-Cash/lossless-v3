@@ -10,7 +10,6 @@ interface ILssReporting {
     function getReportedAddress(uint256 _reportId) external view returns (address);
     function getTokenFromReport(uint256 reportId) external view returns(address);
     function reportedProject(uint256 reportId) external view returns (address);
-    function admin() external view returns (address);
 }
 
 interface ILssController {
@@ -19,6 +18,9 @@ interface ILssController {
     function resolvedNegatively(address _adr) external;
     function retrieveBlacklistedToStaking(uint256 reportId, address token) external;
     function deactivateEmergency(address token) external;
+    function admin() external view returns (address);
+    function pauseAdmin() external view returns (address);
+    function recoveryAdmin() external view returns (address);
 }
 
 interface ILERC20 {
@@ -29,9 +31,6 @@ interface ILERC20 {
 /// @title Lossless Governance Contract
 /// @notice The governance contract is in charge of handling the voting process over the reports and their resolution
 contract LosslessGovernance is Initializable, AccessControl {
-    address public pauseAdmin;
-    address public admin;
-    address public recoveryAdmin;
 
     uint256 public lssTeamVoteIndex;
     uint256 public tokenOwnersVoteIndex;
@@ -60,19 +59,16 @@ contract LosslessGovernance is Initializable, AccessControl {
 
     address[] private reportedAddresses;
 
-    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin, address _losslessReporting, address _losslessController) public initializer {
-        admin = _admin;
-        recoveryAdmin = _recoveryAdmin;
-        pauseAdmin = _pauseAdmin;
+    function initialize(address _losslessReporting, address _losslessController) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
         tokenOwnersVoteIndex = 1;
         committeeVoteIndex = 2;
-        _setupRole(DEFAULT_ADMIN_ROLE, losslessReporting.admin());
+        _setupRole(DEFAULT_ADMIN_ROLE, losslessController.admin());
     }
 
     modifier onlyLosslessAdmin() {
-        require(losslessReporting.admin() == _msgSender(), "LSS: must be admin");
+        require(losslessController.admin() == _msgSender(), "LSS: must be admin");
         _;
     }
 
@@ -280,7 +276,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     function resolveReport(uint256 reportId) public {
 
         require(hasRole(COMMITTEE_ROLE, msg.sender) 
-                || msg.sender == losslessReporting.admin() 
+                || msg.sender == losslessController.admin() 
                 || msg.sender == ILERC20(losslessReporting.getTokenFromReport(reportId)).admin(),
                 "LSS: Role cannot resolve.");
         

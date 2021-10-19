@@ -35,6 +35,9 @@ interface ILssController {
     function getReportCoefficient(uint256 reportId) external view returns (uint256);
     function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool);
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
+    function admin() external view returns (address);
+    function pauseAdmin() external view returns (address);
+    function recoveryAdmin() external view returns (address);
 }
 
 interface ILssGovernance {
@@ -64,9 +67,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     ILssController public losslessController;
     ILssGovernance public losslessGovernance;
 
-    address public pauseAdmin;
-    address public admin;
-    address public recoveryAdmin;
     address public controllerAddress;
     address public governanceAddress;
     address public tokenAddress;
@@ -81,11 +81,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
-    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin, address _losslessReporting, address _losslessController, address _losslessGovernance) public initializer {
+    function initialize(address _losslessReporting, address _losslessController, address _losslessGovernance) public initializer {
        cooldownPeriod = 5 minutes;
-       admin = _admin;
-       recoveryAdmin = _recoveryAdmin;
-       pauseAdmin = _pauseAdmin;
        losslessReporting = ILssReporting(_losslessReporting);
        losslessController = ILssController(_losslessController);
        losslessGovernance = ILssGovernance(_losslessGovernance);
@@ -96,17 +93,17 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     // --- MODIFIERS ---
 
     modifier onlyLosslessRecoveryAdmin() {
-        require(_msgSender() == recoveryAdmin, "LSS: Must be recoveryAdmin");
+        require(_msgSender() == losslessController.recoveryAdmin(), "LSS: Must be recoveryAdmin");
         _;
     }
 
     modifier onlyLosslessAdmin() {
-        require(admin == _msgSender(), "LSS: Must be admin");
+        require(losslessController.admin() == _msgSender(), "LSS: Must be admin");
         _;
     }
 
     modifier onlyLosslessPauseAdmin() {
-        require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
+        require(_msgSender() == losslessController.pauseAdmin(), "LSS: Must be pauseAdmin");
         _;
     }
 
@@ -117,7 +114,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     modifier onlyFromAdminOrLssSC {
         require(_msgSender() == controllerAddress ||
-                _msgSender() == admin, "LSS: Admin or LSS SC only");
+                _msgSender() == losslessController.admin(), "LSS: Admin or LSS SC only");
         _;
     }
 
@@ -133,31 +130,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function unpause() public onlyLosslessPauseAdmin {
         _unpause();
     }
-
-    /// @notice This function sets a new admin
-    /// @dev Only can be called by the Recovery admin
-    /// @param newAdmin Address corresponding to the new Lossless Admin
-    function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
-        emit AdminChanged(admin, newAdmin);
-        admin = newAdmin;
-    }
-
-    /// @notice This function sets a new recovery admin
-    /// @dev Only can be called by the previous Recovery admin
-    /// @param newRecoveryAdmin Address corresponding to the new Lossless Recovery Admin
-    function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
-        emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
-        recoveryAdmin = newRecoveryAdmin;
-    }
-
-    /// @notice This function sets a new pause admin
-    /// @dev Only can be called by the Recovery admin
-    /// @param newPauseAdmin Address corresponding to the new Lossless Pause Admin
-    function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
-        emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
-        pauseAdmin = newPauseAdmin;
-    }
-
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
