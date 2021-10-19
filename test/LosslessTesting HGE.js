@@ -30,7 +30,7 @@ const stakeAmount = 2500;
 const reportLifetime = time.duration.days(1);
 
 const lssTeamVoteIndex = 0;
-const projectTeamVoteIndex = 1;
+const tokenOwnersVoteIndex = 1;
 const committeeVoteIndex = 2;
 
 //LosslessToken
@@ -873,7 +873,7 @@ describe.only('Lossless TestSuite for High Gas Environments', () => {
             await lssGovernance.connect(lerc20Admin).tokenOwnersVote(1, true);
 
             expect(
-              await lssGovernance.getIsVoted(1, projectTeamVoteIndex),
+              await lssGovernance.getIsVoted(1, tokenOwnersVoteIndex),
             ).to.be.equal(true);
           });
 
@@ -985,7 +985,7 @@ describe.only('Lossless TestSuite for High Gas Environments', () => {
 
           it('should save vote as positive', async () =>{
             expect(
-              await lssGovernance.getVote(1, projectTeamVoteIndex)
+              await lssGovernance.getVote(1, tokenOwnersVoteIndex)
             ).to.be.equal(true);
           });
 
@@ -1102,7 +1102,7 @@ describe.only('Lossless TestSuite for High Gas Environments', () => {
             ).to.be.equal(true);
 
             expect(
-              await lssGovernance.getVote(1, projectTeamVoteIndex)
+              await lssGovernance.getVote(1, tokenOwnersVoteIndex)
             ).to.be.equal(true);
 
             expect(
@@ -1139,7 +1139,7 @@ describe.only('Lossless TestSuite for High Gas Environments', () => {
             ).to.be.equal(false);
 
             expect(
-              await lssGovernance.getVote(1, projectTeamVoteIndex)
+              await lssGovernance.getVote(1, tokenOwnersVoteIndex)
             ).to.be.equal(false);
 
             expect(
