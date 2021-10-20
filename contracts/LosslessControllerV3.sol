@@ -526,8 +526,8 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
 
         if (emergencyMode[_msgSender()].emergency) {
-            require(amount <= (availableAmount/2), "LSS: Emergency mode active, can only transfer half of the available amount");
-            require((block.timestamp - emergencyMode[_msgSender()].emergencyAddressCooldown[sender]) > emergencyCooldown, "LSS: Emergency mode active, can only transfer every 15 minutes");
+            require(!dexList[recipient], "LSS: Emergency mode active, cannot transfer to DEX");
+            require((block.timestamp - emergencyMode[_msgSender()].emergencyAddressCooldown[sender]) > emergencyCooldown, "LSS: Emergency mode active, one transfer per priod allowed");
         }
 
         if (dexList[recipient] && amount > dexTranferThreshold) {

@@ -155,7 +155,7 @@ describe('Lossless TestSuite', () => {
 
       const randomToken = await ethers.getContractFactory('LERC20');
 
-      randToken = await randomToken.deploy(
+      lerc20Token = await randomToken.deploy(
         lerc20InitialSupply,
         lerc20Name,
         lerc20Symbol,
@@ -182,7 +182,7 @@ describe('Lossless TestSuite', () => {
     await lssReporting.connect(lssAdmin).setLosslessFee(10);
     
   });
-  describe.only('Lossless Environment', () => {
+  describe('Lossless Environment', () => {
     describe('On deployment', () =>{ 
         describe('when the Lossless Controller contract has been set up', () =>{
           it('should set the stake amount correctly', async () => {
@@ -293,13 +293,13 @@ describe('Lossless TestSuite', () => {
     describe('Random Token', () => {
       describe('when transfering between users', ()=>{
         beforeEach(async ()=>{
-          await randToken.connect(lerc20InitialHolder).transfer(regularUser1.address, 100);
-          await randToken.connect(lerc20InitialHolder).transfer(regularUser2.address, 100);
+          await lerc20Token.connect(lerc20InitialHolder).transfer(regularUser1.address, 100);
+          await lerc20Token.connect(lerc20InitialHolder).transfer(regularUser2.address, 100);
         });
 
         it('should revert if 5 minutes haven\'t passed', async () => {
           await expect(
-            randToken.connect(regularUser2).transfer(regularUser4.address, 5),
+            lerc20Token.connect(regularUser2).transfer(regularUser4.address, 5),
           ).to.be.revertedWith("LSS: Amt exceeds settled balance");
         });
         
@@ -309,11 +309,11 @@ describe('Lossless TestSuite', () => {
               ]);
 
               await expect(
-                randToken.connect(regularUser1).transfer(regularUser3.address, 5),
+                lerc20Token.connect(regularUser1).transfer(regularUser3.address, 5),
               ).to.not.be.reverted;
 
               expect(
-                await randToken.balanceOf(regularUser3.address),
+                await lerc20Token.balanceOf(regularUser3.address),
               ).to.be.equal(5);
          });
       });
@@ -357,14 +357,14 @@ describe('Lossless TestSuite', () => {
         describe('when reporting a whitelisted account', ()=>{
           it('should revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter1).report(randToken.address, lssReporting.address),
+              lssReporting.connect(reporter1).report(lerc20Token.address, lssReporting.address),
             ).to.be.revertedWith("LSS: Cannot report LSS protocol");
           });
         });
 
         describe('when succesfully generating a report', ()=>{
           it('should not revert', async ()=>{
-            await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+            await lssReporting.connect(reporter1).report(lerc20Token.address, maliciousActor1.address);
 
             expect(
               await lssReporting.getReportTimestamps(1)
@@ -373,7 +373,7 @@ describe('Lossless TestSuite', () => {
 
           it('should blacklist address', async ()=>{
 
-            await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+            await lssReporting.connect(reporter1).report(lerc20Token.address, maliciousActor1.address);
 
             expect(
               await lssController.isBlacklisted(maliciousActor1.address),
@@ -384,10 +384,10 @@ describe('Lossless TestSuite', () => {
         describe('when reporting the same token and address twice', ()=>{
           it('should revert', async ()=>{
 
-            await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+            await lssReporting.connect(reporter1).report(lerc20Token.address, maliciousActor1.address);
 
             await expect(
-               lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address),
+               lssReporting.connect(reporter1).report(lerc20Token.address, maliciousActor1.address),
             ).to.be.revertedWith("LSS: Report already exists");
           });
         });
@@ -407,13 +407,13 @@ describe('Lossless TestSuite', () => {
             Number(time.duration.minutes(5)),
           ]);
 
-          await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+          await lssReporting.connect(reporter1).report(lerc20Token.address, maliciousActor1.address);
         });
 
         describe('when generating another report successfully', ()=>{
           it('should not revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter1).secondReport(1, randToken.address, maliciousActor2.address),
+              lssReporting.connect(reporter1).secondReport(1, lerc20Token.address, maliciousActor2.address),
             ).to.not.be.reverted;
           });
         });
@@ -421,7 +421,7 @@ describe('Lossless TestSuite', () => {
         describe('when reporting another on a whitelisted account', ()=>{
           it('should revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter1).secondReport(1, randToken.address, lssReporting.address),
+              lssReporting.connect(reporter1).secondReport(1, lerc20Token.address, lssReporting.address),
             ).to.be.revertedWith("LSS: Cannot report LSS protocol");
           });
         });
@@ -429,7 +429,7 @@ describe('Lossless TestSuite', () => {
         describe('when reporting another on a non existant report', ()=>{
           it('should revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter1).secondReport(5, randToken.address, maliciousActor1.address),
+              lssReporting.connect(reporter1).secondReport(5, lerc20Token.address, maliciousActor1.address),
             ).to.be.revertedWith("LSS: report does not exists");
           });
         });
@@ -437,7 +437,7 @@ describe('Lossless TestSuite', () => {
         describe('when reporting another by other than the original reporter', ()=>{
           it('should revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter2).secondReport(1, randToken.address, maliciousActor1.address),
+              lssReporting.connect(reporter2).secondReport(1, lerc20Token.address, maliciousActor1.address),
             ).to.be.revertedWith("LSS: invalid reporter");
           });
         });
@@ -445,7 +445,7 @@ describe('Lossless TestSuite', () => {
         describe('when reporting another multiple times', ()=>{
           it('should revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter2).secondReport(1, randToken.address, maliciousActor1.address),
+              lssReporting.connect(reporter2).secondReport(1, lerc20Token.address, maliciousActor1.address),
             ).to.be.revertedWith("LSS: invalid reporter");
           });
         });
@@ -473,7 +473,7 @@ describe('Lossless TestSuite', () => {
             Number(time.duration.minutes(5)),
           ]);
           
-          await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+          await lssReporting.connect(reporter1).report(lerc20Token.address, maliciousActor1.address);
         });
   
         describe('when staking before the cooldown period', ()=> {
@@ -596,13 +596,13 @@ describe('Lossless TestSuite', () => {
           await lssToken.connect(staker3).approve(lssStaking.address, stakeAmount*2);
           await lssToken.connect(staker4).approve(lssStaking.address, stakeAmount*2);;
 
-          await randToken.connect(lerc20InitialHolder).transfer(maliciousActor1.address, 1000);
+          await lerc20Token.connect(lerc20InitialHolder).transfer(maliciousActor1.address, 1000);
   
           await ethers.provider.send('evm_increaseTime', [
             Number(time.duration.minutes(5)),
           ]);
 
-          await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+          await lssReporting.connect(reporter1).report(lerc20Token.address, maliciousActor1.address);
 
           await ethers.provider.send('evm_increaseTime', [
             Number(time.duration.minutes(5)),
@@ -689,7 +689,7 @@ describe('Lossless TestSuite', () => {
 
               let balance;
               expect(
-                balance = await randToken.balanceOf(staker1.address),
+                balance = await lerc20Token.balanceOf(staker1.address),
               ).to.be.equal(0);
 
               expect(
@@ -699,7 +699,7 @@ describe('Lossless TestSuite', () => {
               await lssStaking.connect(staker1).stakerClaim(1);
 
               expect(
-                await randToken.balanceOf(staker1.address),
+                await lerc20Token.balanceOf(staker1.address),
               ).to.not.be.equal(0);
 
               expect(
@@ -736,7 +736,7 @@ describe('Lossless TestSuite', () => {
 
             let balance;
             expect(
-              balance = await randToken.balanceOf(reporter1.address),
+              balance = await lerc20Token.balanceOf(reporter1.address),
             ).to.be.equal(0);
 
             expect(
@@ -746,7 +746,7 @@ describe('Lossless TestSuite', () => {
             await lssStaking.connect(reporter1).reporterClaim(1);
 
             expect(
-              await randToken.balanceOf(reporter1.address),
+              await lerc20Token.balanceOf(reporter1.address),
             ).to.be.equal(20);
 
             expect(
@@ -769,7 +769,6 @@ describe('Lossless TestSuite', () => {
       });
       });
     });
-
     describe('Lossless Governance', ()=>{
       beforeEach(async ()=>{
         await lssToken.connect(lssInitialHolder).transfer(reporter1.address, stakeAmount);
@@ -780,7 +779,7 @@ describe('Lossless TestSuite', () => {
           Number(time.duration.minutes(5)),
         ]);
 
-        await lssReporting.connect(reporter1).report(randToken.address, maliciousActor1.address);
+        await lssReporting.connect(reporter1).report(lerc20Token.address, maliciousActor1.address);
       });
 
       describe('when setting up the Committee', ()=>{
