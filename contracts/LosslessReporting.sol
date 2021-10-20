@@ -238,7 +238,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param reportId Report that was previously generated.
     /// @param token Token address of the stolen funds
     /// @param account Potential malicious address
-    function reportAnother(uint256 reportId, address token, address account) public notBlacklisted {
+    function secondReport(uint256 reportId, address token, address account) public notBlacklisted {
         uint256 reportLifetime;
         uint256 reportTimestamp;
         uint256 stakeAmount;

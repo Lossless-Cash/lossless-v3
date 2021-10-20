@@ -413,7 +413,7 @@ describe('Lossless TestSuite', () => {
         describe('when generating another report successfully', ()=>{
           it('should not revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter1).reportAnother(1, randToken.address, maliciousActor2.address),
+              lssReporting.connect(reporter1).secondReport(1, randToken.address, maliciousActor2.address),
             ).to.not.be.reverted;
           });
         });
@@ -421,7 +421,7 @@ describe('Lossless TestSuite', () => {
         describe('when reporting another on a whitelisted account', ()=>{
           it('should revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter1).reportAnother(1, randToken.address, lssReporting.address),
+              lssReporting.connect(reporter1).secondReport(1, randToken.address, lssReporting.address),
             ).to.be.revertedWith("LSS: Cannot report LSS protocol");
           });
         });
@@ -429,7 +429,7 @@ describe('Lossless TestSuite', () => {
         describe('when reporting another on a non existant report', ()=>{
           it('should revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter1).reportAnother(5, randToken.address, maliciousActor1.address),
+              lssReporting.connect(reporter1).secondReport(5, randToken.address, maliciousActor1.address),
             ).to.be.revertedWith("LSS: report does not exists");
           });
         });
@@ -437,7 +437,7 @@ describe('Lossless TestSuite', () => {
         describe('when reporting another by other than the original reporter', ()=>{
           it('should revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter2).reportAnother(1, randToken.address, maliciousActor1.address),
+              lssReporting.connect(reporter2).secondReport(1, randToken.address, maliciousActor1.address),
             ).to.be.revertedWith("LSS: invalid reporter");
           });
         });
@@ -445,7 +445,7 @@ describe('Lossless TestSuite', () => {
         describe('when reporting another multiple times', ()=>{
           it('should revert', async ()=>{
             await expect(
-              lssReporting.connect(reporter2).reportAnother(1, randToken.address, maliciousActor1.address),
+              lssReporting.connect(reporter2).secondReport(1, randToken.address, maliciousActor1.address),
             ).to.be.revertedWith("LSS: invalid reporter");
           });
         });
