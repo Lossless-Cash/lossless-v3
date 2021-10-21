@@ -7,7 +7,7 @@ const { setupAddresses, setupEnvironment, setupToken } = require('../utils');
 let adr;
 let env;
 
-describe.only('Lossless Staking', ()=>{
+describe('Lossless Staking', ()=>{
     beforeEach(async () => {
         adr = await setupAddresses();
         env = await setupEnvironment(adr.lssAdmin,
