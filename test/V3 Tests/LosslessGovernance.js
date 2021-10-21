@@ -29,6 +29,7 @@ describe('Lossless Governance', ()=>{
 
     beforeEach(async ()=>{
         await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.reporter1.address, env.stakeAmount);
+        await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 1000);
 
         await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakeAmount);
         
@@ -255,7 +256,7 @@ describe('Lossless Governance', ()=>{
             expect(
             await env.lssGovernance.reportResolution(1),
             ).to.be.equal(false);
-        });
+            });
         });
 
         describe('when only the Committee votes positively', ()=>{
@@ -343,77 +344,130 @@ describe('Lossless Governance', ()=>{
         });
 
         describe('when everyone votes positive', ()=>{
-        beforeEach(async ()=>{
-            await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-            await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-            await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-            await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
-            await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
-            await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
-        });
+            beforeEach(async ()=>{
+                await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+                await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+                await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+                await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+                await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+                await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
+            });
 
-        it('should save all vote as positive', async () =>{
-            expect(
-            await env.lssGovernance.getVote(1, env.committeeVoteIndex)
-            ).to.be.equal(true);
+            it('should save all vote as positive', async () =>{
+                expect(
+                await env.lssGovernance.getVote(1, env.committeeVoteIndex)
+                ).to.be.equal(true);
 
-            expect(
-            await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex)
-            ).to.be.equal(true);
+                expect(
+                await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex)
+                ).to.be.equal(true);
 
-            expect(
-            await env.lssGovernance.getVote(1, env.lssTeamVoteIndex)
-            ).to.be.equal(true);
-        });
+                expect(
+                await env.lssGovernance.getVote(1, env.lssTeamVoteIndex)
+                ).to.be.equal(true);
+            });
 
-        it('should resolve positively', async () =>{
-            await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+            it('should resolve positively', async () =>{
+                await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
-            expect(
-            await env.lssGovernance.isReportSolved(1),
-            ).to.be.equal(true);
+                expect(
+                await env.lssGovernance.isReportSolved(1),
+                ).to.be.equal(true);
 
-            expect(
-            await env.lssGovernance.reportResolution(1),
-            ).to.be.equal(true);
-        });
+                expect(
+                await env.lssGovernance.reportResolution(1),
+                ).to.be.equal(true);
+            });
+
+            describe('when proposing a refund wallet on report close', () =>{
+                beforeEach(async ()=>{
+                    await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+                    await ethers.provider.send('evm_increaseTime', [
+                        Number(time.duration.minutes(1)),
+                    ]);
+                });
+
+                it('should accept a proposed wallet by Lossless Team', async () =>{
+                    await expect(
+                        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
+                    ).to.not.be.reverted;
+                });
+
+                it('should accept a proposed wallet by Token Owner', async () =>{
+                    await expect(
+                        env.lssGovernance.connect(adr.lerc20Admin).proposeWallet(1, adr.regularUser5.address),
+                    ).to.not.be.reverted;
+                });
+
+                it('should revert if proposed by other than LssTeam or TokenOwner', async () =>{
+                    await expect(
+                        env.lssGovernance.connect(adr.regularUser5).proposeWallet(1, adr.regularUser5.address),
+                    ).to.be.revertedWith("LSS: Role cannot propose.");
+                });
+
+                it('should revert when trying to propose another', async () =>{
+                    await expect(
+                        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
+                    ).to.not.be.reverted;
+
+                    await expect(
+                        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
+                    ).to.be.revertedWith("LSS: Wallet already proposed.");
+                });
+
+                describe('when retrieving funds to proposed wallet', () =>{
+
+                    it('should transfer funds', async () =>{
+                        await env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address);
+
+                        await ethers.provider.send('evm_increaseTime', [
+                            Number(time.duration.days(8)),
+                        ]);
+
+                        await expect(
+                            env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
+                        ).to.not.be.reverted;
+                    });
+                });
+            });
         });
 
         describe('when everyone votes negatively', ()=>{
-        beforeEach(async ()=>{
-            await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
-            await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
-            await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, false);
-            await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
-            await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
-            await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
-        });
+            beforeEach(async ()=>{
+                await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+                await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+                await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, false);
+                await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
+                await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
+                await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+            });
 
-        it('should save vote as negative', async () =>{
-            expect(
-            await env.lssGovernance.getVote(1, env.committeeVoteIndex)
-            ).to.be.equal(false);
+            it('should save vote as negative', async () =>{
+                expect(
+                await env.lssGovernance.getVote(1, env.committeeVoteIndex)
+                ).to.be.equal(false);
 
-            expect(
-            await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex)
-            ).to.be.equal(false);
+                expect(
+                await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex)
+                ).to.be.equal(false);
 
-            expect(
-            await env.lssGovernance.getVote(1, env.lssTeamVoteIndex)
-            ).to.be.equal(false);
-        });
+                expect(
+                await env.lssGovernance.getVote(1, env.lssTeamVoteIndex)
+                ).to.be.equal(false);
+            });
 
-        it('should resolve negatively', async () =>{
-            await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+            it('should resolve negatively', async () =>{
+                await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
-            expect(
-            await env.lssGovernance.isReportSolved(1),
-            ).to.be.equal(true);
+                expect(
+                await env.lssGovernance.isReportSolved(1),
+                ).to.be.equal(true);
 
-            expect(
-            await env.lssGovernance.reportResolution(1),
-            ).to.be.equal(false);
-        });
+                expect(
+                await env.lssGovernance.reportResolution(1),
+                ).to.be.equal(false);
+            });
         });
     });
 });

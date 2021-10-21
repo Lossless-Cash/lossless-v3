@@ -34,6 +34,7 @@ interface ILssReporting {
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
     function getAmountReported(uint256 reportId) external view returns (uint256);
+    function getStakersFee() external view returns (uint256);
 }
 
 interface ILssGovernance {
@@ -513,10 +514,22 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         ILERC20(token).transferOutBlacklistedFunds(_addresses);
     }
 
-    function retrieveBlacklistedToStaking(uint256 reportId, address token) public onlyFromAdminOrLssSC{
-        uint256 retrieveAmount = losslessReporting.getAmountReported(reportId);
-        console.log("retrieveAmount: %s", retrieveAmount);
+    /// @notice This function retrieves the funds of the reported account corresponding to rewards
+    /// @param reportId Report Id
+    /// @param token Token reported
+    function retrieveBlacklistedToContracts(uint256 reportId, address token) public onlyFromAdminOrLssSC{
+        
+        uint256 retrieveAmount;
+        uint256 totalAmount;
+        
+        totalAmount = losslessReporting.getAmountReported(reportId);
+
+        (uint256 reporterReward, uint256 losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
+
+        retrieveAmount = totalAmount * (losslessReporting.getStakersFee() + reporterReward + losslessFee) / 10**2;
+
         ILERC20(token).transfer(losslessStakingingAddress, retrieveAmount);
+        ILERC20(token).transfer(losslessGovernanceAddress, totalAmount - retrieveAmount);
     }
 
     // --- BEFORE HOOKS ---

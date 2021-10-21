@@ -10,13 +10,16 @@ interface ILssReporting {
     function getReportedAddress(uint256 _reportId) external view returns (address);
     function getTokenFromReport(uint256 reportId) external view returns(address);
     function reportedProject(uint256 reportId) external view returns (address);
+    function getStakersFee() external view returns (uint256);
+    function getAmountReported(uint256 reportId) external view returns (uint256);
+    function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
 }
 
 interface ILssController {
     function getReportLifetime() external view returns(uint256);
     function retreiveBlacklistedFunds(address[] calldata _addresses, address token) external;
     function resolvedNegatively(address _adr) external;
-    function retrieveBlacklistedToStaking(uint256 reportId, address token) external;
+    function retrieveBlacklistedToContracts(uint256 reportId, address token) external;
     function deactivateEmergency(address token) external;
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
@@ -26,6 +29,7 @@ interface ILssController {
 interface ILERC20 {
     function admin() external view returns (address);
     function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
 } 
 
 /// @title Lossless Governance Contract
@@ -40,6 +44,8 @@ contract LosslessGovernance is Initializable, AccessControl {
 
     uint256 public committeeMembersCount;
     uint256 public quorumSize;
+
+    uint256 walletDisputePeriod;
 
     ILssReporting public losslessReporting;
     ILssController public losslessController;
@@ -57,11 +63,27 @@ contract LosslessGovernance is Initializable, AccessControl {
     mapping(address => address) projectOwners;
     mapping(uint256 => uint256) amountReported;
 
+    mapping(uint256 => ProposedWallet) proposedWalletOnReport;
+
+    struct ProposedWallet {
+        address wallet;
+        uint256 timestamp;
+        bool status;
+        bool losslessVote;
+        bool losslessVoted;
+        bool tokenOwnersVote;
+        bool tokenOwnersVoted;
+        uint16 committeeDisagree;
+        mapping (address => bool) memberVoted;
+    }
+
+
     address[] private reportedAddresses;
 
     function initialize(address _losslessReporting, address _losslessController) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
+        walletDisputePeriod = 7 days;
         tokenOwnersVoteIndex = 1;
         committeeVoteIndex = 2;
         _setupRole(DEFAULT_ADMIN_ROLE, losslessController.admin());
@@ -126,6 +148,12 @@ contract LosslessGovernance is Initializable, AccessControl {
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
         return reportVote.resolution;
+    }
+
+    /// @notice This function sets the wallet dispute period
+    /// @param timeFrame Time in seconds for the dispute period
+    function setDipustePeriod(uint256 timeFrame) public onlyLosslessAdmin {
+        walletDisputePeriod = timeFrame;
     }
     
     /// @notice This function returns if the majority of the commitee voted and the resolution of the votes
@@ -316,7 +344,7 @@ contract LosslessGovernance is Initializable, AccessControl {
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
             losslessController.retreiveBlacklistedFunds(reportedAddresses, token);
-            losslessController.retrieveBlacklistedToStaking(reportId, token);
+            losslessController.retrieveBlacklistedToContracts(reportId, token);
         }else{
             reportVote.resolution = false;
             losslessController.resolvedNegatively(reportedAddress);
@@ -324,5 +352,110 @@ contract LosslessGovernance is Initializable, AccessControl {
         
         reportVote.resolved = true;
         delete reportedAddresses;
+    }
+
+    // REFUND PROCESS
+
+    /// @notice This function proposes a wallet where the recovered funds will be returned
+    /// @dev Only can be run by the three pilars.
+    /// @param reportId Report to propose the wallet
+    /// @param wallet proposed address
+    function proposeWallet(uint256 reportId, address wallet) public {
+        require(msg.sender == losslessController.admin() || 
+                msg.sender == ILERC20(losslessReporting.getTokenFromReport(reportId)).admin(),
+                "LSS: Role cannot propose.");
+        require(isReportSolved(reportId), "LSS: Report is not solved.");
+        require(reportResolution(reportId), "LSS: Report solved negatively.");
+        require(proposedWalletOnReport[reportId].wallet == address(0), "LSS: Wallet already proposed.");
+
+        proposedWalletOnReport[reportId].wallet = wallet;
+        proposedWalletOnReport[reportId].timestamp = block.timestamp;
+        proposedWalletOnReport[reportId].status = false;
+        proposedWalletOnReport[reportId].losslessVote = true;
+        proposedWalletOnReport[reportId].losslessVoted = false;
+        proposedWalletOnReport[reportId].tokenOwnersVote = true;
+        proposedWalletOnReport[reportId].tokenOwnersVoted = false;
+    }
+
+    /// @notice This function is used to reject the wallet proposal
+    /// @dev Only can be run by the three pilars.
+    /// @param reportId Report to propose the wallet
+    function rejectWallet(uint256 reportId) public {
+
+        require(block.timestamp <= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period closed");
+
+        bool isMember = hasRole(COMMITTEE_ROLE, msg.sender);
+        bool isLosslessTeam = msg.sender == losslessController.admin();
+        bool isTokenOwner = msg.sender == ILERC20(losslessReporting.getTokenFromReport(reportId)).admin();
+
+        require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot resolve.");
+
+        if (isMember) {
+            require(!proposedWalletOnReport[reportId].memberVoted[msg.sender], "LSS: Already Voted.");
+            proposedWalletOnReport[reportId].committeeDisagree += 1;
+            proposedWalletOnReport[reportId].memberVoted[msg.sender] = true;
+        } else if (isLosslessTeam) {
+            require(!proposedWalletOnReport[reportId].losslessVoted, "LSS: Already Voted.");
+            proposedWalletOnReport[reportId].losslessVote = false;
+            proposedWalletOnReport[reportId].losslessVoted = true;
+        } else {
+            require(!proposedWalletOnReport[reportId].tokenOwnersVoted, "LSS: Already Voted.");
+            proposedWalletOnReport[reportId].tokenOwnersVote = false;
+            proposedWalletOnReport[reportId].tokenOwnersVoted = true;
+        }
+    }
+
+    /// @notice This function proposes a wallet where the recovered funds will be returned
+    /// @param reportId Report to propose the wallet
+    function retrieveFunds(uint256 reportId) public {
+ 
+        require(block.timestamp >= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
+        require(!proposedWalletOnReport[reportId].status, "LSS: Funds already claimed");
+
+        address proposedAddress = proposedWalletOnReport[reportId].wallet;
+        require(proposedAddress == msg.sender, "LSS: Only proposed adr can claim");
+
+        require(determineProposedWallet(reportId), "LSS: Proposed wallet rejected");
+
+        address token;
+        token = losslessReporting.getTokenFromReport(reportId);
+
+        uint256 rewardAmounts;
+        uint256 totalAmount;
+        
+        totalAmount = losslessReporting.getAmountReported(reportId);
+
+        (uint256 reporterReward, uint256 losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
+
+        rewardAmounts = totalAmount * (losslessReporting.getStakersFee() + reporterReward + losslessFee) / 10**2;
+
+        ILERC20(token).transfer(msg.sender, totalAmount - rewardAmounts);
+
+        proposedWalletOnReport[reportId].status = true;
+
+    }
+
+    /// @notice This function determins is the refund wallet was accepted
+    /// @param reportId Report to propose the wallet
+    function determineProposedWallet(uint256 reportId) public view returns(bool){
+        
+        uint256 agreementCount;
+        
+        if (proposedWalletOnReport[reportId].committeeDisagree < committeeMembersCount/2 ){
+            agreementCount += 1;
+        }
+
+        if (proposedWalletOnReport[reportId].losslessVote) {
+            agreementCount += 1;
+        }
+
+        if (proposedWalletOnReport[reportId].tokenOwnersVote) {
+            agreementCount += 1;
+        }
+        
+        if (agreementCount >= 2) {
+            return true;
+        }
+        return false;
     }
 }

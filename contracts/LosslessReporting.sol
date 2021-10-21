@@ -37,6 +37,7 @@ interface ILssController {
 contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgradeable {
     uint256 public reporterReward;
     uint256 public losslessFee;
+    uint256 public stakersFee;
 
     uint256 public reportCount;
 
@@ -94,6 +95,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     function initialize(address _losslessController) public initializer {
         losslessController = ILssController(_losslessController);
+        stakersFee = 2;
     }
     
     // --- SETTERS ---
@@ -140,12 +142,24 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         losslessFee = fee;
     }
 
+    /// @notice This function sets the default Stakers Fee
+    /// @param fee Percentage attributed to Stakers when a report gets resolved positively
+    function setStakersFee(uint256 fee) public onlyLosslessAdmin {
+        stakersFee = fee;
+    }
+
+
     // --- GETTERS ---
 
     /// @notice This function gets the contract version
     /// @return Version of the contract
     function getVersion() public pure returns (uint256) {
         return 1;
+    }
+
+    /// @notice This function returns  the default Stakers Fee
+    function getStakersFee() public view returns (uint256) {
+        return stakersFee;
     }
 
     /// @notice This function will return the address of the reporter
