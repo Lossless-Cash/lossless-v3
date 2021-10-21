@@ -16,6 +16,7 @@ interface ILERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function admin() external view returns (address);
+    function decimals() external view returns (uint256);
 }
 
 interface ILssReporting {
@@ -50,6 +51,7 @@ interface ILssGovernance {
 contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
 
     uint256 public cooldownPeriod;
+    uint256 public stakersFee;
 
     struct Stake {
         mapping(uint256 => StakeInfo) stakeInfoOnReport;
@@ -83,6 +85,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     function initialize(address _losslessReporting, address _losslessController, address _losslessGovernance) public initializer {
        cooldownPeriod = 5 minutes;
+       stakersFee = 2;
        losslessReporting = ILssReporting(_losslessReporting);
        losslessController = ILssController(_losslessController);
        losslessGovernance = ILssGovernance(_losslessGovernance);
@@ -144,7 +147,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         losslessToken = ILERC20(_losslessToken);
         tokenAddress = _losslessToken;
     }
-    
+
+    /// @notice This function sets the default Stakers Fee
+    /// @param fee Percentage attributed to Stakers when a report gets resolved positively
+    function setStakersFee(uint256 fee) public onlyLosslessAdmin {
+        stakersFee = fee;
+    }
+
     // GET STAKE INFO
 
     /// @notice This function returns all the reports where an address is staking
@@ -305,7 +314,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         reportedWallet = losslessReporting.getReportedAddress(reportId);
 
-        amountStakedOnReport = amountStakedOnReport * (100 - reporterReward - losslessFee) / 10**2;
+        amountStakedOnReport = amountStakedOnReport * stakersFee / 10**2;
 
         stakerCoefficient = getStakerCoefficient(reportId, _msgSender());
         reportCoefficient = losslessController.getReportCoefficient(reportId);
@@ -330,11 +339,15 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         uint256 amountToClaim;
         uint256 stakeAmount;
+        address token;
 
         amountToClaim = stakerClaimableAmount(reportId);
         stakeAmount = losslessController.getStakeAmount();
+        token = losslessReporting.getTokenFromReport(reportId);
 
-        ILERC20(losslessReporting.getTokenFromReport(reportId)).transfer(_msgSender(), amountToClaim);
+        console.log("amountToClaim: %s", amountToClaim);
+
+        ILERC20(token).transfer(_msgSender(), amountToClaim);
         losslessToken.transfer( _msgSender(), stakeAmount);
 
         setPayoutStatus(reportId, _msgSender());
@@ -353,6 +366,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         amountToClaim = reporterClaimableAmount(reportId);
         stakeAmount = losslessController.getStakeAmount();
+
+        console.log("amountToClaim: %s", amountToClaim);
 
         ILERC20(losslessReporting.getTokenFromReport(reportId)).transfer(_msgSender(), amountToClaim);
         losslessToken.transfer(_msgSender(), stakeAmount);

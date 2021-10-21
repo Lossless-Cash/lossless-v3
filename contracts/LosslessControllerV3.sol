@@ -515,6 +515,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     function retrieveBlacklistedToStaking(uint256 reportId, address token) public onlyFromAdminOrLssSC{
         uint256 retrieveAmount = losslessReporting.getAmountReported(reportId);
+        console.log("retrieveAmount: %s", retrieveAmount);
         ILERC20(token).transfer(losslessStakingingAddress, retrieveAmount);
     }
 
