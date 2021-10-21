@@ -42,7 +42,7 @@ interface ILssGovernance {
 
 /// @title Lossless Controller Contract
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
-contract LosslessController is Initializable, ContextUpgradeable, PausableUpgradeable {
+contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
     address public admin;
     address public recoveryAdmin;
@@ -340,6 +340,11 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
         return 3;
     }
 
+    /// @notice Retruns the emergency state
+    function getEmergencyStatus(address token) public view returns (bool) {
+        return emergencyMode[token].emergency;
+    }
+
     /// @notice This function will return if the address is blacklisted/reported
     /// @return Returns true or false
     function isBlacklisted(address _adr) public view returns (bool) {
@@ -527,7 +532,7 @@ contract LosslessController is Initializable, ContextUpgradeable, PausableUpgrad
 
         if (emergencyMode[_msgSender()].emergency) {
             require(!dexList[recipient], "LSS: Emergency mode active, cannot transfer to DEX");
-            require((block.timestamp - emergencyMode[_msgSender()].emergencyAddressCooldown[sender]) > emergencyCooldown, "LSS: Emergency mode active, one transfer per priod allowed");
+            require((block.timestamp - emergencyMode[_msgSender()].emergencyAddressCooldown[sender]) > emergencyCooldown, "LSS: Emergency mode active, one transfer per period allowed");
         }
 
         if (dexList[recipient] && amount > dexTranferThreshold) {

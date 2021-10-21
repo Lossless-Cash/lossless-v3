@@ -42,7 +42,7 @@ interface ILssGovernance {
 
 /// @title Lossless Controller Contract
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
-contract LosslessControllerHGE is Initializable, ContextUpgradeable, PausableUpgradeable {
+contract LosslessControllerV3HGE is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
     address public admin;
     address public recoveryAdmin;

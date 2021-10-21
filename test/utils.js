@@ -88,7 +88,7 @@ const setupEnvironment = async (lssAdmin, lssRecoveryAdmin, lssPauseAdmin, lssIn
     const lssInitialSupply  = 1000000;
 
     const LosslessController = await ethers.getContractFactory(
-    'LosslessController',
+    'LosslessControllerV3',
     );
 
     const LosslessStaking = await ethers.getContractFactory(
