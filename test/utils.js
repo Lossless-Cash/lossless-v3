@@ -170,20 +170,21 @@ const setupEnvironment = async (lssAdmin, lssRecoveryAdmin, lssPauseAdmin, lssIn
 };
 
 const setupToken = async (supply, name, symbol, initialHolder, admin, backupAdmin, lockPeriod, controller) => {
+
     const token = await ethers.getContractFactory('LERC20');
 
-    token = await randomToken.deploy(
+    let deployedToken = await token.deploy(
         supply,
         name,
         symbol,
-        initialHolder.address,
-        admin.address,
-        backupAdmin.address,
+        initialHolder,
+        admin,
+        backupAdmin,
         lockPeriod,
-        controller.address,
+        controller,
         );
 
-    return token;
+     return deployedToken;
 };
 
 module.exports = {

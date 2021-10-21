@@ -7,7 +7,7 @@ const { setupAddresses, setupEnvironment, setupToken } = require('../utils');
 let adr;
 let env;
 
-describe.only('Lossless Environment', () => {
+describe('Lossless Environment', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -19,7 +19,7 @@ describe.only('Lossless Environment', () => {
 
   });
 
-  describe('On deployment', () =>{ 
+    describe('On deployment', () =>{ 
         describe('when the Lossless Controller contract has been set up', () =>{
             it('should set the stake amount correctly', async () => {
                 expect(
