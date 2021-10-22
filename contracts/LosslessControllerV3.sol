@@ -90,19 +90,23 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(address => bool) private whitelist;
     mapping(address => bool) private blacklist;
 
+    mapping(address => EmergencyMode) private emergencyMode;
+
     struct EmergencyMode {
         bool emergency;
         uint256 emergencyTimestamp;
-        mapping(address => uint256) emergencyAddressCooldown;
+        uint256 emergencyMappingNum;
+        mapping( uint256 => mapping(address => bool)) emergencyTransfer;
+        mapping( uint256 => mapping(address => bool)) emergencyDexTransfer;
     }
 
-    mapping(address => EmergencyMode) private emergencyMode;
     
     struct ReporterClaimStatus {
         mapping(uint256 => bool) reportIdClaimStatus;
     }
 
     mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
+
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -332,6 +336,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param token Token on which the emergency mode must get deactivated
     function deactivateEmergency(address token) external onlyFromAdminOrLssSC {
         emergencyMode[token].emergency = false;
+        emergencyMode[token].emergencyMappingNum += 1;
     }
 
     // --- GETTERS ---
@@ -540,19 +545,31 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param amount Amount to be transfered
     function evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
         
-        require(ILERC20(_msgSender()).balanceOf(sender) >= amount, "LSS: Insufficient balance");
+        uint256 totalBalance = ILERC20(_msgSender()).balanceOf(sender);
 
-        uint256 availableAmount = getAvailableAmount(_msgSender(), sender);
+        require(totalBalance >= amount, "LSS: Insufficient balance");
 
-        if (emergencyMode[_msgSender()].emergency) {
-            require(!dexList[recipient], "LSS: Emergency mode active, cannot transfer to DEX");
-            require((block.timestamp - emergencyMode[_msgSender()].emergencyAddressCooldown[sender]) > emergencyCooldown, "LSS: Emergency mode active, one transfer per period allowed");
+        uint256 settledAmount = getAvailableAmount(_msgSender(), sender);
+        uint256 unsettledAmount = totalBalance - settledAmount;
+
+        if (emergencyMode[_msgSender()].emergency && amount >= settledAmount) {
+            require(!emergencyMode[_msgSender()].emergencyTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender], "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
+            require(!dexList[recipient] &&
+            !emergencyMode[_msgSender()].emergencyDexTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender], "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
+
+            if (dexList[recipient]){
+                emergencyMode[_msgSender()].emergencyDexTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender] = true;
+            } else {
+                emergencyMode[_msgSender()].emergencyTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender] = true;
+            }
+
+            return true;
         }
 
         if (dexList[recipient] && amount > dexTranferThreshold) {
-            require(availableAmount >= amount, "LSS: Amt exceeds settled balance");
-        } else if (availableAmount < amount) {
-            removeUsedUpLocks(availableAmount, sender, amount);
+            require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
+        } else if (settledAmount < amount) {
+            removeUsedUpLocks(settledAmount, sender, amount);
             require(getAvailableAmount(_msgSender(), sender) >= amount, "LSS: Amt exceeds settled balance");
         }
 
@@ -562,7 +579,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + lockTimeframe);
         enqueueLockedFunds(newCheckpoint, recipient);
-        emergencyMode[_msgSender()].emergencyAddressCooldown[sender] = block.timestamp;
 
         return true;
     }
