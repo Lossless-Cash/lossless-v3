@@ -147,23 +147,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         _;
     }
 
-    /// @notice Upgrade proxy for deployment
-    /// @dev Should be deployed with OpenZeppelin Upgradeable Contracts
-    /// @param _admin Address corresponding to the Lossless Admin
-    /// @param _recoveryAdmin Address corresponding to the Lossless Recovery Admin
-    /// @param _pauseAdmin Address corresponding to the Lossless Recovery Admin
-    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin) public initializer {
-        admin = _admin;
-        recoveryAdmin = _recoveryAdmin;
-        pauseAdmin = _pauseAdmin;
-        dexTranferThreshold = 2;
-        lockTimeframe = 5 minutes;
-        emergencyCooldown = 15 minutes;
-        whitelist[_admin] = true;
-        whitelist[_recoveryAdmin]  = true;
-        whitelist[_pauseAdmin]  = true;
-    }
-
     // --- SETTERS ---
 
     /// @notice This function pauses the contract
@@ -174,6 +157,17 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function unpauses the contract
     function unpause() public onlyPauseAdmin{
         _unpause();
+    }
+
+    /// @notice This function sets default values for Contoller V3
+    /// @dev Called on startur
+    function setControllerV3Defaults() private onlyLosslessAdmin {
+        dexTranferThreshold = 2;
+        lockTimeframe = 5 minutes;
+        emergencyCooldown = 15 minutes;
+        whitelist[admin] = true;
+        whitelist[recoveryAdmin]  = true;
+        whitelist[pauseAdmin]  = true;
     }
 
     /// @notice This function sets a new admin
