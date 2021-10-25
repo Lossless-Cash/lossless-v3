@@ -557,7 +557,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             require(!dexList[recipient] &&
             !emergencyMode[_msgSender()].emergencyDexTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender], "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
 
-            if (dexList[recipient]){
+            if (dexList[recipient] && amount > dexTranferThreshold){
                 emergencyMode[_msgSender()].emergencyDexTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender] = true;
             } else {
                 emergencyMode[_msgSender()].emergencyTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender] = true;
