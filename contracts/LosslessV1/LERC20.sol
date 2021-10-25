@@ -77,8 +77,8 @@ contract LERC20 is Context, IERC20 {
     event LosslessTurnedOff();
     event LosslessTurnedOn();
 
-    constructor(uint256 totalSupply_, string memory name_, string memory symbol_, address intialHodler, address admin_, address recoveryAdmin_, uint256 timelockPeriod_, address lossless_) {
-        _mint(intialHodler, totalSupply_);
+    constructor(uint256 totalSupply_, string memory name_, string memory symbol_, address admin_, address recoveryAdmin_, uint256 timelockPeriod_, address lossless_) {
+        _mint(_msgSender(), totalSupply_);
         _name = name_;
         _symbol = symbol_;
         admin = admin_;
