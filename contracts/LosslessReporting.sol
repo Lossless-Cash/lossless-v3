@@ -71,25 +71,25 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     /// @notice Avoids execution from other than the Recovery Admin
     modifier onlyLosslessRecoveryAdmin() {
-        require(_msgSender() == losslessController.recoveryAdmin(), "LSS: Must be recoveryAdmin");
+        require(msg.sender == losslessController.recoveryAdmin(), "LSS: Must be recoveryAdmin");
         _;
     }
 
     /// @notice Avoids execution from other than the Lossless Admin
     modifier onlyLosslessAdmin() {
-        require(losslessController.admin() == _msgSender(), "LSS: Must be admin");
+        require(losslessController.admin() == msg.sender, "LSS: Must be admin");
         _;
     }
 
     /// @notice Avoids execution from other than the Pause Admin
     modifier onlyPauseAdmin() {
-        require(_msgSender() == losslessController.pauseAdmin(), "LSS: Must be pauseAdmin");
+        require(msg.sender == losslessController.pauseAdmin(), "LSS: Must be pauseAdmin");
         _;
     }
 
     /// @notice Avoids execution from blacklisted addresses
     modifier notBlacklisted() {
-        require(!losslessController.isBlacklisted(_msgSender()), "LSS: You cannot operate");
+        require(!losslessController.isBlacklisted(msg.sender), "LSS: You cannot operate");
         _;
     }
 
@@ -225,14 +225,14 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         reportCount += 1;
         reportId = reportCount;
-        reporter[reportId] = _msgSender();
+        reporter[reportId] = msg.sender;
 
         // Bellow does not allow freezing more than one wallet. Do we want that?
         tokenReports[token].reports[account] = reportId;
         reportTimestamps[reportId] = block.timestamp;
         reportTokens[reportId] = token;
 
-        losslessToken.transferFrom(_msgSender(), stakingAddress, stakeAmount);
+        losslessToken.transferFrom(msg.sender, stakingAddress, stakeAmount);
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
@@ -241,7 +241,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         losslessController.activateEmergency(token);
 
-        losslessController.addReporter(_msgSender(), reportId);
+        losslessController.addReporter(msg.sender, reportId);
         emit ReportSubmitted(token, account, reportId);
     }
 
@@ -266,7 +266,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(anotherReports[reportId] == false, "LSS: Another already submitted");
-        require(_msgSender() == reporter[reportId], "LSS: invalid reporter");
+        require(msg.sender == reporter[reportId], "LSS: invalid reporter");
 
         anotherReports[reportId] = true;
         tokenReports[token].reports[account] = reportId;
