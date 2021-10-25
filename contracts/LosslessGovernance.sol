@@ -437,7 +437,7 @@ contract LosslessGovernance is Initializable, AccessControl {
 
     /// @notice This function determins is the refund wallet was accepted
     /// @param reportId Report to propose the wallet
-    function determineProposedWallet(uint256 reportId) public view returns(bool){
+    function determineProposedWallet(uint256 reportId) private returns(bool){
         
         uint256 agreementCount;
         
@@ -456,6 +456,15 @@ contract LosslessGovernance is Initializable, AccessControl {
         if (agreementCount >= 2) {
             return true;
         }
+
+        proposedWalletOnReport[reportId].wallet = address(0);
+        proposedWalletOnReport[reportId].timestamp = block.timestamp;
+        proposedWalletOnReport[reportId].status = false;
+        proposedWalletOnReport[reportId].losslessVote = true;
+        proposedWalletOnReport[reportId].losslessVoted = false;
+        proposedWalletOnReport[reportId].tokenOwnersVote = true;
+        proposedWalletOnReport[reportId].tokenOwnersVoted = false;
+
         return false;
     }
 }
