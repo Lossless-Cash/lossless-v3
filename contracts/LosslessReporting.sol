@@ -275,8 +275,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
 
-        losslessToken.transferFrom(_msgSender(), stakingAddress, stakeAmount);
-
         emit AnotherReportSubmitted(token, account, reportId);
     }
 }

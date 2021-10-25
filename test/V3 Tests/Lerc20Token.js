@@ -7,7 +7,7 @@ const { setupAddresses, setupEnvironment, setupToken } = require('../utils');
 let adr;
 let env;
 
-describe.only('Random LERC20 Token', () => {
+describe('Random LERC20 Token', () => {
     beforeEach(async () => {
         adr = await setupAddresses();
         env = await setupEnvironment(adr.lssAdmin,
