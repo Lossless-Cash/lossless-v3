@@ -41,12 +41,32 @@ interface ILssGovernance {
     function reportResolution(uint256 reportId) external view returns(bool);
 }
 
+interface ProtectionStrategy {
+    function isTransferAllowed(address token, address sender, address recipient, uint256 amount) external;
+}
+
 /// @title Lossless Controller Contract
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
 contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
     address public admin;
     address public recoveryAdmin;
+
+    // --- V2 VARIABLES ---
+
+    address public guardian;
+    mapping(address => Protections) private tokenProtections;
+
+    struct Protection {
+        bool isProtected;
+        ProtectionStrategy strategy;
+    }
+
+    struct Protections {
+        mapping(address => Protection) protections;
+    }
+
+    // --- V3 VARIABLES ---
 
     uint256 public stakeAmount;
     uint256 public reportLifetime;
@@ -107,10 +127,15 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
 
-
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
+
+    // --- V2 EVENTS ---
+
+    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
+    event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
+    event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
 
     // --- MODIFIERS ---
 
@@ -161,7 +186,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function sets default values for Contoller V3
     /// @dev Called on startur
-    function setControllerV3Defaults() private onlyLosslessAdmin {
+    function setControllerV3Defaults() public onlyLosslessAdmin {
         dexTranferThreshold = 2;
         lockTimeframe = 5 minutes;
         emergencyCooldown = 15 minutes;

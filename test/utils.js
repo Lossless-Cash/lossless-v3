@@ -91,59 +91,41 @@ const setupEnvironment = async (lssAdmin, lssRecoveryAdmin, lssPauseAdmin, lssIn
       'LosslessControllerV1',
     );
 
-    console.log("Loaded V1")
-  
     const LosslessControllerV2 = await ethers.getContractFactory(
       'LosslessControllerV2',
     );
-
-    console.log("Loaded V2")
 
     const LosslessControllerV3 = await ethers.getContractFactory(
       'LosslessControllerV3',
     );
 
-    console.log("Loaded V3")
-  
     const losslessControllerV1 = await upgrades.deployProxy(LosslessControllerV1, [
       lssAdmin.address,
       lssRecoveryAdmin.address,
       lssPauseAdmin.address,
     ]);
 
-    console.log("Deployed V1")
-  
     const losslessControllerV2 = await upgrades.upgradeProxy(
       losslessControllerV1.address,
       LosslessControllerV2,
     );
-
-    console.log("Upgraded V2")
 
     const lssController = await upgrades.upgradeProxy(
       losslessControllerV2.address,
       LosslessControllerV3,
     );
 
-    console.log("Upgraded V3")
-
     const LosslessStaking = await ethers.getContractFactory(
     'LosslessStaking',
     );
-
-    console.log("Loaded Staking")
 
     const LosslessGovernance = await ethers.getContractFactory(
     'LosslessGovernance',
     );
 
-    console.log("Loaded Governance")
-
     const LosslessReporting = await ethers.getContractFactory(
     'LosslessReporting',
     );
-
-    console.log("Loaded Reporting")
 
     lssReporting = await upgrades.deployProxy(
     LosslessReporting,
@@ -151,23 +133,17 @@ const setupEnvironment = async (lssAdmin, lssRecoveryAdmin, lssPauseAdmin, lssIn
     { initializer: 'initialize' },
     );
 
-    console.log("Deployed Reporting")
-
     lssGovernance = await upgrades.deployProxy(
     LosslessGovernance,
     [lssReporting.address, lssController.address],
     { initializer: 'initialize' },
     );
 
-    console.log("Deployed Governance")
-
     lssStaking = await upgrades.deployProxy(
     LosslessStaking,
     [lssReporting.address, lssController.address, lssGovernance.address],
     { initializer: 'initialize' },
     );
-
-    console.log("Deployed Staking")
 
     const LosslessToken = await ethers.getContractFactory('LERC20');
 
