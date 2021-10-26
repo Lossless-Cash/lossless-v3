@@ -2,7 +2,7 @@
 /* eslint-disable prefer-destructuring */
 const { time, constants } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
-const { setupAddresses, setupEnvironment, setupToken } = require('../utils');
+const { setupAddresses, setupEnvironment, setupToken } = require('./utilsV3');
 
 let adr;
 let env;

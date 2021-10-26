@@ -17,12 +17,12 @@ contract LosslessControllerV1 is Initializable, ContextUpgradeable, PausableUpgr
     // --- MODIFIERS ---
 
     modifier onlyLosslessRecoveryAdmin() {
-        require(_msgSender() == recoveryAdmin, "LSS: Must be recoveryAdmin");
+        require(_msgSender() == recoveryAdmin, "LOSSLESS: Must be recoveryAdmin");
         _;
     }
 
     modifier onlyLosslessAdmin() {
-        require(admin == _msgSender(), "LSS: Must be admin");
+        require(admin == _msgSender(), "LOSSLESS: Must be admin");
         _;
     }
 
@@ -35,12 +35,12 @@ contract LosslessControllerV1 is Initializable, ContextUpgradeable, PausableUpgr
     // --- SETTERS ---
 
     function pause() public {
-        require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
+        require(_msgSender() == pauseAdmin, "LOSSLESS: Must be pauseAdmin");
         _pause();
     }    
     
     function unpause() public {
-        require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
+        require(_msgSender() == pauseAdmin, "LOSSLESS: Must be pauseAdmin");
         _unpause();
     }
 

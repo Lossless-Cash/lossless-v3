@@ -41,12 +41,32 @@ interface ILssGovernance {
     function reportResolution(uint256 reportId) external view returns(bool);
 }
 
+interface ProtectionStrategy {
+    function isTransferAllowed(address token, address sender, address recipient, uint256 amount) external;
+}
+
 /// @title Lossless Controller Contract
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
 contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
     address public admin;
     address public recoveryAdmin;
+
+    // --- V2 VARIABLES ---
+
+    address public guardian;
+    mapping(address => Protections) private tokenProtections;
+
+    struct Protection {
+        bool isProtected;
+        ProtectionStrategy strategy;
+    }
+
+    struct Protections {
+        mapping(address => Protection) protections;
+    }
+
+    // --- V3 VARIABLES ---
 
     uint256 public stakeAmount;
     uint256 public reportLifetime;
@@ -107,10 +127,17 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
 
+    // --- V1 EVENTS ---
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
+
+    // --- V2 EVENTS ---
+
+    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
+    event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
+    event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
 
     // --- MODIFIERS ---
 
@@ -132,6 +159,15 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         _;
     }
 
+    // --- V2 MODIFIERS ---
+
+    modifier onlyGuardian() {
+        require(msg.sender == guardian, "LOSSLESS: Must be Guardian");
+        _;
+    }
+
+    // --- V3 MODIFIERS ---
+
     /// @notice Avoids execution from other than the Lossless Admin or Lossless Environment
     modifier onlyFromAdminOrLssSC {
         require(_msgSender() == losslessStakingingAddress ||
@@ -147,57 +183,67 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         _;
     }
 
-    /// @notice Upgrade proxy for deployment
-    /// @dev Should be deployed with OpenZeppelin Upgradeable Contracts
-    /// @param _admin Address corresponding to the Lossless Admin
-    /// @param _recoveryAdmin Address corresponding to the Lossless Recovery Admin
-    /// @param _pauseAdmin Address corresponding to the Lossless Recovery Admin
-    function initialize(address _admin, address _recoveryAdmin, address _pauseAdmin) public initializer {
-        admin = _admin;
-        recoveryAdmin = _recoveryAdmin;
-        pauseAdmin = _pauseAdmin;
-        dexTranferThreshold = 2;
-        lockTimeframe = 5 minutes;
-        emergencyCooldown = 15 minutes;
-        whitelist[_admin] = true;
-        whitelist[_recoveryAdmin]  = true;
-        whitelist[_pauseAdmin]  = true;
+    // --- VIEWS ---
+
+    /// @notice This function will return the contract version 
+    function getVersion() public pure returns (uint256) {
+        return 3;
+    }
+    
+    /// @notice Retruns the emergency state
+    function getEmergencyStatus(address token) public view returns (bool) {
+        return emergencyMode[token].emergency;
     }
 
-    // --- SETTERS ---
+    /// @notice This function will return if the address is blacklisted/reported
+    /// @return Returns true or false
+    function isBlacklisted(address _adr) public view returns (bool) {
+        return blacklist[_adr];
+    }
 
-    /// @notice This function pauses the contract
-    function pause() public onlyPauseAdmin{
+    /// @notice This function will return if the address is whitelisted
+    /// @return Returns true or false
+    function isWhitelisted(address _adr) public view returns (bool) {
+        return whitelist[_adr];
+    }
+
+    // --- ADMINISTRATION ---
+
+    function pause() public onlyPauseAdmin  {
         _pause();
     }    
-
-    /// @notice This function unpauses the contract
-    function unpause() public onlyPauseAdmin{
+    
+    function unpause() public onlyPauseAdmin {
         _unpause();
     }
 
-    /// @notice This function sets a new admin
-    /// @dev Only can be called by the Recovery admin
-    /// @param newAdmin Address corresponding to the new Lossless Admin
     function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
     }
 
-    /// @notice This function sets a new recovery admin
-    /// @dev Only can be called by the previous Recovery admin
-    /// @param newRecoveryAdmin Address corresponding to the new Lossless Recovery Admin
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
         emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
-    /// @notice This function sets a new pause admin
-    /// @dev Only can be called by the Recovery admin
-    /// @param newPauseAdmin Address corresponding to the new Lossless Pause Admin
     function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
         emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
+    }
+
+
+    // --- V3 SETTERS ---
+
+    /// @notice This function sets default values for Contoller V3
+    /// @dev Called on startur
+    function setControllerV3Defaults() public onlyLosslessAdmin {
+        dexTranferThreshold = 2;
+        lockTimeframe = 5 minutes;
+        emergencyCooldown = 15 minutes;
+        whitelist[admin] = true;
+        whitelist[recoveryAdmin]  = true;
+        whitelist[pauseAdmin]  = true;
     }
     
     /// @notice This function sets the address of the Lossless Governance Token
@@ -339,28 +385,31 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         emergencyMode[token].emergencyMappingNum += 1;
     }
 
-    // --- GETTERS ---
+    // --- GUARD ---
 
-    /// @notice This function will return the contract version 
-    function getVersion() public pure returns (uint256) {
-        return 3;
+    // @notice Set a guardian contract.
+    // @dev Guardian contract must be trusted as it has some access rights and can modify controller's state.
+    function setGuardian(address newGuardian) public onlyLosslessAdmin whenNotPaused {
+        emit GuardianSet(guardian, newGuardian);
+        guardian = newGuardian;
     }
 
-    /// @notice Retruns the emergency state
-    function getEmergencyStatus(address token) public view returns (bool) {
-        return emergencyMode[token].emergency;
+    // @notice Sets protection for an address with the choosen strategy.
+    // @dev Strategies are verified in the guardian contract.
+    // @dev This call is initiated from a strategy, but guardian proxies it.
+    function setProtectedAddress(address token, address protectedAddresss, ProtectionStrategy strategy) external onlyGuardian whenNotPaused {
+        Protection storage protection = tokenProtections[token].protections[protectedAddresss];
+        protection.isProtected = true;
+        protection.strategy = strategy;
+        emit ProtectedAddressSet(token, protectedAddresss, address(strategy));
     }
 
-    /// @notice This function will return if the address is blacklisted/reported
-    /// @return Returns true or false
-    function isBlacklisted(address _adr) public view returns (bool) {
-        return blacklist[_adr];
-    }
-
-    /// @notice This function will return if the address is whitelisted
-    /// @return Returns true or false
-    function isWhitelisted(address _adr) public view returns (bool) {
-        return whitelist[_adr];
+    // @notice Remove the protection from the address.
+    // @dev Strategies are verified in the guardian contract.
+    // @dev This call is initiated from a strategy, but guardian proxies it.
+    function removeProtectedAddress(address token, address protectedAddresss) external onlyGuardian whenNotPaused {
+        delete tokenProtections[token].protections[protectedAddresss];
+        emit RemovedProtectedAddress(token, protectedAddresss);
     }
     
     /// @notice This function will return the non-settled tokens amount
@@ -550,7 +599,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(totalBalance >= amount, "LSS: Insufficient balance");
 
         uint256 settledAmount = getAvailableAmount(_msgSender(), sender);
-        uint256 unsettledAmount = totalBalance - settledAmount;
 
         if (emergencyMode[_msgSender()].emergency && amount >= settledAmount) {
             require(!emergencyMode[_msgSender()].emergencyTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender], "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
@@ -583,15 +631,26 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         return true;
     }
 
+    // @notice If address is protected, transfer validation rules have to be run inside the strategy.
+    // @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransfer(address sender, address recipient, uint256 amount) external notBlacklisted {
+        if (tokenProtections[msg.sender].protections[sender].isProtected) {
+            tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
+        }
+
         require(!isBlacklisted(sender), "LSS: You cannot operate");
         require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
 
         require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
-
     }
 
+    // @notice If address is protected, transfer validation rules have to be run inside the strategy.
+    // @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external notBlacklisted {
+        if (tokenProtections[msg.sender].protections[sender].isProtected) {
+            tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
+        }
+
         require(!isBlacklisted(sender), "LSS: You cannot operate");
         require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
         require(!isBlacklisted(msgSender), "LSS: Recipient is blacklisted");
@@ -605,13 +664,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external {}
 
+
     // --- AFTER HOOKS ---
+    // * After hooks are deprecated in LERC20 but we have to keep them
+    //   here in order to support legacy LERC20.
 
     function afterApprove(address sender, address spender, uint256 amount) external {}
 
-    function afterTransfer(address sender, address recipient, uint256 amount) external {
-
-    }
+    function afterTransfer(address sender, address recipient, uint256 amount) external {}
 
     function afterTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {}
 
