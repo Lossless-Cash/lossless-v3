@@ -42,6 +42,8 @@ interface ILosslessController {
 
     function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external;
 
+    function beforeBurn(address account, uint256 amount) external;
+
     function afterApprove(address sender, address spender, uint256 amount) external;
 
     function afterTransfer(address sender, address recipient, uint256 amount) external;
@@ -51,6 +53,8 @@ interface ILosslessController {
     function afterIncreaseAllowance(address sender, address spender, uint256 addedValue) external;
 
     function afterDecreaseAllowance(address sender, address spender, uint256 subtractedValue) external;
+
+    function afterBurn(address account, uint256 amount) external;
 }
 
 contract LERC20 is Context, IERC20 {
@@ -134,6 +138,16 @@ contract LERC20 is Context, IERC20 {
             lossless.beforeDecreaseAllowance(_msgSender(), spender, subtractedValue);
             _;
             lossless.afterDecreaseAllowance(_msgSender(), spender, subtractedValue);
+        } else {
+            _;
+        }
+    }
+
+    modifier lssBurn(address account, uint256 amount) {
+        if (isLosslessOn) {
+            lossless.beforeBurn(account, amount);
+            _;
+            lossless.afterBurn(account, amount);
         } else {
             _;
         }
@@ -256,6 +270,15 @@ contract LERC20 is Context, IERC20 {
         return true;
     }
 
+    function burnFrom(address account, uint256 amount) public virtual lssBurn(account, amount) {
+        uint256 currentAllowance = allowance(account, _msgSender());
+        require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
+        unchecked {
+            _approve(account, _msgSender(), currentAllowance - amount);
+        }
+        _burn(account, amount);
+    }
+
     function _transfer(address sender, address recipient, uint256 amount) internal virtual {
         require(sender != address(0), "LERC20: transfer from the zero address");
         require(recipient != address(0), "LERC20: transfer to the zero address");
@@ -283,4 +306,33 @@ contract LERC20 is Context, IERC20 {
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
+
+    function _burn(address account, uint256 amount) internal virtual {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        _beforeTokenTransfer(account, address(0), amount);
+
+        uint256 accountBalance = _balances[account];
+        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+        unchecked {
+            _balances[account] = accountBalance - amount;
+        }
+        _totalSupply -= amount;
+
+        emit Transfer(account, address(0), amount);
+
+        _afterTokenTransfer(account, address(0), amount);
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
 }

@@ -662,6 +662,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     function beforeApprove(address sender, address spender, uint256 amount) external {}
 
+    function beforeBurn(address account, uint256 amount) external {}
+
     function beforeIncreaseAllowance(address msgSender, address spender, uint256 addedValue) external {}
 
     function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external {}
@@ -672,6 +674,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     //   here in order to support legacy LERC20.
 
     function afterApprove(address sender, address spender, uint256 amount) external {}
+
+    function afterBurn(address account, uint256 amount) external {}
 
     function afterTransfer(address sender, address recipient, uint256 amount) external {}
 
