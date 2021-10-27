@@ -215,17 +215,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         _unpause();
     }
 
-    /// @notice This function sets default values for Contoller V3
-    /// @dev Called on startur
-    function setControllerV3Defaults() public onlyLosslessAdmin {
-        dexTranferThreshold = 2;
-        lockTimeframe = 5 minutes;
-        emergencyCooldown = 15 minutes;
-        whitelist[admin] = true;
-        whitelist[recoveryAdmin]  = true;
-        whitelist[pauseAdmin]  = true;
-    }
-
     /// @notice This function sets a new admin
     /// @dev Only can be called by the Recovery admin
     /// @param newAdmin Address corresponding to the new Lossless Admin
