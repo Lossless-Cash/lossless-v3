@@ -61,7 +61,7 @@ contract LERC20 is Context, IERC20 {
     string private _symbol;
 
     address public recoveryAdmin;
-    address private recoveryAdminCanditate;
+    address private recoveryAdminCandidate;
     bytes32 private recoveryAdminKeyHash;
     address public admin;
     uint256 public timelockPeriod;
@@ -164,16 +164,16 @@ contract LERC20 is Context, IERC20 {
     }
 
     function transferRecoveryAdminOwnership(address candidate, bytes32 keyHash) public onlyRecoveryAdmin {
-        recoveryAdminCanditate = candidate;
+        recoveryAdminCandidate = candidate;
         recoveryAdminKeyHash = keyHash;
         emit RecoveryAdminChangeProposed(candidate);
     }
 
     function acceptRecoveryAdminOwnership(bytes memory key) external {
-        require(_msgSender() == recoveryAdminCanditate, "LERC20: Must be canditate");
+        require(_msgSender() == recoveryAdminCandidate, "LERC20: Must be canditate");
         require(keccak256(key) == recoveryAdminKeyHash, "LERC20: Invalid key");
-        emit RecoveryAdminChanged(recoveryAdmin, recoveryAdminCanditate);
-        recoveryAdmin = recoveryAdminCanditate;
+        emit RecoveryAdminChanged(recoveryAdmin, recoveryAdminCandidate);
+        recoveryAdmin = recoveryAdminCandidate;
     }
 
     function proposeLosslessTurnOff() public onlyRecoveryAdmin {
