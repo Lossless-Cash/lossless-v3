@@ -141,19 +141,19 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice Avoids execution from other than the Recovery Admin
     modifier onlyLosslessRecoveryAdmin() {
-        require(_msgSender() == recoveryAdmin, "LSS: Must be recoveryAdmin");
+        require(msg.sender == recoveryAdmin, "LSS: Must be recoveryAdmin");
         _;
     }
 
     /// @notice Avoids execution from other than the Lossless Admin
     modifier onlyLosslessAdmin() {
-        require(admin == _msgSender(), "LSS: Must be admin");
+        require(admin == msg.sender, "LSS: Must be admin");
         _;
     }
 
     /// @notice Avoids execution from other than the Pause Admin
     modifier onlyPauseAdmin() {
-        require(_msgSender() == pauseAdmin, "LSS: Must be pauseAdmin");
+        require(msg.sender == pauseAdmin, "LSS: Must be pauseAdmin");
         _;
     }
 
@@ -168,16 +168,16 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice Avoids execution from other than the Lossless Admin or Lossless Environment
     modifier onlyFromAdminOrLssSC {
-        require(_msgSender() == losslessStakingingAddress ||
-                _msgSender() == losslessReportingAddress  || 
-                _msgSender() == losslessGovernanceAddress ||
-                _msgSender() == admin, "LSS: Admin or LSS SC only");
+        require(msg.sender == losslessStakingingAddress ||
+                msg.sender == losslessReportingAddress  || 
+                msg.sender == losslessGovernanceAddress ||
+                msg.sender == admin, "LSS: Admin or LSS SC only");
         _;
     }
 
     /// @notice Avoids execution from blacklisted addresses
     modifier notBlacklisted() {
-        require(!blacklist[_msgSender()], "LSS: You cannot operate");
+        require(!blacklist[msg.sender], "LSS: You cannot operate");
         _;
     }
 
@@ -496,7 +496,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param recipient Address to lift the locks
     function removeExpiredLocks (address recipient) private {
         LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
+        queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
 
         uint i = queue.first;
         ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
@@ -515,7 +515,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param amount Address to lift the locks
     function removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
         LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[_msgSender()].queue[account];
+        queue = tokenScopedLockedFunds[msg.sender].queue[account];
 
         require(queue.touchedTimestamp + lockTimeframe <= block.timestamp, "LSS: Transfers limit reached");
 
@@ -547,7 +547,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param recipient Address to lift the locks
     function enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
+        queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
 
         if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
             queue.lockedFunds[queue.last].amount += checkpoint.amount;
@@ -561,7 +561,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param recipient Address to lift the locks
     function dequeueLockedFunds(address recipient) private {
         LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[_msgSender()].queue[recipient];
+        queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
 
         delete queue.lockedFunds[queue.first];
         queue.first += 1;
@@ -606,21 +606,22 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param amount Amount to be transfered
     function evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
         
-        uint256 totalBalance = ILERC20(_msgSender()).balanceOf(sender);
+        uint256 totalBalance = ILERC20(msg.sender).balanceOf(sender);
 
         require(totalBalance >= amount, "LSS: Insufficient balance");
 
-        uint256 settledAmount = getAvailableAmount(_msgSender(), sender);
+        uint256 settledAmount = getAvailableAmount(msg.sender, sender);
+        uint256 unsettledAmount = totalBalance - settledAmount;
 
-        if (emergencyMode[_msgSender()].emergency && amount >= settledAmount) {
-            require(!emergencyMode[_msgSender()].emergencyTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender], "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
+        if (emergencyMode[msg.sender].emergency && amount >= settledAmount) {
+            require(!emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender], "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
             require(!dexList[recipient] &&
-            !emergencyMode[_msgSender()].emergencyDexTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender], "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
+            !emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender], "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
 
             if (dexList[recipient] && amount > dexTranferThreshold){
-                emergencyMode[_msgSender()].emergencyDexTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender] = true;
+                emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
             } else {
-                emergencyMode[_msgSender()].emergencyTransfer[emergencyMode[_msgSender()].emergencyMappingNum][sender] = true;
+                emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
             }
 
             return true;
@@ -630,7 +631,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
         } else if (settledAmount < amount) {
             removeUsedUpLocks(settledAmount, sender, amount);
-            require(getAvailableAmount(_msgSender(), sender) >= amount, "LSS: Amt exceeds settled balance");
+            require(getAvailableAmount(msg.sender, sender) >= amount, "LSS: Amt exceeds settled balance");
         }
 
         if (dexList[recipient]) {

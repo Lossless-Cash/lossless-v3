@@ -90,7 +90,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     }
 
     modifier onlyLosslessAdmin() {
-        require(losslessController.admin() == _msgSender(), "LSS: must be admin");
+        require(losslessController.admin() == msg.sender, "LSS: must be admin");
         _;
     }
 
