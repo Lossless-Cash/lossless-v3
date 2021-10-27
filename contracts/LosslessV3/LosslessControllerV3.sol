@@ -660,6 +660,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
     }
 
+    function beforeMint(address to, uint256 amount) external {}
+
     function beforeApprove(address sender, address spender, uint256 amount) external {}
 
     function beforeIncreaseAllowance(address msgSender, address spender, uint256 addedValue) external {}
@@ -670,6 +672,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- AFTER HOOKS ---
     // * After hooks are deprecated in LERC20 but we have to keep them
     //   here in order to support legacy LERC20.
+
+    function afterMint(address to, uint256 amount) external {}
 
     function afterApprove(address sender, address spender, uint256 amount) external {}
 
