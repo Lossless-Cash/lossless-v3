@@ -8,44 +8,39 @@ let adr;
 let env;
 
 describe('Lossless Token', () => {
+  beforeEach(async () => {
+    adr = await setupAddresses();
+    env = await setupEnvironment(adr.lssAdmin,
+      adr.lssRecoveryAdmin,
+      adr.lssPauseAdmin,
+      adr.lssInitialHolder,
+      adr.lssBackupAdmin);
+  });
+
+  describe('when transfering between users', () => {
     beforeEach(async () => {
-        adr = await setupAddresses();
-        env = await setupEnvironment(adr.lssAdmin,
-                                     adr.lssRecoveryAdmin,
-                                     adr.lssPauseAdmin,
-                                     adr.lssInitialHolder,
-                                     adr.lssBackupAdmin,
-                                    );
-
+      await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.regularUser1.address, 100);
+      await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.regularUser2.address, 100);
     });
-    
-    describe('when transfering between users', ()=>{
-        beforeEach(async ()=>{
-        await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.regularUser1.address, 100);
-        await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.regularUser2.address, 100);
-        });
 
-        it('should revert if 5 minutes haven\'t passed', async () => {
-
-        await expect(
-            env.lssToken.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
-        ).to.be.revertedWith("LSS: Amt exceeds settled balance");
-
-        });
-        
-        it('should not revert', async () => {
-        
-            await ethers.provider.send('evm_increaseTime', [
-                Number(time.duration.minutes(5)),
-            ]);
-
-            await expect(
-                env.lssToken.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
-            ).to.not.be.reverted;
-
-            expect(
-                await env.lssToken.balanceOf(adr.regularUser3.address),
-            ).to.be.equal(5);
-        });
+    it('should revert if 5 minutes haven\'t passed', async () => {
+      await expect(
+        env.lssToken.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+      ).to.be.revertedWith('LSS: Amt exceeds settled balance');
     });
+
+    it('should not revert', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await expect(
+        env.lssToken.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+
+      expect(
+        await env.lssToken.balanceOf(adr.regularUser3.address),
+      ).to.be.equal(5);
+    });
+  });
 });

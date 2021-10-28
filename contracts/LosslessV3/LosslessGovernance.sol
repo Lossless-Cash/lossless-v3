@@ -17,7 +17,7 @@ interface ILssReporting {
 
 interface ILssController {
     function getReportLifetime() external view returns(uint256);
-    function retreiveBlacklistedFunds(address[] calldata _addresses, address token) external;
+    function retrieveBlacklistedFunds(address[] calldata _addresses, address token) external;
     function resolvedNegatively(address _adr) external;
     function retrieveBlacklistedToContracts(uint256 reportId, address token) external;
     function deactivateEmergency(address token) external;
@@ -169,7 +169,7 @@ contract LosslessGovernance is Initializable, AccessControl {
 
     /// @notice This function sets the wallet dispute period
     /// @param timeFrame Time in seconds for the dispute period
-    function setDipustePeriod(uint256 timeFrame) public onlyLosslessAdmin {
+    function setDiputePeriod(uint256 timeFrame) public onlyLosslessAdmin {
         walletDisputePeriod = timeFrame;
     }
     
@@ -360,7 +360,7 @@ contract LosslessGovernance is Initializable, AccessControl {
         
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
-            losslessController.retreiveBlacklistedFunds(reportedAddresses, token);
+            losslessController.retrieveBlacklistedFunds(reportedAddresses, token);
             losslessController.retrieveBlacklistedToContracts(reportId, token);
         }else{
             reportVote.resolution = false;
