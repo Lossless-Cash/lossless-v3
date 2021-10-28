@@ -24,12 +24,19 @@ interface ILssController {
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
     function recoveryAdmin() external view returns (address);
+    function getCompensationPercentage() external view returns (uint256);
+}
+
+interface ILssStaking {
+    function getTotalStaked(uint256 reportId) external view returns (uint256);
+    function retrieveCompensation(address adr, uint256 amount) external;
 }
 
 interface ILERC20 {
     function admin() external view returns (address);
     function balanceOf(address account) external view returns (uint256);
     function transfer(address recipient, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 } 
 
 /// @title Lossless Governance Contract
@@ -45,10 +52,12 @@ contract LosslessGovernance is Initializable, AccessControl {
     uint256 public committeeMembersCount;
     uint256 public quorumSize;
 
-    uint256 walletDisputePeriod;
+    uint256 public walletDisputePeriod;
 
     ILssReporting public losslessReporting;
     ILssController public losslessController;
+    ILssStaking public losslessStaking;
+    ILERC20 public losslessToken;
 
     struct Vote {
         mapping(address => bool) committeeMemberVoted;
@@ -59,11 +68,11 @@ contract LosslessGovernance is Initializable, AccessControl {
         bool resolution;
     }
 
-    mapping(uint256 => Vote) reportVotes;
-    mapping(address => address) projectOwners;
-    mapping(uint256 => uint256) amountReported;
+    mapping(uint256 => Vote) public reportVotes;
+    mapping(address => address) public projectOwners;
+    mapping(uint256 => uint256) public amountReported;
 
-    mapping(uint256 => ProposedWallet) proposedWalletOnReport;
+    mapping(uint256 => ProposedWallet) public proposedWalletOnReport;
 
     struct ProposedWallet {
         address wallet;
@@ -77,12 +86,20 @@ contract LosslessGovernance is Initializable, AccessControl {
         mapping (address => bool) memberVoted;
     }
 
+    struct Compensation {
+        uint256 amount;
+        bool payed;
+    }
+
+    mapping(address => Compensation) private compensation;
 
     address[] private reportedAddresses;
 
-    function initialize(address _losslessReporting, address _losslessController) public initializer {
+    function initialize(address _losslessReporting, address _losslessController, address _losslessStaking, address _losslessToken) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
+        losslessStaking = ILssStaking(_losslessStaking);
+        losslessToken = ILERC20(_losslessToken);
         walletDisputePeriod = 7 days;
         tokenOwnersVoteIndex = 1;
         committeeVoteIndex = 2;
@@ -348,6 +365,10 @@ contract LosslessGovernance is Initializable, AccessControl {
         }else{
             reportVote.resolution = false;
             losslessController.resolvedNegatively(reportedAddress);
+
+            uint256 compensationAmount = losslessController.getCompensationPercentage();
+            compensation[reportedAddress].amount +=  (losslessStaking.getTotalStaked(reportId) * compensationAmount) / 10**2;
+            compensation[reportedAddress].payed =  false;
         }
         
         reportVote.resolved = true;
@@ -429,10 +450,9 @@ contract LosslessGovernance is Initializable, AccessControl {
 
         rewardAmounts = totalAmount * (losslessReporting.getStakersFee() + reporterReward + losslessFee) / 10**2;
 
-        ILERC20(token).transfer(msg.sender, totalAmount - rewardAmounts);
-
         proposedWalletOnReport[reportId].status = true;
-
+        
+        ILERC20(token).transfer(msg.sender, totalAmount - rewardAmounts);
     }
 
     /// @notice This function determins is the refund wallet was accepted
@@ -466,5 +486,17 @@ contract LosslessGovernance is Initializable, AccessControl {
         proposedWalletOnReport[reportId].tokenOwnersVoted = false;
 
         return false;
+    }
+
+    /// @notice This lets an erroneously reported account to retrieve compensation
+    function retrieveCompensation() public {
+        require(!compensation[msg.sender].payed, "LSS: Already retrieved");
+        require(compensation[msg.sender].amount > 0, "LSS: No retribution assigned");
+        
+        compensation[msg.sender].payed = true;
+
+        losslessStaking.retrieveCompensation(msg.sender, compensation[msg.sender].amount);
+
+        compensation[msg.sender].amount = 0;
     }
 }
