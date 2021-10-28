@@ -42,6 +42,8 @@ interface ILosslessController {
 
     function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external;
 
+    function beforeMint(address to, uint256 amount) external;
+
     function afterApprove(address sender, address spender, uint256 amount) external;
 
     function afterTransfer(address sender, address recipient, uint256 amount) external;
@@ -51,6 +53,8 @@ interface ILosslessController {
     function afterIncreaseAllowance(address sender, address spender, uint256 addedValue) external;
 
     function afterDecreaseAllowance(address sender, address spender, uint256 subtractedValue) external;
+
+    function afterMint(address to, uint256 amount) external;
 }
 
 contract LERC20 is Context, IERC20 {
@@ -114,6 +118,16 @@ contract LERC20 is Context, IERC20 {
             lossless.beforeTransferFrom(_msgSender(),sender, recipient, amount);
             _;
             lossless.afterTransferFrom(_msgSender(), sender, recipient, amount);
+        } else {
+            _;
+        }
+    }
+
+    modifier lssMint(address to, uint256 amount) {
+        if (isLosslessOn) {
+            lossless.beforeMint(to, amount);
+            _;
+            lossless.afterMint(to, amount);
         } else {
             _;
         }
@@ -220,6 +234,11 @@ contract LERC20 is Context, IERC20 {
 
     function transfer(address recipient, uint256 amount) public virtual override lssTransfer(recipient, amount) returns (bool) {
         _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    function mint(address to, uint256 amount) public virtual lssMint(to, amount) returns (bool){
+        _mint(to, amount);
         return true;
     }
 
