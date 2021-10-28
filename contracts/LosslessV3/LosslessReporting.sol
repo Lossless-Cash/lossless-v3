@@ -43,7 +43,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     ILERC20 public losslessToken;
     ILssController public losslessController;
-    address controllerAddress;
+
     address stakingAddress;
 
     struct TokenReports {
@@ -121,7 +121,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param _adr Address corresponding to the Lossless Controller contract
     function setControllerContractAddress(address _adr) public onlyLosslessAdmin {
         losslessController = ILssController(_adr);
-        controllerAddress = _adr;
     }
 
     /// @notice This function sets the address of the Lossless Staking contract

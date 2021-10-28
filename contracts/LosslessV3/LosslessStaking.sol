@@ -40,6 +40,7 @@ interface ILssController {
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
     function recoveryAdmin() external view returns (address);
+    function getCompensationPercentage() external view returns (uint256);
 }
 
 interface ILssGovernance {
@@ -69,27 +70,22 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     ILssController public losslessController;
     ILssGovernance public losslessGovernance;
 
-    address public controllerAddress;
-    address public governanceAddress;
-    address public tokenAddress;
-
     mapping(address => bool) whitelist;
     
     mapping(address => Stake) private stakes;
     mapping(uint256 => address[]) public stakers;
+
+    mapping(uint256 => uint256) public totalStakedOnReport;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
-    function initialize(address _losslessReporting, address _losslessController, address _losslessGovernance) public initializer {
+    function initialize(address _losslessReporting, address _losslessController) public initializer {
        cooldownPeriod = 5 minutes;
        losslessReporting = ILssReporting(_losslessReporting);
        losslessController = ILssController(_losslessController);
-       losslessGovernance = ILssGovernance(_losslessGovernance);
-       controllerAddress = _losslessController;
-       governanceAddress = _losslessGovernance;
     }
 
     // --- MODIFIERS ---
@@ -114,12 +110,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         _;
     }
 
+    /// @notice Avoids execution from other than the Lossless Admin or Lossless Environment
     modifier onlyFromAdminOrLssSC {
-        require(msg.sender == controllerAddress ||
+        require(msg.sender == address(losslessController) ||
+                msg.sender == address(losslessGovernance) ||
                 msg.sender == losslessController.admin(), "LSS: Admin or LSS SC only");
         _;
     }
-
 
     // --- SETTERS ---
 
@@ -144,7 +141,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param _losslessToken Address corresponding to the Lossless Governance Token
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
         losslessToken = ILERC20(_losslessToken);
-        tokenAddress = _losslessToken;
+    }
+
+    /// @notice This function sets the address of the Lossless Governance Token
+    /// @dev Only can be called by the Lossless Admin
+    /// @param _losslessGovernance Address corresponding to the Lossless Governance Token
+    function setLosslessGovernance(address _losslessGovernance) public onlyLosslessAdmin {
+        losslessGovernance = ILssGovernance(_losslessGovernance);
     }
 
     /// @notice This function returns all the reports where an address is staking
@@ -236,6 +239,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         losslessController.addToReportCoefficient(reportId, stakerCoefficient);
         
         losslessToken.transferFrom(msg.sender, address(this), stakeAmount);
+
+        totalStakedOnReport[reportId] += stakeAmount;
         
         emit Staked(losslessReporting.getTokenFromReport(reportId), msg.sender, reportId);
     }
@@ -336,10 +341,10 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakeAmount = losslessController.getStakeAmount();
         token = losslessReporting.getTokenFromReport(reportId);
 
+        setPayoutStatus(reportId, msg.sender);
+
         ILERC20(token).transfer(msg.sender, amountToClaim);
         losslessToken.transfer( msg.sender, stakeAmount);
-
-        setPayoutStatus(reportId, msg.sender);
     }
 
     /// @notice This function is for the reported  to claim their rewards
@@ -356,11 +361,19 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         amountToClaim = reporterClaimableAmount(reportId);
         stakeAmount = losslessController.getStakeAmount();
 
+        losslessController.setReporterPayoutStatus(msg.sender, true, reportId);
+
         ILERC20(losslessReporting.getTokenFromReport(reportId)).transfer(msg.sender, amountToClaim);
         losslessToken.transfer(msg.sender, stakeAmount);
-
-        losslessController.setReporterPayoutStatus(msg.sender, true, reportId);
     }
+
+    /// @notice This function allows the governance token to retribute an erroneous report
+    /// @param adr retribution address
+    /// @param amount amount to be retrieved
+    function retrieveCompensation(address adr, uint256 amount) public onlyFromAdminOrLssSC {
+        losslessToken.transfer(adr, amount);
+    }
+
 
     // --- GETTERS ---
 
@@ -369,4 +382,11 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function getVersion() public pure returns (uint256) {
         return 1;
     }
+
+    /// @notice This function returns the total staked on a report
+    /// @return Returns the Smart Contract version
+    function getTotalStaked(uint256 reportId) public view returns (uint256) {
+        return totalStakedOnReport[reportId];
+    }
+    
 }
