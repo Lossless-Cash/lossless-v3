@@ -95,6 +95,18 @@ contract LosslessGovernance is Initializable, AccessControl {
 
     address[] private reportedAddresses;
 
+    event NewCommitteeMembers(address[] indexed members);
+    event CommitteeMembersRemoved(address[] indexed members);
+    event LosslessTeamVoted(uint256 indexed reportId, bool indexed vote);
+    event TokenOwnersVoted(uint256 indexed reportId, bool indexed vote);
+    event CommitteeMemberVoted(uint256 indexed reportId, address indexed member, bool indexed vote);
+    event ReportResolved(uint256 indexed reportId, bool indexed resolution);
+    event WalletProposed(uint256 indexed reportId, address indexed wallet);
+    event WalletRejected(uint256 indexed reportId, address indexed wallet);
+    event FundsRetrieved(uint256 indexed reportId, address indexed wallet);
+    event CompensationRetrieved(address indexed wallet);
+
+
     function initialize(address _losslessReporting, address _losslessController, address _losslessStaking, address _losslessToken) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
@@ -214,6 +226,8 @@ contract LosslessGovernance is Initializable, AccessControl {
             require(!isCommitteeMember(members[i]), "LSS: duplicate members");
             grantRole(COMMITTEE_ROLE, members[i]);
         }
+
+        emit NewCommitteeMembers(members);
     } 
 
     /// @notice This function removes Committee members    
@@ -233,6 +247,8 @@ contract LosslessGovernance is Initializable, AccessControl {
             require(isCommitteeMember(members[i]), "LSS: An address is not member");
             revokeRole(COMMITTEE_ROLE, members[i]);
         }
+
+        emit CommitteeMembersRemoved(members);
     }
 
     /// @notice This function automatically updates the quorum number
@@ -263,6 +279,8 @@ contract LosslessGovernance is Initializable, AccessControl {
 
         reportVote.voted[lssTeamVoteIndex] = true;
         reportVote.votes[lssTeamVoteIndex] = vote;
+
+        emit LosslessTeamVoted(reportId, vote);
     }
 
     /// @notice This function emits a vote on a report by the Token Owners
@@ -284,6 +302,8 @@ contract LosslessGovernance is Initializable, AccessControl {
         
         reportVote.voted[tokenOwnersVoteIndex] = true;
         reportVote.votes[tokenOwnersVoteIndex] = vote;
+
+        emit TokenOwnersVoted(reportId, vote);
     }
 
     /// @notice This function emits a vote on a report by a Committee member
@@ -311,6 +331,8 @@ contract LosslessGovernance is Initializable, AccessControl {
             reportVote.votes[committeeVoteIndex] = result;
             reportVote.voted[committeeVoteIndex] = true;
         }
+
+        emit CommitteeMemberVoted(reportId, msg.sender, vote);
     }
 
     /// @notice This function solves a reported based on the voting resolution of the three pilars
@@ -373,6 +395,8 @@ contract LosslessGovernance is Initializable, AccessControl {
         
         reportVote.resolved = true;
         delete reportedAddresses;
+
+        emit ReportResolved(reportId, reportVote.resolution);
     }
 
     // REFUND PROCESS
@@ -396,6 +420,8 @@ contract LosslessGovernance is Initializable, AccessControl {
         proposedWalletOnReport[reportId].losslessVoted = false;
         proposedWalletOnReport[reportId].tokenOwnersVote = true;
         proposedWalletOnReport[reportId].tokenOwnersVoted = false;
+
+        emit WalletProposed(reportId, wallet);
     }
 
     /// @notice This function is used to reject the wallet proposal
@@ -424,6 +450,8 @@ contract LosslessGovernance is Initializable, AccessControl {
             proposedWalletOnReport[reportId].tokenOwnersVote = false;
             proposedWalletOnReport[reportId].tokenOwnersVoted = true;
         }
+
+        emit WalletRejected(reportId, proposedWalletOnReport[reportId].wallet);
     }
 
     /// @notice This function proposes a wallet where the recovered funds will be returned
@@ -453,6 +481,8 @@ contract LosslessGovernance is Initializable, AccessControl {
         proposedWalletOnReport[reportId].status = true;
         
         ILERC20(token).transfer(msg.sender, totalAmount - rewardAmounts);
+
+        emit FundsRetrieved(reportId, msg.sender);
     }
 
     /// @notice This function determins is the refund wallet was accepted
@@ -498,5 +528,7 @@ contract LosslessGovernance is Initializable, AccessControl {
         losslessStaking.retrieveCompensation(msg.sender, compensation[msg.sender].amount);
 
         compensation[msg.sender].amount = 0;
+
+        emit CompensationRetrieved(msg.sender);
     }
 }
