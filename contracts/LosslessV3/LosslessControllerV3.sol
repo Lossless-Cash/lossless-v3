@@ -77,14 +77,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     uint256 emergencyCooldown;
 
+    uint256 erroneusCompensation;
+
     ILERC20 public losslessToken;
     ILssStaking public losslessStaking;
     ILssReporting public losslessReporting;
     ILssGovernance public losslessGovernance;
-
-    address public losslessReportingAddress;
-    address public losslessStakingingAddress;
-    address public losslessGovernanceAddress;
 
     struct LocksQueue {
         mapping(uint256 => ReceiveCheckpoint) lockedFunds;
@@ -168,9 +166,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice Avoids execution from other than the Lossless Admin or Lossless Environment
     modifier onlyFromAdminOrLssSC {
-        require(msg.sender == losslessStakingingAddress ||
-                msg.sender == losslessReportingAddress  || 
-                msg.sender == losslessGovernanceAddress ||
+        require(msg.sender == address(losslessStaking) ||
+                msg.sender == address(losslessReporting)  || 
+                msg.sender == address(losslessGovernance) ||
                 msg.sender == admin, "LSS: Admin or LSS SC only");
         _;
     }
@@ -240,6 +238,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Called on startur
     function setControllerV3Defaults() public onlyLosslessAdmin {
         dexTranferThreshold = 2;
+        erroneusCompensation = 2;
         lockTimeframe = 5 minutes;
         emergencyCooldown = 15 minutes;
         whitelist[admin] = true;
@@ -252,6 +251,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _losslessToken Address corresponding to the Lossless Governance Token
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
         losslessToken = ILERC20(_losslessToken);
+    }
+
+    /// @notice This function sets the amount of tokens given to the erroneously reported address
+    /// @param amount Percentage to return
+    function setCompensationAmount(uint256 amount) private {
+        erroneusCompensation = amount;
     }
 
     /// @notice This function adds an address to the Decentralized Exchanges mapping
@@ -293,7 +298,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         blacklist[_adr] = false;
     }
 
-    /// @notice This function calls removeFromBlacklist()
+    /// @notice This function calls removeFromBlacklist() and returns a percentage as compensation
     /// @param _adr Address corresponding to be removed from the blacklist mapping
     function resolvedNegatively(address _adr) public onlyFromAdminOrLssSC {
         removeFromBlacklist(_adr);
@@ -303,21 +308,18 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _adr Address corresponding to the Lossless Staking contract
     function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
         losslessStaking = ILssStaking(_adr);
-        losslessStakingingAddress = _adr;
     }
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _adr Address corresponding to the Lossless Reporting contract
     function setReportingContractAddress(address _adr) public onlyLosslessAdmin {
         losslessReporting = ILssReporting(_adr);
-        losslessReportingAddress = _adr;
     }
 
     /// @notice This function sets the address of the Lossless Governance contract
     /// @param _adr Address corresponding to the Lossless Governance contract
     function setGovernanceContractAddress(address _adr) public onlyLosslessAdmin {
         losslessGovernance = ILssGovernance(_adr);
-        losslessGovernanceAddress = _adr;
     }
 
     /// @notice This function sets the amount of tokens to be staked when reporting or staking
@@ -448,6 +450,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 total = ILERC20(token).balanceOf(account);
         uint256 locked = getLockedAmount(token, account);
         return total - locked;
+    }
+
+    /// @notice This function sets the percentage of compensation
+    /// @return Compensation percentage
+    function getCompensationPercentage() public view returns (uint256) {
+        return erroneusCompensation;
     }
 
     /// @notice This function will return the last funds in queue
@@ -583,8 +591,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         retrieveAmount = totalAmount * (losslessReporting.getStakersFee() + reporterReward + losslessFee) / 10**2;
 
-        ILERC20(token).transfer(losslessStakingingAddress, retrieveAmount);
-        ILERC20(token).transfer(losslessGovernanceAddress, totalAmount - retrieveAmount);
+        ILERC20(token).transfer(address(losslessStaking), retrieveAmount);
+        ILERC20(token).transfer(address(losslessGovernance), totalAmount - retrieveAmount);
     }
 
     // --- BEFORE HOOKS ---

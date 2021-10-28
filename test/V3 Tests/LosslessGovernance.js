@@ -25,9 +25,7 @@ describe('Lossless Governance', ()=>{
                                         Number(time.duration.days(1)),
                                         env.lssController.address,
                                         );
-    });
 
-    beforeEach(async ()=>{
         await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.reporter1.address, env.stakeAmount);
         await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 1000);
 
@@ -202,32 +200,32 @@ describe('Lossless Governance', ()=>{
         });
 
         describe('when only Lossless Team votes positively', ()=>{
-        beforeEach(async ()=>{
-            await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-            await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
-            await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, false);
-            await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
-            await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
-            await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
-        });
+            beforeEach(async ()=>{
+                await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+                await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+                await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, false);
+                await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
+                await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
+                await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+            });
 
-        it('should save vote as positive', async () =>{
-            expect(
-            await env.lssGovernance.getVote(1, env.lssTeamVoteIndex)
-            ).to.be.equal(true);
-        });
+            it('should save vote as positive', async () =>{
+                expect(
+                await env.lssGovernance.getVote(1, env.lssTeamVoteIndex)
+                ).to.be.equal(true);
+            });
 
-        it('should resolve negatively', async () =>{
-            await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+            it('should resolve negatively', async () =>{
+                await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
-            expect(
-            await env.lssGovernance.isReportSolved(1),
-            ).to.be.equal(true);
+                expect(
+                await env.lssGovernance.isReportSolved(1),
+                ).to.be.equal(true);
 
-            expect(
-            await env.lssGovernance.reportResolution(1),
-            ).to.be.equal(false);
-        });
+                expect(
+                await env.lssGovernance.reportResolution(1),
+                ).to.be.equal(false);
+            });
         });
 
         describe('when only Token Owner votes positively', ()=>{
@@ -467,6 +465,125 @@ describe('Lossless Governance', ()=>{
                 expect(
                 await env.lssGovernance.reportResolution(1),
                 ).to.be.equal(false);
+            });
+
+            it("should let reported address retrieve compensation", async ()=>{
+                
+                await ethers.provider.send('evm_increaseTime', [
+                    Number(time.duration.minutes(5)),
+                ]);
+
+                await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.staker1.address, env.stakeAmount+env.stakeAmount);
+                await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.staker2.address, env.stakeAmount*2);
+                await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.staker3.address, env.stakeAmount*2);
+        
+                await env.lssToken.connect(adr.staker1).approve(env.lssStaking.address, env.stakeAmount*2);
+                await env.lssToken.connect(adr.staker2).approve(env.lssStaking.address, env.stakeAmount*2)
+                await env.lssToken.connect(adr.staker3).approve(env.lssStaking.address, env.stakeAmount*2);
+
+                await ethers.provider.send('evm_increaseTime', [
+                    Number(time.duration.minutes(5)),
+                ]);
+                
+                await env.lssStaking.connect(adr.staker1).stake(1);
+                await env.lssStaking.connect(adr.staker2).stake(1);
+                await env.lssStaking.connect(adr.staker3).stake(1);
+
+                await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+                expect(
+                await env.lssGovernance.isReportSolved(1),
+                ).to.be.equal(true);
+
+                expect(
+                await env.lssGovernance.reportResolution(1),
+                ).to.be.equal(false);
+
+                await expect(
+                    env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation()
+                ).to.not.be.reverted;
+
+                expect(
+                    await env.lssToken.balanceOf(adr.maliciousActor1.address), 
+                ).to.be.equal(150);
+            });
+
+            it("should revert if tries to retrieve twice", async ()=>{
+                
+                await ethers.provider.send('evm_increaseTime', [
+                    Number(time.duration.minutes(5)),
+                ]);
+
+                await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.staker1.address, env.stakeAmount+env.stakeAmount);
+                await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.staker2.address, env.stakeAmount*2);
+                await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.staker3.address, env.stakeAmount*2);
+        
+                await env.lssToken.connect(adr.staker1).approve(env.lssStaking.address, env.stakeAmount*2);
+                await env.lssToken.connect(adr.staker2).approve(env.lssStaking.address, env.stakeAmount*2)
+                await env.lssToken.connect(adr.staker3).approve(env.lssStaking.address, env.stakeAmount*2);
+
+                await ethers.provider.send('evm_increaseTime', [
+                    Number(time.duration.minutes(5)),
+                ]);
+                
+                await env.lssStaking.connect(adr.staker1).stake(1);
+                await env.lssStaking.connect(adr.staker2).stake(1);
+                await env.lssStaking.connect(adr.staker3).stake(1);
+
+                await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+                expect(
+                await env.lssGovernance.isReportSolved(1),
+                ).to.be.equal(true);
+
+                expect(
+                await env.lssGovernance.reportResolution(1),
+                ).to.be.equal(false);
+                
+                await expect(
+                    env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation()
+                ).to.not.be.reverted;
+
+                await expect(
+                    env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation()
+                ).to.be.revertedWith("LSS: Already retrieved");
+            });
+
+            it("should revert if other than the afflicted tries to retrieve", async ()=>{
+                
+                await ethers.provider.send('evm_increaseTime', [
+                    Number(time.duration.minutes(5)),
+                ]);
+
+                await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.staker1.address, env.stakeAmount+env.stakeAmount);
+                await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.staker2.address, env.stakeAmount*2);
+                await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.staker3.address, env.stakeAmount*2);
+        
+                await env.lssToken.connect(adr.staker1).approve(env.lssStaking.address, env.stakeAmount*2);
+                await env.lssToken.connect(adr.staker2).approve(env.lssStaking.address, env.stakeAmount*2)
+                await env.lssToken.connect(adr.staker3).approve(env.lssStaking.address, env.stakeAmount*2);
+
+                await ethers.provider.send('evm_increaseTime', [
+                    Number(time.duration.minutes(5)),
+                ]);
+                
+                await env.lssStaking.connect(adr.staker1).stake(1);
+                await env.lssStaking.connect(adr.staker2).stake(1);
+                await env.lssStaking.connect(adr.staker3).stake(1);
+
+                await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+                expect(
+                await env.lssGovernance.isReportSolved(1),
+                ).to.be.equal(true);
+
+                expect(
+                await env.lssGovernance.reportResolution(1),
+                ).to.be.equal(false);
+
+                await expect(
+                    env.lssGovernance.connect(adr.regularUser1).retrieveCompensation()
+                ).to.be.revertedWith("LSS: No retribution assigned");
             });
         });
     });

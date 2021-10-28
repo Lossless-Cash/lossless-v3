@@ -114,7 +114,19 @@ const setupEnvironment = async (lssAdmin, lssRecoveryAdmin, lssPauseAdmin, lssIn
       losslessControllerV2.address,
       LosslessControllerV3,
     );
+    
+    const LosslessToken = await ethers.getContractFactory('LERC20');
 
+    lssToken = await LosslessToken.connect(lssInitialHolder).deploy(
+    lssInitialSupply,
+    lssName,
+    lssSymbol,
+    lssAdmin.address,
+    lssBackupAdmin.address,
+    Number(time.duration.days(1)),
+    lssController.address,
+    );
+    
     const LosslessStaking = await ethers.getContractFactory(
     'LosslessStaking',
     );
@@ -133,30 +145,18 @@ const setupEnvironment = async (lssAdmin, lssRecoveryAdmin, lssPauseAdmin, lssIn
     { initializer: 'initialize' },
     );
 
-    lssGovernance = await upgrades.deployProxy(
-    LosslessGovernance,
-    [lssReporting.address, lssController.address],
-    { initializer: 'initialize' },
-    );
-
     lssStaking = await upgrades.deployProxy(
-    LosslessStaking,
-    [lssReporting.address, lssController.address, lssGovernance.address],
-    { initializer: 'initialize' },
-    );
-
-    const LosslessToken = await ethers.getContractFactory('LERC20');
-
-    lssToken = await LosslessToken.connect(lssInitialHolder).deploy(
-    lssInitialSupply,
-    lssName,
-    lssSymbol,
-    lssAdmin.address,
-    lssBackupAdmin.address,
-    Number(time.duration.days(1)),
-    lssController.address,
+      LosslessStaking,
+      [lssReporting.address, lssController.address],
+      { initializer: 'initialize' },
     );
     
+    lssGovernance = await upgrades.deployProxy(
+      LosslessGovernance,
+      [lssReporting.address, lssController.address, lssStaking.address, lssToken.address],
+      { initializer: 'initialize' },
+    );
+
     await lssController.connect(lssAdmin).setStakeAmount(stakeAmount);
     await lssController.connect(lssAdmin).setReportLifetime(Number(reportLifetime));
     await lssController.connect(lssAdmin).setLosslessToken(lssToken.address);
@@ -166,6 +166,7 @@ const setupEnvironment = async (lssAdmin, lssRecoveryAdmin, lssPauseAdmin, lssIn
     await lssController.connect(lssAdmin).setControllerV3Defaults();
 
     await lssStaking.connect(lssAdmin).setLosslessToken(lssToken.address);
+    await lssStaking.connect(lssAdmin).setLosslessGovernance(lssGovernance.address);
 
     await lssReporting.connect(lssAdmin).setLosslessToken(lssToken.address);
     await lssReporting.connect(lssAdmin).setControllerContractAddress(lssController.address);
