@@ -17,7 +17,7 @@ interface ILssReporting {
 
 interface ILssController {
     function getReportLifetime() external view returns(uint256);
-    function retreiveBlacklistedFunds(address[] calldata _addresses, address token) external;
+    function retrieveBlacklistedFunds(address[] calldata _addresses, address token) external;
     function resolvedNegatively(address _adr) external;
     function retrieveBlacklistedToContracts(uint256 reportId, address token) external;
     function deactivateEmergency(address token) external;
@@ -165,23 +165,19 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @param reportId Report number to be checked
     /// @return True if it has been solved
     function isReportSolved(uint256 reportId) public view returns(bool){
-        Vote storage reportVote;
-        reportVote = reportVotes[reportId];
-        return reportVote.resolved;
+        return reportVotes[reportId].resolved;
     }
 
     /// @notice This function returns report resolution     
     /// @param reportId Report number to be checked
     /// @return True if it has been resolved positively
     function reportResolution(uint256 reportId) public view returns(bool){
-        Vote storage reportVote;
-        reportVote = reportVotes[reportId];
-        return reportVote.resolution;
+        return reportVotes[reportId].resolution;
     }
 
     /// @notice This function sets the wallet dispute period
     /// @param timeFrame Time in seconds for the dispute period
-    function setDipustePeriod(uint256 timeFrame) public onlyLosslessAdmin {
+    function setDisputePeriod(uint256 timeFrame) public onlyLosslessAdmin {
         walletDisputePeriod = timeFrame;
     }
     
@@ -382,7 +378,7 @@ contract LosslessGovernance is Initializable, AccessControl {
         
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
-            losslessController.retreiveBlacklistedFunds(reportedAddresses, token);
+            losslessController.retrieveBlacklistedFunds(reportedAddresses, token);
             losslessController.retrieveBlacklistedToContracts(reportId, token);
         }else{
             reportVote.resolution = false;
