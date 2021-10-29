@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-operators */
 /* eslint-disable no-undef */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prefer-destructuring */
@@ -8,7 +9,7 @@ const { setupAddresses, setupEnvironment, setupToken } = require('./utilsV3');
 let adr;
 let env;
 
-describe('Lossless Governance', () => {
+describe.only('Lossless Governance', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -508,9 +509,11 @@ describe('Lossless Governance', () => {
           env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation(),
         ).to.not.be.reverted;
 
+        const compensationPercentage = await env.lssController.getCompensationPercentage();
+
         expect(
           await env.lssToken.balanceOf(adr.maliciousActor1.address),
-        ).to.be.equal(150);
+        ).to.be.equal(env.stakeAmount * compensationPercentage / 100);
       });
 
       it('should revert if tries to retrieve twice', async () => {

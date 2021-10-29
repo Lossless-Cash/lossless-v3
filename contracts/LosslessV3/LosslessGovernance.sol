@@ -25,6 +25,7 @@ interface ILssController {
     function pauseAdmin() external view returns (address);
     function recoveryAdmin() external view returns (address);
     function getCompensationPercentage() external view returns (uint256);
+    function getStakeAmount() external view returns (uint256);
 }
 
 interface ILssStaking {
@@ -385,7 +386,7 @@ contract LosslessGovernance is Initializable, AccessControl {
             losslessController.resolvedNegatively(reportedAddress);
 
             uint256 compensationAmount = losslessController.getCompensationPercentage();
-            compensation[reportedAddress].amount +=  (losslessStaking.getTotalStaked(reportId) * compensationAmount) / 10**2;
+            compensation[reportedAddress].amount +=  (losslessController.getStakeAmount() * compensationAmount) / 10**2;
             compensation[reportedAddress].payed =  false;
         }
         
