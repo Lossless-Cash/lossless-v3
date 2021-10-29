@@ -153,18 +153,14 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @param reportId Report number to be checked
     /// @return True if it has been solved
     function isReportSolved(uint256 reportId) public view returns(bool){
-        Vote storage reportVote;
-        reportVote = reportVotes[reportId];
-        return reportVote.resolved;
+        return reportVotes[reportId].resolved;
     }
 
     /// @notice This function returns report resolution     
     /// @param reportId Report number to be checked
     /// @return True if it has been resolved positively
     function reportResolution(uint256 reportId) public view returns(bool){
-        Vote storage reportVote;
-        reportVote = reportVotes[reportId];
-        return reportVote.resolution;
+        return reportVotes[reportId].resolution;
     }
 
     /// @notice This function sets the wallet dispute period
