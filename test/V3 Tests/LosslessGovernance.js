@@ -122,6 +122,14 @@ describe.only('Lossless Governance', () => {
           env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true),
         ).to.be.revertedWith('LSS: LSS already voted.');
       });
+
+      it('should revert when trying to resolve if no other party voted', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
+        ).to.be.revertedWith('LSS: Not enough votes');
+      });
     });
 
     describe('when the Token Owner is voting', () => {
@@ -198,6 +206,267 @@ describe.only('Lossless Governance', () => {
         adr.member4.address,
         adr.member5.address],
       3);
+    });
+
+    describe('when only 2/3 parts vote', () => {
+      describe('when only Lossless Team and Token Owners vote', () => {
+        describe('when both vote positively', () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+            await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+          });
+
+          it('should save vote as positive', async () => {
+            expect(
+              await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
+            ).to.be.equal(true);
+
+            expect(
+              await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
+            ).to.be.equal(true);
+          });
+
+          it('should resolve positvely', async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+            expect(
+              await env.lssGovernance.isReportSolved(1),
+            ).to.be.equal(true);
+
+            expect(
+              await env.lssGovernance.reportResolution(1),
+            ).to.be.equal(true);
+          });
+        });
+        describe('when both vote negatively', () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+            await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+          });
+
+          it('should save vote as negative', async () => {
+            expect(
+              await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
+            ).to.be.equal(false);
+
+            expect(
+              await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
+            ).to.be.equal(false);
+          });
+
+          it('should resolve negatively', async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+            expect(
+              await env.lssGovernance.isReportSolved(1),
+            ).to.be.equal(true);
+
+            expect(
+              await env.lssGovernance.reportResolution(1),
+            ).to.be.equal(false);
+          });
+        });
+        describe('when Lossless Team votes negative and Token Owners positive', () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+            await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+          });
+
+          it('should save each individual vote', async () => {
+            expect(
+              await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
+            ).to.be.equal(false);
+
+            expect(
+              await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
+            ).to.be.equal(true);
+          });
+
+          it('should revert needing committee member to vote', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
+            ).to.be.revertedWith('LSS: Need anothe vote to untie');
+          });
+        });
+      });
+      describe('when only Lossless Team and Committee vote', () => {
+        describe('when both vote positively', () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+            await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+          });
+
+          it('should save vote as positive', async () => {
+            expect(
+              await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
+            ).to.be.equal(true);
+
+            expect(
+              await env.lssGovernance.getVote(1, env.committeeVoteIndex),
+            ).to.be.equal(true);
+          });
+
+          it('should resolve positvely', async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+            expect(
+              await env.lssGovernance.isReportSolved(1),
+            ).to.be.equal(true);
+
+            expect(
+              await env.lssGovernance.reportResolution(1),
+            ).to.be.equal(true);
+          });
+        });
+        describe('when both vote negatively', () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+            await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
+            await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
+            await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+          });
+
+          it('should save vote as negative', async () => {
+            expect(
+              await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
+            ).to.be.equal(false);
+
+            expect(
+              await env.lssGovernance.getVote(1, env.committeeVoteIndex),
+            ).to.be.equal(false);
+          });
+
+          it('should resolve negatively', async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+            expect(
+              await env.lssGovernance.isReportSolved(1),
+            ).to.be.equal(true);
+
+            expect(
+              await env.lssGovernance.reportResolution(1),
+            ).to.be.equal(false);
+          });
+        });
+        describe('when Lossless Team votes negative and Token Owners positive', () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+            await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+          });
+
+          it('should save each individual vote', async () => {
+            expect(
+              await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
+            ).to.be.equal(false);
+
+            expect(
+              await env.lssGovernance.getVote(1, env.committeeVoteIndex),
+            ).to.be.equal(true);
+          });
+
+          it('should revert needing Lossless Team to vote', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
+            ).to.be.revertedWith('LSS: Need anothe vote to untie');
+          });
+        });
+      });
+      describe('when only Token Owners and Committee vote', () => {
+        describe('when both vote positively', () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+            await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+          });
+
+          it('should save vote as positive', async () => {
+            expect(
+              await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
+            ).to.be.equal(true);
+
+            expect(
+              await env.lssGovernance.getVote(1, env.committeeVoteIndex),
+            ).to.be.equal(true);
+          });
+
+          it('should resolve positvely', async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+            expect(
+              await env.lssGovernance.isReportSolved(1),
+            ).to.be.equal(true);
+
+            expect(
+              await env.lssGovernance.reportResolution(1),
+            ).to.be.equal(true);
+          });
+        });
+        describe('when both vote negatively', () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+            await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
+            await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
+            await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+          });
+
+          it('should save vote as negative', async () => {
+            expect(
+              await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
+            ).to.be.equal(false);
+
+            expect(
+              await env.lssGovernance.getVote(1, env.committeeVoteIndex),
+            ).to.be.equal(false);
+          });
+
+          it('should resolve negatively', async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+            expect(
+              await env.lssGovernance.isReportSolved(1),
+            ).to.be.equal(true);
+
+            expect(
+              await env.lssGovernance.reportResolution(1),
+            ).to.be.equal(false);
+          });
+        });
+        describe('when Token Owners votes negative and Committee positive', () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+            await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+            await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+          });
+
+          it('should save each individual vote', async () => {
+            expect(
+              await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
+            ).to.be.equal(false);
+
+            expect(
+              await env.lssGovernance.getVote(1, env.committeeVoteIndex),
+            ).to.be.equal(true);
+          });
+
+          it('should revert needing Lossless Team to vote', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
+            ).to.be.revertedWith('LSS: Need anothe vote to untie');
+          });
+        });
+      });
     });
 
     describe('when only Lossless Team votes positively', () => {
