@@ -69,12 +69,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     // --- MODIFIERS ---
 
-    /// @notice Avoids execution from other than the Recovery Admin
-    modifier onlyLosslessRecoveryAdmin() {
-        require(msg.sender == losslessController.recoveryAdmin(), "LSS: Must be recoveryAdmin");
-        _;
-    }
-
     /// @notice Avoids execution from other than the Lossless Admin
     modifier onlyLosslessAdmin() {
         require(losslessController.admin() == msg.sender, "LSS: Must be admin");
