@@ -132,7 +132,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
-    function setLssReporting(address _losslessReporting) public onlyLosslessRecoveryAdmin {
+    function setLssReporting(address _losslessReporting) public onlyLosslessAdmin {
         losslessReporting = ILssReporting(_losslessReporting);
     }
 
