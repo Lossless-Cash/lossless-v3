@@ -144,11 +144,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         return 1;
     }
 
-    /// @notice This function returns  the default Stakers Fee
-    function getStakersFee() public view returns (uint256) {
-        return stakersFee;
-    }
-
     /// @notice This function will return the address of the reporter
     /// @param _reportId Report number
     /// @return The address of the reporter
@@ -214,7 +209,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportId = reportCount;
         reporter[reportId] = msg.sender;
 
-        // Bellow does not allow freezing more than one wallet. Do we want that?
         tokenReports[token].reports[account] = reportId;
         reportTimestamps[reportId] = block.timestamp;
         reportTokens[reportId] = token;

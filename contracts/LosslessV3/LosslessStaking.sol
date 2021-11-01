@@ -26,7 +26,7 @@ interface ILssReporting {
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
     function getAmountReported(uint256 reportId) external view returns (uint256);
-    function getStakersFee() external view returns (uint256);
+    function stakersFee() external view returns (uint256);
 }
 
 interface ILssController {
@@ -310,7 +310,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         reportedWallet = losslessReporting.getReportedAddress(reportId);
 
-        amountStakedOnReport = amountStakedOnReport * losslessReporting.getStakersFee() / 10**2;
+        amountStakedOnReport = amountStakedOnReport * losslessReporting.stakersFee() / 10**2;
 
         stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
         reportCoefficient = losslessController.getReportCoefficient(reportId);
