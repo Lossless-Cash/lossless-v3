@@ -568,20 +568,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function retrieves the funds of the reported account
     /// @param _addresses Array of addreses to retrieve the locked funds
-    function retrieveBlacklistedFunds(address[] calldata _addresses, address token) public onlyFromAdminOrLssSC {
+    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) public onlyFromAdminOrLssSC {
         uint256 blacklistedAmount;
 
         for(uint256 i; i < _addresses.length; i++) {
             blacklistedAmount += ILERC20(token).balanceOf(_addresses[i]);
         }
         ILERC20(token).transferOutBlacklistedFunds(_addresses);
-    }
-
-    /// @notice This function retrieves the funds of the reported account corresponding to rewards
-    /// @param reportId Report Id
-    /// @param token Token reported
-    function retrieveBlacklistedToContracts(uint256 reportId, address token) public onlyFromAdminOrLssSC{
-        
+                
         uint256 retrieveAmount;
         uint256 totalAmount;
         
