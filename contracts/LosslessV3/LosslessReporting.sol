@@ -249,13 +249,11 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     function secondReport(uint256 reportId, address token, address account) public notBlacklisted {
         uint256 reportLifetime;
         uint256 reportTimestamp;
-        uint256 stakeAmount;
 
         require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
 
         reportTimestamp = reportTimestamps[reportId];
         reportLifetime = losslessController.getReportLifetime();
-        stakeAmount = losslessController.getStakeAmount();
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(secondReports[reportId] == false, "LSS: Another already submitted");
