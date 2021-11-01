@@ -57,7 +57,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     mapping(uint256 => address) public reportedAddress;
     mapping(uint256 => uint256) public reportTimestamps;
     mapping(uint256 => address) public reportTokens;
-    mapping(uint256 => bool) public anotherReports;
+    mapping(uint256 => bool) public secondReports;
     mapping(uint256 => uint256) public amountReported;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -65,7 +65,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
 
     event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
-    event AnotherReportSubmitted(address indexed token, address indexed account, uint256 reportId);
+    event SecondReportsubmitted(address indexed token, address indexed account, uint256 reportId);
 
     // --- MODIFIERS ---
 
@@ -258,16 +258,16 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         stakeAmount = losslessController.getStakeAmount();
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
-        require(anotherReports[reportId] == false, "LSS: Another already submitted");
+        require(secondReports[reportId] == false, "LSS: Another already submitted");
         require(msg.sender == reporter[reportId], "LSS: invalid reporter");
 
-        anotherReports[reportId] = true;
+        secondReports[reportId] = true;
         tokenReports[token].reports[account] = reportId;
         amountReported[reportId] += losslessToken.balanceOf(account);
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
 
-        emit AnotherReportSubmitted(token, account, reportId);
+        emit SecondReportsubmitted(token, account, reportId);
     }
 }
