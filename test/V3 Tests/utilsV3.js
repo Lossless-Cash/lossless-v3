@@ -169,7 +169,6 @@ const setupEnvironment = async (lssAdmin,
   await lssStaking.connect(lssAdmin).setLosslessGovernance(lssGovernance.address);
 
   await lssReporting.connect(lssAdmin).setLosslessToken(lssToken.address);
-  await lssReporting.connect(lssAdmin).setControllerContractAddress(lssController.address);
   await lssReporting.connect(lssAdmin).setStakingContractAddress(lssStaking.address);
   await lssReporting.connect(lssAdmin).setReporterReward(2);
   await lssReporting.connect(lssAdmin).setLosslessFee(10);

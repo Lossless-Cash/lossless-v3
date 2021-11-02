@@ -111,12 +111,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         losslessToken = ILERC20(_losslessToken);
     }
 
-    /// @notice This function sets the address of the Lossless Controller contract
-    /// @param _adr Address corresponding to the Lossless Controller contract
-    function setControllerContractAddress(address _adr) public onlyLosslessAdmin {
-        losslessController = ILssController(_adr);
-    }
-
     /// @notice This function sets the address of the Lossless Staking contract
     /// @param _adr Address corresponding to the Lossless Staking contract
     function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
