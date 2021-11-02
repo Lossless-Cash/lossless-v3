@@ -13,6 +13,8 @@ interface ILssReporting {
     function stakersFee() external view returns (uint256);
     function getAmountReported(uint256 reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
+    function secondReportedAddress(uint256 reportId) external view returns (address);
+    function secondReports(uint256 reportId) external view returns (bool);
 }
 
 interface ILssController {
@@ -372,6 +374,10 @@ contract LosslessGovernance is Initializable, AccessControl {
 
         reportedAddresses.push(reportedAddress);
 
+        if (losslessReporting.secondReports(reportId)) {
+            reportedAddresses.push(losslessReporting.secondReportedAddress(reportId));
+        }
+
         losslessController.deactivateEmergency(token);
         
         if (aggreeCount > (voteCount - aggreeCount)){
@@ -379,17 +385,27 @@ contract LosslessGovernance is Initializable, AccessControl {
             losslessController.retrieveBlacklistedFunds(reportedAddresses, token, reportId);
         }else{
             reportVote.resolution = false;
-            losslessController.resolvedNegatively(reportedAddress);
-
-            uint256 compensationAmount = losslessController.getCompensationPercentage();
-            compensation[reportedAddress].amount +=  (losslessController.getStakeAmount() * compensationAmount) / 10**2;
-            compensation[reportedAddress].payed =  false;
+            compensateAddresses(reportedAddresses);
         }
         
         reportVote.resolved = true;
         delete reportedAddresses;
 
         emit ReportResolved(reportId, reportVote.resolution);
+    }
+
+    /// @notice This compensates the addresses wrongly reported
+    /// @dev The array of addresses will contain the main reported address and the second reported address
+    /// @param addresses Array of addresses to be compensated
+    function compensateAddresses(address[] memory addresses) internal {
+        uint256 compensationAmount = losslessController.getCompensationPercentage();
+        uint256 stakeAmount = losslessController.getStakeAmount();
+        
+        for(uint256 i; i < addresses.length; i++) {
+            losslessController.resolvedNegatively(addresses[i]);      
+            compensation[addresses[i]].amount +=  (stakeAmount * compensationAmount) / 10**2;
+            compensation[addresses[i]].payed =  false;
+        }
     }
 
     // REFUND PROCESS
