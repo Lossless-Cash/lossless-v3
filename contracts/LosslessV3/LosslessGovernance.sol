@@ -10,7 +10,7 @@ interface ILssReporting {
     function getReportedAddress(uint256 _reportId) external view returns (address);
     function getTokenFromReport(uint256 reportId) external view returns(address);
     function reportedProject(uint256 reportId) external view returns (address);
-    function getStakersFee() external view returns (uint256);
+    function stakersFee() external view returns (uint256);
     function getAmountReported(uint256 reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
 }
@@ -470,7 +470,7 @@ contract LosslessGovernance is Initializable, AccessControl {
 
         (uint256 reporterReward, uint256 losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
-        rewardAmounts = totalAmount * (losslessReporting.getStakersFee() + reporterReward + losslessFee) / 10**2;
+        rewardAmounts = totalAmount * (losslessReporting.stakersFee() + reporterReward + losslessFee) / 10**2;
 
         proposedWalletOnReport[reportId].status = true;
         
