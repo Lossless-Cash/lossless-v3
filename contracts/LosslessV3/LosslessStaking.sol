@@ -77,9 +77,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     mapping(uint256 => uint256) public totalStakedOnReport;
 
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
     function initialize(address _losslessReporting, address _losslessController) public initializer {
@@ -132,7 +129,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
-    function setILssReporting(address _losslessReporting) public onlyLosslessRecoveryAdmin {
+    function setLssReporting(address _losslessReporting) public onlyLosslessAdmin {
         losslessReporting = ILssReporting(_losslessReporting);
     }
 
