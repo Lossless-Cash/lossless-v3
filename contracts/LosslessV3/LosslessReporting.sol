@@ -31,6 +31,10 @@ interface ILssController {
     function recoveryAdmin() external view returns (address);
 }
 
+interface ILssGovernance {
+    function isReportSolved(uint256 reportId) external returns (bool);
+}
+
 /// @title Lossless Reporting Contract
 /// @author Lossless.cash
 /// @notice The Reporting smart contract is in charge of handling all the parts related to creating new reports
@@ -43,6 +47,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     ILERC20 public losslessToken;
     ILssController public losslessController;
+    ILssGovernance public losslessGovernance;
 
     address stakingAddress;
 
@@ -106,6 +111,13 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param _losslessToken Address corresponding to the Lossless Governance Token
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
         losslessToken = ILERC20(_losslessToken);
+    }
+
+    /// @notice This function sets the address of the Lossless Governance smart contract
+    /// @dev Only can be called by the Lossless Admin
+    /// @param _losslessGovernance Address corresponding to the Lossless Governance smart contract
+    function setLosslessGovernance(address _losslessGovernance) public onlyLosslessAdmin {
+        losslessGovernance = ILssGovernance(_losslessGovernance);
     }
 
     /// @notice This function sets the address of the Lossless Staking contract
@@ -200,7 +212,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportLifetime = losslessController.getReportLifetime();
         stakeAmount = losslessController.getStakeAmount();
 
-        require(reportId == 0 || reportTimestamps[reportId] + reportLifetime < block.timestamp, "LSS: Report already exists");
+        require(reportId == 0 || reportTimestamps[reportId] + reportLifetime < block.timestamp || losslessGovernance.isReportSolved(reportId), "LSS: Report already exists");
 
         reportCount += 1;
         reportId = reportCount;
