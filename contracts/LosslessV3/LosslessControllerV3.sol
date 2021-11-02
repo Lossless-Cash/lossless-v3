@@ -34,7 +34,7 @@ interface ILssReporting {
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
     function getAmountReported(uint256 reportId) external view returns (uint256);
-    function getStakersFee() external view returns (uint256);
+    function stakersFee() external view returns (uint256);
 }
 
 interface ILssGovernance {
@@ -568,20 +568,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function retrieves the funds of the reported account
     /// @param _addresses Array of addreses to retrieve the locked funds
-    function retrieveBlacklistedFunds(address[] calldata _addresses, address token) public onlyFromAdminOrLssSC {
+    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) public onlyFromAdminOrLssSC {
         uint256 blacklistedAmount;
 
         for(uint256 i; i < _addresses.length; i++) {
             blacklistedAmount += ILERC20(token).balanceOf(_addresses[i]);
         }
         ILERC20(token).transferOutBlacklistedFunds(_addresses);
-    }
-
-    /// @notice This function retrieves the funds of the reported account corresponding to rewards
-    /// @param reportId Report Id
-    /// @param token Token reported
-    function retrieveBlacklistedToContracts(uint256 reportId, address token) public onlyFromAdminOrLssSC{
-        
+                
         uint256 retrieveAmount;
         uint256 totalAmount;
         
@@ -589,7 +583,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         (uint256 reporterReward, uint256 losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
-        retrieveAmount = totalAmount * (losslessReporting.getStakersFee() + reporterReward + losslessFee) / 10**2;
+        retrieveAmount = totalAmount * (losslessReporting.stakersFee() + reporterReward + losslessFee) / 10**2;
 
         ILERC20(token).transfer(address(losslessStaking), retrieveAmount);
         ILERC20(token).transfer(address(losslessGovernance), totalAmount - retrieveAmount);

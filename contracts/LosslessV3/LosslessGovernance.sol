@@ -10,16 +10,15 @@ interface ILssReporting {
     function getReportedAddress(uint256 _reportId) external view returns (address);
     function getTokenFromReport(uint256 reportId) external view returns(address);
     function reportedProject(uint256 reportId) external view returns (address);
-    function getStakersFee() external view returns (uint256);
+    function stakersFee() external view returns (uint256);
     function getAmountReported(uint256 reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
 }
 
 interface ILssController {
     function getReportLifetime() external view returns(uint256);
-    function retrieveBlacklistedFunds(address[] calldata _addresses, address token) external;
+    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) external;
     function resolvedNegatively(address _adr) external;
-    function retrieveBlacklistedToContracts(uint256 reportId, address token) external;
     function deactivateEmergency(address token) external;
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
@@ -377,8 +376,7 @@ contract LosslessGovernance is Initializable, AccessControl {
         
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
-            losslessController.retrieveBlacklistedFunds(reportedAddresses, token);
-            losslessController.retrieveBlacklistedToContracts(reportId, token);
+            losslessController.retrieveBlacklistedFunds(reportedAddresses, token, reportId);
         }else{
             reportVote.resolution = false;
             losslessController.resolvedNegatively(reportedAddress);
@@ -471,7 +469,7 @@ contract LosslessGovernance is Initializable, AccessControl {
 
         (uint256 reporterReward, uint256 losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
-        rewardAmounts = totalAmount * (losslessReporting.getStakersFee() + reporterReward + losslessFee) / 10**2;
+        rewardAmounts = totalAmount * (losslessReporting.stakersFee() + reporterReward + losslessFee) / 10**2;
 
         proposedWalletOnReport[reportId].status = true;
         

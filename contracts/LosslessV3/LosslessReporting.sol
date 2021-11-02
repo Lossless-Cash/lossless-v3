@@ -57,15 +57,11 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     mapping(uint256 => address) public reportedAddress;
     mapping(uint256 => uint256) public reportTimestamps;
     mapping(uint256 => address) public reportTokens;
-    mapping(uint256 => bool) public anotherReports;
+    mapping(uint256 => bool) public secondReports;
     mapping(uint256 => uint256) public amountReported;
 
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-
     event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
-    event AnotherReportSubmitted(address indexed token, address indexed account, uint256 reportId);
+    event SecondReportsubmitted(address indexed token, address indexed account, uint256 reportId);
 
     // --- MODIFIERS ---
 
@@ -111,12 +107,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         losslessToken = ILERC20(_losslessToken);
     }
 
-    /// @notice This function sets the address of the Lossless Controller contract
-    /// @param _adr Address corresponding to the Lossless Controller contract
-    function setControllerContractAddress(address _adr) public onlyLosslessAdmin {
-        losslessController = ILssController(_adr);
-    }
-
     /// @notice This function sets the address of the Lossless Staking contract
     /// @param _adr Address corresponding to the Lossless Staking contract
     function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
@@ -148,11 +138,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @return Version of the contract
     function getVersion() public pure returns (uint256) {
         return 1;
-    }
-
-    /// @notice This function returns  the default Stakers Fee
-    function getStakersFee() public view returns (uint256) {
-        return stakersFee;
     }
 
     /// @notice This function will return the address of the reporter
@@ -220,7 +205,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportId = reportCount;
         reporter[reportId] = msg.sender;
 
-        // Bellow does not allow freezing more than one wallet. Do we want that?
         tokenReports[token].reports[account] = reportId;
         reportTimestamps[reportId] = block.timestamp;
         reportTokens[reportId] = token;
@@ -249,25 +233,23 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     function secondReport(uint256 reportId, address token, address account) public notBlacklisted {
         uint256 reportLifetime;
         uint256 reportTimestamp;
-        uint256 stakeAmount;
 
         require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
 
         reportTimestamp = reportTimestamps[reportId];
         reportLifetime = losslessController.getReportLifetime();
-        stakeAmount = losslessController.getStakeAmount();
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
-        require(anotherReports[reportId] == false, "LSS: Another already submitted");
+        require(secondReports[reportId] == false, "LSS: Another already submitted");
         require(msg.sender == reporter[reportId], "LSS: invalid reporter");
 
-        anotherReports[reportId] = true;
+        secondReports[reportId] = true;
         tokenReports[token].reports[account] = reportId;
         amountReported[reportId] += losslessToken.balanceOf(account);
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
 
-        emit AnotherReportSubmitted(token, account, reportId);
+        emit SecondReportsubmitted(token, account, reportId);
     }
 }

@@ -26,7 +26,7 @@ interface ILssReporting {
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
     function getAmountReported(uint256 reportId) external view returns (uint256);
-    function getStakersFee() external view returns (uint256);
+    function stakersFee() external view returns (uint256);
 }
 
 interface ILssController {
@@ -77,9 +77,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     mapping(uint256 => uint256) public totalStakedOnReport;
 
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
     function initialize(address _losslessReporting, address _losslessController) public initializer {
@@ -132,7 +129,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
-    function setILssReporting(address _losslessReporting) public onlyLosslessRecoveryAdmin {
+    function setLssReporting(address _losslessReporting) public onlyLosslessAdmin {
         losslessReporting = ILssReporting(_losslessReporting);
     }
 
@@ -310,7 +307,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         reportedWallet = losslessReporting.getReportedAddress(reportId);
 
-        amountStakedOnReport = amountStakedOnReport * losslessReporting.getStakersFee() / 10**2;
+        amountStakedOnReport = amountStakedOnReport * losslessReporting.stakersFee() / 10**2;
 
         stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
         reportCoefficient = losslessController.getReportCoefficient(reportId);
