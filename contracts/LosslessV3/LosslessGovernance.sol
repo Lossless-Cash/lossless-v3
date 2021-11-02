@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "hardhat/console.sol";
 
 interface ILssReporting {
@@ -43,7 +44,7 @@ interface ILERC20 {
 
 /// @title Lossless Governance Contract
 /// @notice The governance contract is in charge of handling the voting process over the reports and their resolution
-contract LosslessGovernance is Initializable, AccessControl {
+contract LosslessGovernance is Initializable, AccessControlUpgradeable, PausableUpgradeable {
 
     uint256 public lssTeamVoteIndex;
     uint256 public tokenOwnersVoteIndex;
@@ -124,6 +125,17 @@ contract LosslessGovernance is Initializable, AccessControl {
         require(losslessController.admin() == msg.sender, "LSS: must be admin");
         _;
     }
+
+    // --- ADMINISTRATION ---
+
+    function pause() public onlyLosslessAdmin  {
+        _pause();
+    }    
+    
+    function unpause() public onlyLosslessAdmin {
+        _unpause();
+    }
+
 
     /// @notice This function determines if an address belongs to the Committee
     /// @param account Address to be verified
