@@ -7,13 +7,11 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "hardhat/console.sol";
 
 interface ILssReporting {
-    function getReportTimestamps(uint256 reportId) external view returns (uint256);
-    function getReportedAddress(uint256 _reportId) external view returns (address);
-    function getTokenFromReport(uint256 reportId) external view returns(address);
+    function reportTimestamps(uint256 reportId) external view returns (uint256);
+    function reportedAddress(uint256 _reportId) external view returns (address);
+    function reportTokens(uint256 reportId) external view returns(address);
     function reportedProject(uint256 reportId) external view returns (address);
     function stakersFee() external view returns (uint256);
-    function getAmountReported(uint256 reportId) external view returns (uint256);
-    function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
     function secondReportedAddress(uint256 reportId) external view returns (address);
     function secondReports(uint256 reportId) external view returns (bool);
 }
@@ -31,7 +29,6 @@ interface ILssController {
 }
 
 interface ILssStaking {
-    function getTotalStaked(uint256 reportId) external view returns (uint256);
     function retrieveCompensation(address adr, uint256 amount) external;
 }
 
@@ -280,7 +277,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
-        uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
+        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessController.getReportLifetime() > block.timestamp, "LSS: report is not valid");
         
         Vote storage reportVote;
@@ -301,10 +298,10 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function tokenOwnersVote(uint256 reportId, bool vote) public whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
-        uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
+        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessController.getReportLifetime() > block.timestamp, "LSS: report is not valid");
 
-        require(ILERC20(losslessReporting.getTokenFromReport(reportId)).admin() == msg.sender, "LSS: must be token owner");
+        require(ILERC20(losslessReporting.reportTokens(reportId)).admin() == msg.sender, "LSS: must be token owner");
 
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -325,7 +322,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(!isReportSolved(reportId), "LSS: Report already solved.");
         require(isCommitteeMember(msg.sender), "LSS: must be a committee member");
 
-        uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
+        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessController.getReportLifetime() > block.timestamp, "LSS: report is not valid");
 
         Vote storage reportVote;
@@ -355,11 +352,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         require(hasRole(COMMITTEE_ROLE, msg.sender) 
                 || msg.sender == losslessController.admin() 
-                || msg.sender == ILERC20(losslessReporting.getTokenFromReport(reportId)).admin(),
+                || msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
                 "LSS: Role cannot resolve.");
         
         address token;
-        token = losslessReporting.getTokenFromReport(reportId);
+        token = losslessReporting.reportTokens(reportId);
 
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -383,7 +380,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need anothe vote to untie");
         
         address reportedAddress;
-        reportedAddress = losslessReporting.getReportedAddress(reportId);
+        reportedAddress = losslessReporting.reportedAddress(reportId);
 
         reportedAddresses.push(reportedAddress);
 
@@ -429,7 +426,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param wallet proposed address
     function proposeWallet(uint256 reportId, address wallet) public whenNotPaused {
         require(msg.sender == losslessController.admin() || 
-                msg.sender == ILERC20(losslessReporting.getTokenFromReport(reportId)).admin(),
+                msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
                 "LSS: Role cannot propose.");
         require(isReportSolved(reportId), "LSS: Report is not solved.");
         require(reportResolution(reportId), "LSS: Report solved negatively.");
@@ -455,7 +452,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         bool isMember = hasRole(COMMITTEE_ROLE, msg.sender);
         bool isLosslessTeam = msg.sender == losslessController.admin();
-        bool isTokenOwner = msg.sender == ILERC20(losslessReporting.getTokenFromReport(reportId)).admin();
+        bool isTokenOwner = msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin();
 
         require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot resolve.");
 
@@ -489,7 +486,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(determineProposedWallet(reportId), "LSS: Proposed wallet rejected");
 
         address token;
-        token = losslessReporting.getTokenFromReport(reportId);
+        token = losslessReporting.reportTokens(reportId);
 
         proposedWalletOnReport[reportId].status = true;
 

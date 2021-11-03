@@ -20,12 +20,12 @@ interface ILERC20 {
 }
 
 interface ILssReporting {
-    function getTokenFromReport(uint256 _reportId) external view returns (address);
-    function getReportedAddress(uint256 _reportId) external view returns (address);
-    function getReporter(uint256 _reportId) external view returns (address);
-    function getReportTimestamps(uint256 _reportId) external view returns (uint256);
+    function reportTokens(uint256 _reportId) external view returns (address);
+    function reportedAddress(uint256 _reportId) external view returns (address);
+    function reporter(uint256 _reportId) external view returns (address);
+    function reportTimestamps(uint256 _reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
-    function getAmountReported(uint256 reportId) external view returns (uint256);
+    function amountReported(uint256 reportId) external view returns (uint256);
     function stakersFee() external view returns (uint256);
 }
 
@@ -213,10 +213,10 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function stake(uint256 reportId) public notBlacklisted whenNotPaused {
         require(!losslessGovernance.isReportSolved(reportId), "LSS: Report already resolved");
         require(!getIsAccountStaked(reportId, msg.sender), "LSS: already staked");
-        require(losslessReporting.getReporter(reportId) != msg.sender, "LSS: reporter can not stake");   
+        require(losslessReporting.reporter(reportId) != msg.sender, "LSS: reporter can not stake");   
 
         uint256 reportTimestamp;
-        reportTimestamp = losslessReporting.getReportTimestamps(reportId);
+        reportTimestamp = losslessReporting.reportTimestamps(reportId);
 
         require(reportTimestamp + 1 minutes < block.timestamp, "LSS: Must wait 1 minute to stake");
         require(reportId > 0 && (reportTimestamp + losslessController.getReportLifetime()) > block.timestamp, "LSS: report does not exists");
@@ -239,7 +239,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         totalStakedOnReport[reportId] += stakeAmount;
         
-        emit Staked(losslessReporting.getTokenFromReport(reportId), msg.sender, reportId);
+        emit Staked(losslessReporting.reportTokens(reportId), msg.sender, reportId);
     }
 
     /// @notice This function sets the payout status to true when claiming
@@ -259,7 +259,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(!getPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
 
         address reporter;
-        reporter = losslessReporting.getReporter(reportId);
+        reporter = losslessReporting.reporter(reportId);
 
         require(msg.sender == reporter, "LSS: Must be the reporter");
 
@@ -269,7 +269,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 stakeAmount;
         stakeAmount = losslessController.getStakeAmount();
 
-        amountStakedOnReport = losslessReporting.getAmountReported(reportId);
+        amountStakedOnReport = losslessReporting.amountReported(reportId);
 
         (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
@@ -299,13 +299,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         stakeAmount = losslessController.getStakeAmount();
 
-        amountStakedOnReport = losslessReporting.getAmountReported(reportId);
+        amountStakedOnReport = losslessReporting.amountReported(reportId);
 
         (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
-        reportedToken = losslessReporting.getTokenFromReport(reportId);
+        reportedToken = losslessReporting.reportTokens(reportId);
 
-        reportedWallet = losslessReporting.getReportedAddress(reportId);
+        reportedWallet = losslessReporting.reportedAddress(reportId);
 
         amountStakedOnReport = amountStakedOnReport * losslessReporting.stakersFee() / 10**2;
 
@@ -326,7 +326,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Staked report
     function stakerClaim(uint256 reportId) public notBlacklisted whenNotPaused {
 
-        require( losslessReporting.getReporter(reportId) != msg.sender, "LSS: Must user reporterClaim");
+        require( losslessReporting.reporter(reportId) != msg.sender, "LSS: Must user reporterClaim");
         require(!getPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
@@ -336,7 +336,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         amountToClaim = stakerClaimableAmount(reportId);
         stakeAmount = losslessController.getStakeAmount();
-        token = losslessReporting.getTokenFromReport(reportId);
+        token = losslessReporting.reportTokens(reportId);
 
         setPayoutStatus(reportId, msg.sender);
 
@@ -348,7 +348,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Staked report
     function reporterClaim(uint256 reportId) public notBlacklisted whenNotPaused {
         
-        require( losslessReporting.getReporter(reportId) == msg.sender, "LSS: Must user stakerClaim");
+        require( losslessReporting.reporter(reportId) == msg.sender, "LSS: Must user stakerClaim");
         require(!losslessController.getReporterPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
@@ -360,7 +360,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         losslessController.setReporterPayoutStatus(msg.sender, true, reportId);
 
-        ILERC20(losslessReporting.getTokenFromReport(reportId)).transfer(msg.sender, amountToClaim);
+        ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, amountToClaim);
         losslessToken.transfer(msg.sender, stakeAmount);
     }
 
@@ -380,10 +380,4 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         return 1;
     }
 
-    /// @notice This function returns the total staked on a report
-    /// @return Returns the Smart Contract version
-    function getTotalStaked(uint256 reportId) public view returns (uint256) {
-        return totalStakedOnReport[reportId];
-    }
-    
 }
