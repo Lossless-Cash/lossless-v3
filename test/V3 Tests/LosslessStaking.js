@@ -28,6 +28,30 @@ describe('Lossless Staking', () => {
       env.lssController.address);
   });
 
+  describe('when paused', () => {
+    beforeEach(async () => {
+      await env.lssStaking.connect(adr.lssPauseAdmin).pause()
+    });
+
+    it('should prevent staking', async () => {
+      await expect(
+        env.lssStaking.connect(adr.staker1).stake(1),
+      ).to.be.revertedWith('Pausable: paused');
+    });
+
+    it('should prevent staker claiming', async () => {
+      await expect(
+        env.lssStaking.connect(adr.staker1).stakerClaim(1),
+      ).to.be.revertedWith('Pausable: paused');
+    });
+
+    it('should prevent reporter claiming', async () => {
+      await expect(
+        env.lssStaking.connect(adr.staker1).reporterClaim(1),
+      ).to.be.revertedWith('Pausable: paused');
+    });
+  });
+
   describe('when the staking period is active', () => {
     beforeEach(async () => {
       await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssReporting.address);

@@ -210,7 +210,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// The reporter cannot stake as it'll have a fixed percentage reward.
     /// A reported address cannot stake.
     /// @param reportId Report to stake
-    function stake(uint256 reportId) public notBlacklisted {
+    function stake(uint256 reportId) public notBlacklisted whenNotPaused {
         require(!losslessGovernance.isReportSolved(reportId), "LSS: Report already resolved");
         require(!getIsAccountStaked(reportId, msg.sender), "LSS: already staked");
         require(losslessReporting.getReporter(reportId) != msg.sender, "LSS: reporter can not stake");   
@@ -324,7 +324,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function is for the stakers to claim their rewards
     /// @param reportId Staked report
-    function stakerClaim(uint256 reportId) public notBlacklisted{
+    function stakerClaim(uint256 reportId) public notBlacklisted whenNotPaused {
 
         require( losslessReporting.getReporter(reportId) != msg.sender, "LSS: Must user reporterClaim");
         require(!getPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
@@ -346,7 +346,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function is for the reported  to claim their rewards
     /// @param reportId Staked report
-    function reporterClaim(uint256 reportId) public notBlacklisted{
+    function reporterClaim(uint256 reportId) public notBlacklisted whenNotPaused {
         
         require( losslessReporting.getReporter(reportId) == msg.sender, "LSS: Must user stakerClaim");
         require(!losslessController.getReporterPayoutStatus(msg.sender, reportId), "LSS: You already claimed");

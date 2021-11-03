@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "hardhat/console.sol";
 
 interface ILssReporting {
@@ -43,7 +44,7 @@ interface ILERC20 {
 
 /// @title Lossless Governance Contract
 /// @notice The governance contract is in charge of handling the voting process over the reports and their resolution
-contract LosslessGovernance is Initializable, AccessControl {
+contract LosslessGovernance is Initializable, AccessControlUpgradeable, PausableUpgradeable {
 
     uint256 public lssTeamVoteIndex;
     uint256 public tokenOwnersVoteIndex;
@@ -124,6 +125,17 @@ contract LosslessGovernance is Initializable, AccessControl {
         require(losslessController.admin() == msg.sender, "LSS: must be admin");
         _;
     }
+
+    // --- ADMINISTRATION ---
+
+    function pause() public onlyLosslessAdmin  {
+        _pause();
+    }    
+    
+    function unpause() public onlyLosslessAdmin {
+        _unpause();
+    }
+
 
     /// @notice This function determines if an address belongs to the Committee
     /// @param account Address to be verified
@@ -211,7 +223,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @notice This function adds committee members    
     /// @param members Array of members to be added
     /// @param newQuorum New quorum number, based on the members
-    function addCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin  {
+    function addCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin whenNotPaused {
         
         require(newQuorum > 0, "LSS: Quorum cannot be zero");
 
@@ -231,7 +243,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @notice This function removes Committee members    
     /// @param members Array of members to be added
     /// @param newQuorum New quorum number, based on the members
-    function removeCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin  {
+    function removeCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin whenNotPaused {
         
         require(committeeMembersCount != 0, "LSS: committee has no members");
         require(newQuorum > 0, "LSS: Quorum cannot be zero");
@@ -264,7 +276,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @dev Only can be run by the Lossless Admin
     /// @param reportId Report to cast the vote
     /// @param vote Resolution
-    function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin {
+    function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
         uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
@@ -285,7 +297,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @dev Only can be run by the Token admin
     /// @param reportId Report to cast the vote
     /// @param vote Resolution
-    function tokenOwnersVote(uint256 reportId, bool vote) public {
+    function tokenOwnersVote(uint256 reportId, bool vote) public whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
         uint256 reportTimestamp = losslessReporting.getReportTimestamps(reportId);
@@ -308,7 +320,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @dev Only can be run by a committee member
     /// @param reportId Report to cast the vote
     /// @param vote Resolution
-    function committeeMemberVote(uint256 reportId, bool vote) public {
+    function committeeMemberVote(uint256 reportId, bool vote) public whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
         require(isCommitteeMember(msg.sender), "LSS: must be a committee member");
 
@@ -338,7 +350,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// When the report gets resolved, if it's resolved negatively, the reported address gets removed from the blacklist
     /// If the report is solved positively, the funds of the reported account get retrieved in order to be distributed among stakers and the reporter.
     /// @param reportId Report to be resolved
-    function resolveReport(uint256 reportId) public {
+    function resolveReport(uint256 reportId) public whenNotPaused {
 
         require(hasRole(COMMITTEE_ROLE, msg.sender) 
                 || msg.sender == losslessController.admin() 
@@ -414,7 +426,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @dev Only can be run by the three pilars.
     /// @param reportId Report to propose the wallet
     /// @param wallet proposed address
-    function proposeWallet(uint256 reportId, address wallet) public {
+    function proposeWallet(uint256 reportId, address wallet) public whenNotPaused {
         require(msg.sender == losslessController.admin() || 
                 msg.sender == ILERC20(losslessReporting.getTokenFromReport(reportId)).admin(),
                 "LSS: Role cannot propose.");
@@ -436,7 +448,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     /// @notice This function is used to reject the wallet proposal
     /// @dev Only can be run by the three pilars.
     /// @param reportId Report to propose the wallet
-    function rejectWallet(uint256 reportId) public {
+    function rejectWallet(uint256 reportId) public whenNotPaused {
 
         require(block.timestamp <= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period closed");
 
@@ -465,7 +477,7 @@ contract LosslessGovernance is Initializable, AccessControl {
 
     /// @notice This function proposes a wallet where the recovered funds will be returned
     /// @param reportId Report to propose the wallet
-    function retrieveFunds(uint256 reportId) public {
+    function retrieveFunds(uint256 reportId) public whenNotPaused {
  
         require(block.timestamp >= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
         require(!proposedWalletOnReport[reportId].status, "LSS: Funds already claimed");
@@ -528,7 +540,7 @@ contract LosslessGovernance is Initializable, AccessControl {
     }
 
     /// @notice This lets an erroneously reported account to retrieve compensation
-    function retrieveCompensation() public {
+    function retrieveCompensation() public whenNotPaused {
         require(!compensation[msg.sender].payed, "LSS: Already retrieved");
         require(compensation[msg.sender].amount > 0, "LSS: No retribution assigned");
         
