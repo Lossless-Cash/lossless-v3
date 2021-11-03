@@ -27,6 +27,26 @@ describe('Lossless Reporting', () => {
       env.lssController.address);
   });
 
+  describe('when paused', () => {
+    beforeEach(async () => {
+      await env.lssReporting.connect(adr.lssPauseAdmin).pause();
+    });
+
+    it('should prevent reporting', async () => {
+      await expect(
+        env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address),
+      ).to.be.revertedWith('Pausable: paused');
+    });
+
+    it('should prevent staker claiming', async () => {
+      await expect(
+        env.lssReporting.connect(adr.reporter1)
+          .secondReport(1, lerc20Token.address, adr.maliciousActor2.address),
+      ).to.be.revertedWith('Pausable: paused');
+    });
+  });
+
   describe('when generating a report', () => {
     beforeEach(async () => {
       await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssReporting.address);

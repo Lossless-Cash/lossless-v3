@@ -190,7 +190,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// Lossless Contracts and Admin addresses cannot be reported.
     /// @param token Token address of the stolen funds
     /// @param account Potential malicious address
-    function report(address token, address account) public notBlacklisted {
+    function report(address token, address account) public notBlacklisted whenNotPaused {
         require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
 
         uint256 reportId = tokenReports[token].reports[account];
@@ -231,7 +231,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param reportId Report that was previously generated.
     /// @param token Token address of the stolen funds
     /// @param account Potential malicious address
-    function secondReport(uint256 reportId, address token, address account) public notBlacklisted {
+    function secondReport(uint256 reportId, address token, address account) public notBlacklisted whenNotPaused {
         uint256 reportLifetime;
         uint256 reportTimestamp;
 
