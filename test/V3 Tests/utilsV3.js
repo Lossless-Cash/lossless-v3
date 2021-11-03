@@ -139,20 +139,22 @@ const setupEnvironment = async (lssAdmin,
     'LosslessReporting',
   );
 
-  lssReporting = await LosslessReporting.connect(lssAdmin).deploy(
-    lssController.address,
+  lssReporting = await upgrades.deployProxy(
+    LosslessReporting,
+    [lssController.address],
+    { initializer: 'initialize' },
   );
 
-  lssStaking = await LosslessStaking.connect(lssAdmin).deploy(
-    lssReporting.address,
-    lssController.address,
+  lssStaking = await upgrades.deployProxy(
+    LosslessStaking,
+    [lssReporting.address, lssController.address],
+    { initializer: 'initialize' },
   );
 
-  lssGovernance = await LosslessGovernance.connect(lssAdmin).deploy(
-    lssReporting.address,
-    lssController.address,
-    lssStaking.address,
-    lssToken.address,
+  lssGovernance = await upgrades.deployProxy(
+    LosslessGovernance,
+    [lssReporting.address, lssController.address, lssStaking.address, lssToken.address],
+    { initializer: 'initialize' },
   );
 
   await lssController.connect(lssAdmin).setStakeAmount(stakeAmount);
