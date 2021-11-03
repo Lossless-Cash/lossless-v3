@@ -464,25 +464,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         return queue.last;
     }
 
-    /// @notice This function will return the standard report lifetime 
-    /// @return Returns the last funds on queue
-    function getReportLifetime() public view returns (uint256) {
-        return reportLifetime;
-    }
-
-    /// @notice This function will return the standard stake cost
-    /// @return Returns the cost of staking
-    function getStakeAmount() public view returns (uint256) {
-        return stakeAmount;
-    }
-
-    /// @notice This function will return the acummulated coefficient  on a report
-    /// @param reportId Report to be consulted
-    /// @return Returns the total coefficient
-    function getReportCoefficient(uint256 reportId) public view returns (uint256) {
-        return reportCoefficient[reportId];
-    }
-
     // LOCKs & QUEUES
 
     /// @notice This function will remove the locks that have already been lifted

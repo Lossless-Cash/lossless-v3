@@ -20,8 +20,8 @@ interface ILERC20 {
 
 interface ILssController {
     function isBlacklisted(address _adr) external returns (bool);
-    function getReportLifetime() external returns (uint256);
-    function getStakeAmount() external returns (uint256);
+    function reportLifetime() external returns (uint256);
+    function stakeAmount() external returns (uint256);
     function addToBlacklist(address _adr) external;
     function isWhitelisted(address _adr) external view returns (bool);
     function activateEmergency(address token) external;
@@ -175,8 +175,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         uint256 reportLifetime;
         uint256 stakeAmount;
 
-        reportLifetime = losslessController.getReportLifetime();
-        stakeAmount = losslessController.getStakeAmount();
+        reportLifetime = losslessController.reportLifetime();
+        stakeAmount = losslessController.stakeAmount();
 
         require(reportId == 0 || reportTimestamps[reportId] + reportLifetime < block.timestamp || losslessGovernance.isReportSolved(reportId), "LSS: Report already exists");
 
@@ -216,7 +216,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
 
         reportTimestamp = reportTimestamps[reportId];
-        reportLifetime = losslessController.getReportLifetime();
+        reportLifetime = losslessController.reportLifetime();
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(secondReports[reportId] == false, "LSS: Another already submitted");
