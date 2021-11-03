@@ -159,7 +159,7 @@ describe('Lossless Staking', () => {
 
         await expect(
           env.lssStaking.connect(adr.staker5).stake(1),
-        ).to.be.revertedWith('LSS: Not enough $LSS to stake');
+        ).to.be.revertedWith('LSS: Insufficient balance');
       });
     });
 
