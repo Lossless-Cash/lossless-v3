@@ -20,7 +20,7 @@ interface ILssReporting {
 
 interface ILssController {
     function getReportLifetime() external view returns(uint256);
-    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) external;
+    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) external returns(uint256);
     function resolvedNegatively(address _adr) external;
     function deactivateEmergency(address token) external;
     function admin() external view returns (address);
@@ -74,6 +74,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     mapping(uint256 => Vote) public reportVotes;
     mapping(address => address) public projectOwners;
     mapping(uint256 => uint256) public amountReported;
+    mapping(uint256 => uint256) private retrievalAmount;
 
     mapping(uint256 => ProposedWallet) public proposedWalletOnReport;
 
@@ -394,7 +395,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
-            losslessController.retrieveBlacklistedFunds(reportedAddresses, token, reportId);
+            retrievalAmount[reportId] = losslessController.retrieveBlacklistedFunds(reportedAddresses, token, reportId);
         }else{
             reportVote.resolution = false;
             compensateAddresses(reportedAddresses);
@@ -475,7 +476,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         emit WalletRejected(reportId, proposedWalletOnReport[reportId].wallet);
     }
 
-    /// @notice This function proposes a wallet where the recovered funds will be returned
+    /// @notice This function retrieves the fund to the accepted proposed wallet
     /// @param reportId Report to propose the wallet
     function retrieveFunds(uint256 reportId) public whenNotPaused {
  
@@ -490,18 +491,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         address token;
         token = losslessReporting.getTokenFromReport(reportId);
 
-        uint256 rewardAmounts;
-        uint256 totalAmount;
-        
-        totalAmount = losslessReporting.getAmountReported(reportId);
-
-        (uint256 reporterReward, uint256 losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
-
-        rewardAmounts = totalAmount * (losslessReporting.stakersFee() + reporterReward + losslessFee) / 10**2;
-
         proposedWalletOnReport[reportId].status = true;
-        
-        ILERC20(token).transfer(msg.sender, totalAmount - rewardAmounts);
+
+        ILERC20(token).transfer(msg.sender, retrievalAmount[reportId]);
 
         emit FundsRetrieved(reportId, msg.sender);
     }
