@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
 
@@ -50,7 +49,7 @@ interface ILssGovernance {
 
 /// @title Lossless Staking Contract
 /// @notice The Staking contract is in charge of handling the staking done on reports
-contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
+contract LosslessStaking is ContextUpgradeable, PausableUpgradeable {
 
     uint256 public cooldownPeriod;
 
@@ -79,7 +78,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
-    function initialize(address _losslessReporting, address _losslessController) public initializer {
+    constructor(address _losslessReporting, address _losslessController){
        cooldownPeriod = 5 minutes;
        losslessReporting = ILssReporting(_losslessReporting);
        losslessController = ILssController(_losslessController);

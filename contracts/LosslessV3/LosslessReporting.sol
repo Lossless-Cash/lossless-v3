@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
 interface ILERC20 {
@@ -38,7 +37,7 @@ interface ILssGovernance {
 /// @title Lossless Reporting Contract
 /// @author Lossless.cash
 /// @notice The Reporting smart contract is in charge of handling all the parts related to creating new reports
-contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgradeable {
+contract LosslessReporting is ContextUpgradeable, PausableUpgradeable {
     uint256 public reporterReward;
     uint256 public losslessFee;
     uint256 public stakersFee;
@@ -89,7 +88,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         _;
     }
 
-    function initialize(address _losslessController) public initializer {
+    constructor(address _losslessController) {
         losslessController = ILssController(_losslessController);
         stakersFee = 2;
     }

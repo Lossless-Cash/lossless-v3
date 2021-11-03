@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Unlicensed
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "hardhat/console.sol";
@@ -44,7 +43,7 @@ interface ILERC20 {
 
 /// @title Lossless Governance Contract
 /// @notice The governance contract is in charge of handling the voting process over the reports and their resolution
-contract LosslessGovernance is Initializable, AccessControlUpgradeable, PausableUpgradeable {
+contract LosslessGovernance is AccessControlUpgradeable, PausableUpgradeable {
 
     uint256 public lssTeamVoteIndex;
     uint256 public tokenOwnersVoteIndex;
@@ -111,7 +110,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event CompensationRetrieved(address indexed wallet);
 
 
-    function initialize(address _losslessReporting, address _losslessController, address _losslessStaking, address _losslessToken) public initializer {
+    constructor(address _losslessReporting, address _losslessController, address _losslessStaking, address _losslessToken) {
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
         losslessStaking = ILssStaking(_losslessStaking);
