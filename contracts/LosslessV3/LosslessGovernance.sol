@@ -12,6 +12,7 @@ interface ILssReporting {
     function reportTokens(uint256 reportId) external view returns(address);
     function reportedProject(uint256 reportId) external view returns (address);
     function stakersFee() external view returns (uint256);
+    function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
     function secondReportedAddress(uint256 reportId) external view returns (address);
     function secondReports(uint256 reportId) external view returns (bool);
 }
@@ -385,13 +386,18 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         reportedAddresses.push(reportedAddress);
 
         if (losslessReporting.secondReports(reportId)) {
-            reportedAddresses.push(losslessReporting.secondReportedAddress(reportId));
+            address secondReportedAddress;
+            secondReportedAddress = losslessReporting.secondReportedAddress(reportId);
+            reportedAddresses.push(secondReportedAddress);
         }
 
         losslessController.deactivateEmergency(token);
         
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
+            for(uint256 i; i < reportedAddresses.length; i++) {
+                amountReported[reportId] += ILERC20(token).balanceOf(reportedAddresses[i]);
+            }
             retrievalAmount[reportId] = losslessController.retrieveBlacklistedFunds(reportedAddresses, token, reportId);
         }else{
             reportVote.resolution = false;

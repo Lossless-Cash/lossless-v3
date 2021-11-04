@@ -35,6 +35,7 @@ interface ILssReporting {
 
 interface ILssGovernance {
     function reportResolution(uint256 reportId) external view returns(bool);
+    function amountReported(uint256 reportId) external view returns(uint256);
 }
 
 interface ProtectionStrategy {
@@ -556,7 +557,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 retrieveAmount;
         uint256 totalAmount;
         
-        totalAmount = losslessReporting.amountReported(reportId);
+        totalAmount = losslessGovernance.amountReported(reportId);
 
         (uint256 reporterReward, uint256 losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 

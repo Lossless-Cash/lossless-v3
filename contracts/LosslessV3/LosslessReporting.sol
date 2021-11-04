@@ -64,7 +64,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     mapping(uint256 => uint256) public reportTimestamps;
     mapping(uint256 => address) public reportTokens;
     mapping(uint256 => bool) public secondReports;
-    mapping(uint256 => uint256) public amountReported;
+
 
     event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
     event SecondReportsubmitted(address indexed token, address indexed account, uint256 reportId);
@@ -193,8 +193,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
         
-        amountReported[reportId] = ILERC20(token).balanceOf(account);
-
         losslessController.activateEmergency(token);
 
         losslessController.addReporter(msg.sender, reportId);
@@ -224,7 +222,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         secondReports[reportId] = true;
         tokenReports[token].reports[account] = reportId;
-        amountReported[reportId] += losslessToken.balanceOf(account);
 
         losslessController.addToBlacklist(account);
         secondReportedAddress[reportId] = account;

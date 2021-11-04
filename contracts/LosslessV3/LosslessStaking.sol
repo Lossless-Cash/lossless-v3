@@ -39,20 +39,18 @@ interface ILssController {
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
-    function recoveryAdmin() external view returns (address);
     function getCompensationPercentage() external view returns (uint256);
 }
 
 interface ILssGovernance {
     function reportResolution(uint256 reportId) external view returns(bool);
     function isReportSolved(uint256 reportId) external view returns(bool);
+    function amountReported(uint256 reportId) external view returns(uint256);
 }
 
 /// @title Lossless Staking Contract
 /// @notice The Staking contract is in charge of handling the staking done on reports
 contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
-
-    uint256 public cooldownPeriod;
 
     struct Stake {
         mapping(uint256 => StakeInfo) stakeInfoOnReport;
@@ -69,8 +67,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     ILssReporting public losslessReporting;
     ILssController public losslessController;
     ILssGovernance public losslessGovernance;
-
-    mapping(address => bool) whitelist;
     
     mapping(address => Stake) private stakes;
     mapping(uint256 => address[]) public stakers;
@@ -80,17 +76,11 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
     function initialize(address _losslessReporting, address _losslessController) public initializer {
-       cooldownPeriod = 5 minutes;
        losslessReporting = ILssReporting(_losslessReporting);
        losslessController = ILssController(_losslessController);
     }
 
     // --- MODIFIERS ---
-
-    modifier onlyLosslessRecoveryAdmin() {
-        require(msg.sender == losslessController.recoveryAdmin(), "LSS: Must be recoveryAdmin");
-        _;
-    }
 
     modifier onlyLosslessAdmin() {
         require(losslessController.admin() == msg.sender, "LSS: Must be admin");
@@ -222,7 +212,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(reportId > 0 && (reportTimestamp + losslessController.reportLifetime()) > block.timestamp, "LSS: report does not exists");
 
         uint256 stakeAmount = losslessController.stakeAmount();
-        require(losslessToken.balanceOf(msg.sender) >= stakeAmount, "LSS: Not enough $LSS to stake");
 
         uint256 stakerCoefficient;
         stakerCoefficient = calculateCoefficient(reportTimestamp);
@@ -269,7 +258,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 stakeAmount;
         stakeAmount = losslessController.stakeAmount();
 
-        amountStakedOnReport = losslessReporting.amountReported(reportId);
+        amountStakedOnReport = losslessGovernance.amountReported(reportId);
 
         (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
@@ -299,7 +288,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         stakeAmount = losslessController.stakeAmount();
 
-        amountStakedOnReport = losslessReporting.amountReported(reportId);
+        amountStakedOnReport = losslessGovernance.amountReported(reportId);
 
         (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
