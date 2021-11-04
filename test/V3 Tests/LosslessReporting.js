@@ -78,7 +78,7 @@ describe('Lossless Reporting', () => {
           .report(lerc20Token.address, adr.maliciousActor1.address);
 
         expect(
-          await env.lssReporting.getReportTimestamps(1),
+          await env.lssReporting.reportTimestamps(1),
         ).to.not.be.empty;
       });
 

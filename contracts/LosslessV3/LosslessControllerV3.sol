@@ -28,11 +28,8 @@ interface ILssStaking {
 }
 
 interface ILssReporting {
-    function getTokenFromReport(uint256 _reportId) external view returns (address);
-    function getReportedAddress(uint256 _reportId) external view returns (address);
-    function getReporter(uint256 _reportId) external view returns (address);
-    function getReportTimestamps(uint256 _reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
+    function amountReported(uint256 reportId) external view returns (uint256);
     function stakersFee() external view returns (uint256);
 }
 
@@ -466,25 +463,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[token].queue[account];
         return queue.last;
-    }
-
-    /// @notice This function will return the standard report lifetime 
-    /// @return Returns the last funds on queue
-    function getReportLifetime() public view returns (uint256) {
-        return reportLifetime;
-    }
-
-    /// @notice This function will return the standard stake cost
-    /// @return Returns the cost of staking
-    function getStakeAmount() public view returns (uint256) {
-        return stakeAmount;
-    }
-
-    /// @notice This function will return the acummulated coefficient  on a report
-    /// @param reportId Report to be consulted
-    /// @return Returns the total coefficient
-    function getReportCoefficient(uint256 reportId) public view returns (uint256) {
-        return reportCoefficient[reportId];
     }
 
     // LOCKs & QUEUES
