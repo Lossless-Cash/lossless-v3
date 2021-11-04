@@ -25,7 +25,6 @@ interface ILssReporting {
     function getReporter(uint256 _reportId) external view returns (address);
     function getReportTimestamps(uint256 _reportId) external view returns (uint256);
     function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
-    function getAmountReported(uint256 reportId) external view returns (uint256);
     function stakersFee() external view returns (uint256);
 }
 
@@ -45,6 +44,7 @@ interface ILssController {
 interface ILssGovernance {
     function reportResolution(uint256 reportId) external view returns(bool);
     function isReportSolved(uint256 reportId) external view returns(bool);
+    function amountReported(uint256 reportId) external view returns(uint256);
 }
 
 /// @title Lossless Staking Contract
@@ -258,7 +258,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 stakeAmount;
         stakeAmount = losslessController.getStakeAmount();
 
-        amountStakedOnReport = losslessReporting.getAmountReported(reportId);
+        amountStakedOnReport = losslessGovernance.amountReported(reportId);
 
         (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
@@ -288,7 +288,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         stakeAmount = losslessController.getStakeAmount();
 
-        amountStakedOnReport = losslessReporting.getAmountReported(reportId);
+        amountStakedOnReport = losslessGovernance.amountReported(reportId);
 
         (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
