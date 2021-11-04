@@ -26,6 +26,8 @@ describe('Lossless Staking', () => {
       adr.lerc20BackupAdmin.address,
       Number(time.duration.days(1)),
       env.lssController.address);
+
+    await env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 5 * 60);
   });
 
   describe('when paused', () => {
