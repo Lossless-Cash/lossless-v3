@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity  ^0.8.0;
+pragma solidity  0.8.0;
 
 import "./LERC20.sol";
 
@@ -13,9 +13,13 @@ contract LERC20Mock is LERC20 {
         address lssAddress,
         address admin,
         address adminBackup,
-        uint256 _timelockPeriod
+         uint256 _timelockPeriod
     ) payable LERC20(totalSupply, name, symbol, admin, adminBackup, _timelockPeriod, lssAddress) {
         _mint(initialAccount, initialBalance);
+    }
+
+    function mint(address account, uint256 amount) public {
+        _mint(account, amount);
     }
 
     function transferInternal(address from, address to, uint256 value) public {

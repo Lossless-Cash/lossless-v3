@@ -38,6 +38,10 @@ interface ILssGovernance {
     function amountReported(uint256 reportId) external view returns(uint256);
 }
 
+interface ILssGuardian {
+    function getGuardian() external view returns(address);
+}
+
 interface ProtectionStrategy {
     function isTransferAllowed(address token, address sender, address recipient, uint256 amount) external;
 }
@@ -51,7 +55,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V2 VARIABLES ---
 
-    address public guardian;
+    ILssGuardian public losslessGuardian;
+
     mapping(address => Protections) private tokenProtections;
 
     struct Protection {
@@ -128,7 +133,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V2 EVENTS ---
 
-    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
 
@@ -155,7 +159,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V2 MODIFIERS ---
 
     modifier onlyGuardian() {
-        require(msg.sender == guardian, "LOSSLESS: Must be Guardian");
+        require(msg.sender == losslessGuardian.getGuardian(), "LOSSLESS: Must be Guardian");
         _;
     }
 
@@ -176,10 +180,20 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         _;
     }
 
+    // --- V2 VIEWS ---
+
+    function isAddressProtected(address token, address protectedAddress) external view returns (bool) {
+        return tokenProtections[token].protections[protectedAddress].isProtected;
+    }
+
+    function getProtectedAddressStrategy(address token, address protectedAddress) external view returns (address) {
+        return address(tokenProtections[token].protections[protectedAddress].strategy);
+    }
+
     // --- VIEWS ---
 
     /// @notice This function will return the contract version 
-    function getVersion() public pure returns (uint256) {
+    function getVersion() external pure returns (uint256) {
         return 3;
     }
     
@@ -202,28 +216,31 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- ADMINISTRATION ---
 
-    function pause() public onlyPauseAdmin  {
+    function pause() external onlyPauseAdmin  {
         _pause();
     }    
     
-    function unpause() public onlyPauseAdmin {
+    function unpause() external onlyPauseAdmin {
         _unpause();
     }
 
     /// @notice This function sets a new admin
     /// @dev Only can be called by the Recovery admin
     /// @param newAdmin Address corresponding to the new Lossless Admin
-    function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
+    function setAdmin(address newAdmin) external onlyLosslessRecoveryAdmin {
+        require(newAdmin != address(0), "LERC20: Cannot be zero address");
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
     }
 
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
+        require(newRecoveryAdmin != address(0), "LERC20: Cannot be zero address");
         emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
-    function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
+    function setPauseAdmin(address newPauseAdmin) external onlyLosslessRecoveryAdmin {
+        require(newPauseAdmin != address(0), "LERC20: Cannot be zero address");
         emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
@@ -389,9 +406,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // @notice Set a guardian contract.
     // @dev Guardian contract must be trusted as it has some access rights and can modify controller's state.
-    function setGuardian(address newGuardian) public onlyLosslessAdmin whenNotPaused {
-        emit GuardianSet(guardian, newGuardian);
-        guardian = newGuardian;
+    function setLssGuardian(address guardianSC) public onlyLosslessAdmin {
+        require(guardianSC != address(0), "LSS: Cannot be zero address");
+        losslessGuardian = ILssGuardian(guardianSC);
     }
 
     // @notice Sets protection for an address with the choosen strategy.
