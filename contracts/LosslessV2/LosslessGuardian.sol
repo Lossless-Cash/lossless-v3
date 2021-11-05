@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.0;
 
+<<<<<<< HEAD
 import "../LosslessV1/LERC20.sol";
+=======
+import "./LERC20.sol";
+>>>>>>> ff5aa71d567d50dab245700b483cb6819e258247
 
 interface LosslessController {
     function setProtectedAddress(address token, address guardedAddress, address strategy) external;
