@@ -25,7 +25,27 @@ describe('Random LERC20 Token', () => {
       Number(time.duration.days(1)),
       env.lssController.address);
 
-      await env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 5 * 60);
+    await env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 5 * 60);
+  });
+
+  describe('when setting up the settlement period', () => {
+    it('should revert when not token admin', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).setLockTimeframe(lerc20Token.address, 0),
+      ).to.be.revertedWith('LSS: Must be Token Admin');
+    });
+
+    it('should revert when trying to change before the timelock', async () => {
+      await expect(
+        env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 10 * 60),
+      ).to.be.revertedWith('LSS: Must wait to change');
+    });
+
+    it('should not revert when trying to change after the timelock by token admin', async () => {
+      await expect(
+        env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 10 * 60),
+      ).to.be.revertedWith('LSS: Must wait to change');
+    });
   });
 
   describe('when transfering between users', () => {

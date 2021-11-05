@@ -15,7 +15,7 @@ describe('Lossless Token', () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-    
+
     await env.lssController.connect(adr.lssAdmin).setLockTimeframe(env.lssToken.address, 5 * 60);
   });
 
