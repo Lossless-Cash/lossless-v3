@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.0;
 
-
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
@@ -41,22 +40,6 @@ interface ILosslessController {
     function beforeIncreaseAllowance(address msgSender, address spender, uint256 addedValue) external;
 
     function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external;
-
-    function beforeBurn(address account, uint256 amount) external;
-    
-    function beforeMint(address to, uint256 amount) external;
-
-    function afterApprove(address sender, address spender, uint256 amount) external;
-
-    function afterTransfer(address sender, address recipient, uint256 amount) external;
-
-    function afterTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external;
-
-    function afterIncreaseAllowance(address sender, address spender, uint256 addedValue) external;
-
-    function afterDecreaseAllowance(address sender, address spender, uint256 subtractedValue) external;
-    function afterBurn(address account, uint256 amount) external;
-    function afterMint(address to, uint256 amount) external;
 }
 
 contract LERC20 is Context, IERC20 {
@@ -67,14 +50,14 @@ contract LERC20 is Context, IERC20 {
     string private _symbol;
 
     address public recoveryAdmin;
-    address private recoveryAdminCandidate;
+    address private recoveryAdminCanditate;
     bytes32 private recoveryAdminKeyHash;
     address public admin;
     uint256 public timelockPeriod;
     uint256 public losslessTurnOffTimestamp;
     bool public isLosslessTurnOffProposed;
     bool public isLosslessOn = true;
-    ILosslessController private lossless;
+    ILosslessController public lossless;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChangeProposed(address indexed candidate);
@@ -98,71 +81,36 @@ contract LERC20 is Context, IERC20 {
     modifier lssAprove(address spender, uint256 amount) {
         if (isLosslessOn) {
             lossless.beforeApprove(_msgSender(), spender, amount);
-            _;
-            lossless.afterApprove(_msgSender(), spender, amount);
-        } else {
-            _;
-        }
+        } 
+        _;
     }
 
     modifier lssTransfer(address recipient, uint256 amount) {
         if (isLosslessOn) {
             lossless.beforeTransfer(_msgSender(), recipient, amount);
-            _;
-            lossless.afterTransfer(_msgSender(), recipient, amount);
-        } else {
-            _;
-        }
+        } 
+        _;
     }
 
     modifier lssTransferFrom(address sender, address recipient, uint256 amount) {
         if (isLosslessOn) {
             lossless.beforeTransferFrom(_msgSender(),sender, recipient, amount);
-            _;
-            lossless.afterTransferFrom(_msgSender(), sender, recipient, amount);
-        } else {
-            _;
         }
-    }
-
-    modifier lssMint(address to, uint256 amount) {
-        if (isLosslessOn) {
-            lossless.beforeMint(to, amount);
-            _;
-            lossless.afterMint(to, amount);
-        } else {
-            _;
-        }
+        _;
     }
 
     modifier lssIncreaseAllowance(address spender, uint256 addedValue) {
         if (isLosslessOn) {
             lossless.beforeIncreaseAllowance(_msgSender(), spender, addedValue);
-            _;
-            lossless.afterIncreaseAllowance(_msgSender(), spender, addedValue);
-        } else {
-            _;
         }
+        _;
     }
 
     modifier lssDecreaseAllowance(address spender, uint256 subtractedValue) {
         if (isLosslessOn) {
             lossless.beforeDecreaseAllowance(_msgSender(), spender, subtractedValue);
-            _;
-            lossless.afterDecreaseAllowance(_msgSender(), spender, subtractedValue);
-        } else {
-            _;
         }
-    }
-
-    modifier lssBurn(address account, uint256 amount) {
-        if (isLosslessOn) {
-            lossless.beforeBurn(account, amount);
-            _;
-            lossless.afterBurn(account, amount);
-        } else {
-            _;
-        }
+        _;
     }
 
     modifier onlyRecoveryAdmin() {
@@ -178,37 +126,38 @@ contract LERC20 is Context, IERC20 {
 
     function transferOutBlacklistedFunds(address[] calldata from) external {
         require(_msgSender() == address(lossless), "LERC20: Only lossless contract");
-        require(isLosslessOn, "LERC20: Lossless Protection Off");
         for (uint i = 0; i < from.length; i++) {
             _transfer(from[i], address(lossless), balanceOf(from[i]));
         }
     }
 
-    function setLosslessAdmin(address newAdmin) public onlyRecoveryAdmin {
+    function setLosslessAdmin(address newAdmin) external onlyRecoveryAdmin {
+        require(newAdmin != address(0), "LERC20: Cannot be zero address");
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
     }
 
-    function transferRecoveryAdminOwnership(address candidate, bytes32 keyHash) public onlyRecoveryAdmin {
-        recoveryAdminCandidate = candidate;
+    function transferRecoveryAdminOwnership(address candidate, bytes32 keyHash) external onlyRecoveryAdmin {
+        require(candidate != address(0), "LERC20: Cannot be zero address");
+        recoveryAdminCanditate = candidate;
         recoveryAdminKeyHash = keyHash;
         emit RecoveryAdminChangeProposed(candidate);
     }
 
     function acceptRecoveryAdminOwnership(bytes memory key) external {
-        require(_msgSender() == recoveryAdminCandidate, "LERC20: Must be canditate");
+        require(_msgSender() == recoveryAdminCanditate, "LERC20: Must be canditate");
         require(keccak256(key) == recoveryAdminKeyHash, "LERC20: Invalid key");
-        emit RecoveryAdminChanged(recoveryAdmin, recoveryAdminCandidate);
-        recoveryAdmin = recoveryAdminCandidate;
+        emit RecoveryAdminChanged(recoveryAdmin, recoveryAdminCanditate);
+        recoveryAdmin = recoveryAdminCanditate;
     }
 
-    function proposeLosslessTurnOff() public onlyRecoveryAdmin {
+    function proposeLosslessTurnOff() external onlyRecoveryAdmin {
         losslessTurnOffTimestamp = block.timestamp + timelockPeriod;
         isLosslessTurnOffProposed = true;
         emit LosslessTurnOffProposed(losslessTurnOffTimestamp);
     }
 
-    function executeLosslessTurnOff() public onlyRecoveryAdmin {
+    function executeLosslessTurnOff() external onlyRecoveryAdmin {
         require(isLosslessTurnOffProposed, "LERC20: TurnOff not proposed");
         require(losslessTurnOffTimestamp <= block.timestamp, "LERC20: Time lock in progress");
         isLosslessOn = false;
@@ -216,7 +165,7 @@ contract LERC20 is Context, IERC20 {
         emit LosslessTurnedOff();
     }
 
-    function executeLosslessTurnOn() public onlyRecoveryAdmin {
+    function executeLosslessTurnOn() external onlyRecoveryAdmin {
         isLosslessTurnOffProposed = false;
         isLosslessOn = true;
         emit LosslessTurnedOn();
@@ -246,11 +195,6 @@ contract LERC20 is Context, IERC20 {
 
     function transfer(address recipient, uint256 amount) public virtual override lssTransfer(recipient, amount) returns (bool) {
         _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    function mint(address to, uint256 amount) public virtual lssMint(to, amount) returns (bool){
-        _mint(to, amount);
         return true;
     }
 
@@ -287,15 +231,6 @@ contract LERC20 is Context, IERC20 {
         return true;
     }
 
-    function burnFrom(address account, uint256 amount) public virtual lssBurn(account, amount) {
-        uint256 currentAllowance = allowance(account, _msgSender());
-        require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
-        unchecked {
-            _approve(account, _msgSender(), currentAllowance - amount);
-        }
-        _burn(account, amount);
-    }
-
     function _transfer(address sender, address recipient, uint256 amount) internal virtual {
         require(sender != address(0), "LERC20: transfer from the zero address");
         require(recipient != address(0), "LERC20: transfer to the zero address");
@@ -323,33 +258,4 @@ contract LERC20 is Context, IERC20 {
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
-
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
-        unchecked {
-            _balances[account] = accountBalance - amount;
-        }
-        _totalSupply -= amount;
-
-        emit Transfer(account, address(0), amount);
-
-        _afterTokenTransfer(account, address(0), amount);
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual {}
-
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual {}
 }
