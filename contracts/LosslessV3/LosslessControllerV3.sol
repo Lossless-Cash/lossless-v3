@@ -38,10 +38,6 @@ interface ILssGovernance {
     function amountReported(uint256 reportId) external view returns(uint256);
 }
 
-interface ILssGuardian {
-    function getGuardian() external view returns(address);
-}
-
 interface ProtectionStrategy {
     function isTransferAllowed(address token, address sender, address recipient, uint256 amount) external;
 }
@@ -55,8 +51,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V2 VARIABLES ---
 
-    ILssGuardian public losslessGuardian;
-
+    address public guardian;
     mapping(address => Protections) private tokenProtections;
 
     struct Protection {
@@ -75,7 +70,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     uint256 public dexTranferThreshold;
 
-    uint256 lockTimeframe;
+    uint256 settlementTimeLock;
+    mapping(address => uint256) public tokenLockTimeframe;
+    mapping(address => uint256) public changeSettlementTimelock;
 
     uint256 emergencyCooldown;
 
@@ -133,6 +130,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V2 EVENTS ---
 
+    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
 
@@ -159,7 +157,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V2 MODIFIERS ---
 
     modifier onlyGuardian() {
-        require(msg.sender == losslessGuardian.getGuardian(), "LOSSLESS: Must be Guardian");
+        require(msg.sender == guardian, "LOSSLESS: Must be Guardian");
         _;
     }
 
@@ -180,20 +178,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         _;
     }
 
-    // --- V2 VIEWS ---
-
-    function isAddressProtected(address token, address protectedAddress) external view returns (bool) {
-        return tokenProtections[token].protections[protectedAddress].isProtected;
-    }
-
-    function getProtectedAddressStrategy(address token, address protectedAddress) external view returns (address) {
-        return address(tokenProtections[token].protections[protectedAddress].strategy);
-    }
-
     // --- VIEWS ---
 
     /// @notice This function will return the contract version 
-    function getVersion() external pure returns (uint256) {
+    function getVersion() public pure returns (uint256) {
         return 3;
     }
     
@@ -216,31 +204,28 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- ADMINISTRATION ---
 
-    function pause() external onlyPauseAdmin  {
+    function pause() public onlyPauseAdmin  {
         _pause();
     }    
     
-    function unpause() external onlyPauseAdmin {
+    function unpause() public onlyPauseAdmin {
         _unpause();
     }
 
     /// @notice This function sets a new admin
     /// @dev Only can be called by the Recovery admin
     /// @param newAdmin Address corresponding to the new Lossless Admin
-    function setAdmin(address newAdmin) external onlyLosslessRecoveryAdmin {
-        require(newAdmin != address(0), "LERC20: Cannot be zero address");
+    function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
     }
 
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
-        require(newRecoveryAdmin != address(0), "LERC20: Cannot be zero address");
         emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
-    function setPauseAdmin(address newPauseAdmin) external onlyLosslessRecoveryAdmin {
-        require(newPauseAdmin != address(0), "LERC20: Cannot be zero address");
+    function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
         emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
@@ -253,11 +238,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setControllerV3Defaults() public onlyLosslessAdmin {
         dexTranferThreshold = 2;
         erroneusCompensation = 2;
-        lockTimeframe = 5 minutes;
         emergencyCooldown = 15 minutes;
         whitelist[admin] = true;
         whitelist[recoveryAdmin]  = true;
         whitelist[pauseAdmin]  = true;
+        settlementTimeLock = 12 hours;
     }
     
     /// @notice This function sets the address of the Lossless Governance Token
@@ -265,6 +250,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _losslessToken Address corresponding to the Lossless Governance Token
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
         losslessToken = ILERC20(_losslessToken);
+    }
+
+    /// @notice This function sets the timelock for tokens to change the settlement period
+    /// @dev Only can be called by the Lossless Admin
+    /// @param newTimelock Timelock in seconds
+    function setSettlementTimeLock(uint256 newTimelock) public onlyLosslessAdmin {
+        settlementTimeLock = newTimelock;
     }
 
     /// @notice This function sets the amount of tokens given to the erroneously reported address
@@ -350,9 +342,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function sets the default time that the recieved funds get locked
     /// @dev This function should be called in seconds
+    /// @param token to set time settlement period on
     /// @param _seconds Time frame of the recieved funds will be locked
-    function setLockTimeframe(uint256 _seconds) public onlyLosslessAdmin {
-        lockTimeframe = _seconds * 1 seconds;
+    function setLockTimeframe(address token, uint256 _seconds) public {
+        require(ILERC20(token).admin() == msg.sender, "LSS: Must be Token Admin");
+        require(block.timestamp > changeSettlementTimelock[token] + settlementTimeLock, "LSS: Must wait to change");
+        tokenLockTimeframe[token] = _seconds * 1 seconds;
+        changeSettlementTimelock[token] = block.timestamp;
     }
 
     /// @notice This function sets the default time that the recieved funds get locked when in emergency mode
@@ -406,9 +402,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // @notice Set a guardian contract.
     // @dev Guardian contract must be trusted as it has some access rights and can modify controller's state.
-    function setLssGuardian(address guardianSC) public onlyLosslessAdmin {
-        require(guardianSC != address(0), "LSS: Cannot be zero address");
-        losslessGuardian = ILssGuardian(guardianSC);
+    function setGuardian(address newGuardian) public onlyLosslessAdmin whenNotPaused {
+        emit GuardianSet(guardian, newGuardian);
+        guardian = newGuardian;
     }
 
     // @notice Sets protection for an address with the choosen strategy.
@@ -505,11 +501,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param availableAmount Address to lift the locks
     /// @param account Address to lift the locks
     /// @param amount Address to lift the locks
-    function removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
+    function removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount, address token) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[account];
 
-        require(queue.touchedTimestamp + lockTimeframe <= block.timestamp, "LSS: Transfers limit reached");
+        require(queue.touchedTimestamp + tokenLockTimeframe[msg.sender] <= block.timestamp, "LSS: Transfers limit reached");
 
         uint256 amountLeft = amount - availableAmount;
         uint i = 1;
@@ -618,7 +614,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         if (dexList[recipient] && amount > dexTranferThreshold) {
             require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
         } else if (settledAmount < amount) {
-            removeUsedUpLocks(settledAmount, sender, amount);
+            removeUsedUpLocks(settledAmount, sender, amount, msg.sender);
             require(getAvailableAmount(msg.sender, sender) >= amount, "LSS: Amt exceeds settled balance");
         }
 
@@ -626,14 +622,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             removeExpiredLocks(recipient);
         }
 
-        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + lockTimeframe);
+        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
         enqueueLockedFunds(newCheckpoint, recipient);
 
         return true;
     }
 
-    // @notice If address is protected, transfer validation rules have to be run inside the strategy.
-    // @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
+    /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
+    /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransfer(address sender, address recipient, uint256 amount) external notBlacklisted {
         if (tokenProtections[msg.sender].protections[sender].isProtected) {
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
@@ -645,8 +641,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
     }
 
-    // @notice If address is protected, transfer validation rules have to be run inside the strategy.
-    // @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
+    /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
+    /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external notBlacklisted {
         if (tokenProtections[msg.sender].protections[sender].isProtected) {
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
