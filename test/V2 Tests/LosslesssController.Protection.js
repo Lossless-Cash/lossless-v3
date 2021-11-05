@@ -11,11 +11,9 @@ describe('ControllerProtection', () => {
   beforeEach(async () => {
     vars = await setupControllerAndTokens();
     protection = await deployProtection(vars.losslessController);
-    await vars.losslessController.connect(vars.lssAdmin).setLssGuardian(protection.guardian.address);
-    await protection.guardian.connect(vars.lssAdmin).setGuardian(protection.guardian.address);
   });
 
-  /*describe('setGuardian', () => {
+  describe('setGuardian', () => {
     describe('when sender is not admin', async () => {
       it('should revert', async () => {
         await expect(
@@ -82,7 +80,7 @@ describe('ControllerProtection', () => {
         });
       });
     });
-  });*/
+  });
 
   describe('setProtectedAddress', () => {
     describe('when sender is not guardian', async () => {
@@ -101,7 +99,9 @@ describe('ControllerProtection', () => {
 
     describe('when sender is guardian', async () => {
       beforeEach(async () => {
-        await protection.guardian.connect(vars.lssAdmin).setGuardian(vars.anotherAccount.address);
+        await vars.losslessController
+          .connect(vars.lssAdmin)
+          .setGuardian(vars.anotherAccount.address);
       });
 
       describe('whenNotPaused', () => {
@@ -226,7 +226,9 @@ describe('ControllerProtection', () => {
 
       describe('when sender is guardian', async () => {
         beforeEach(async () => {
-          await protection.guardian.connect(vars.lssAdmin).setGuardian(vars.anotherAccount.address);
+          await vars.losslessController
+            .connect(vars.lssAdmin)
+            .setGuardian(vars.anotherAccount.address);
 
           await vars.losslessController
             .connect(vars.anotherAccount)

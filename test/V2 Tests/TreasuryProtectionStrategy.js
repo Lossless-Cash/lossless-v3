@@ -8,8 +8,6 @@ describe('TreasuryProtectionStrategy', () => {
   beforeEach(async () => {
     vars = await setupControllerAndTokens();
     protection = await deployProtection(vars.losslessController);
-    await vars.losslessController.connect(vars.lssAdmin).setLssGuardian(protection.guardian.address);
-    await protection.guardian.connect(vars.lssAdmin).setGuardian(protection.guardian.address);
   });
 
   describe('setGuardian', () => {
@@ -56,9 +54,9 @@ describe('TreasuryProtectionStrategy', () => {
           vars.oneMoreAccount.address,
         );
 
-      /*await vars.losslessController
+      await vars.losslessController
         .connect(vars.lssAdmin)
-        .setGuardian(protection.guardian.address);*/
+        .setGuardian(protection.guardian.address);
 
       await protection.guardian
         .connect(vars.lssAdmin)
@@ -238,9 +236,9 @@ describe('TreasuryProtectionStrategy', () => {
         .connect(vars.admin)
         .setProtectionAdmin(vars.erc20s[2].address, vars.guardianAdmin.address);
 
-      /*await vars.losslessController
+      await vars.losslessController
         .connect(vars.lssAdmin)
-        .setGuardian(protection.guardian.address);*/
+        .setGuardian(protection.guardian.address);
 
       await protection.guardian
         .connect(vars.lssAdmin)
@@ -464,9 +462,9 @@ describe('TreasuryProtectionStrategy', () => {
         .connect(vars.admin)
         .setProtectionAdmin(vars.erc20s[2].address, vars.guardianAdmin.address);
 
-      /*await vars.losslessController
+      await vars.losslessController
         .connect(vars.lssAdmin)
-        .setGuardian(protection.guardian.address);*/
+        .setGuardian(protection.guardian.address);
 
       await protection.guardian
         .connect(vars.lssAdmin)
@@ -583,9 +581,9 @@ describe('TreasuryProtectionStrategy', () => {
         .connect(vars.admin)
         .setProtectionAdmin(vars.erc20s[2].address, vars.guardianAdmin.address);
 
-      /*await vars.losslessController
+      await vars.losslessController
         .connect(vars.lssAdmin)
-        .setGuardian(protection.guardian.address);*/
+        .setGuardian(protection.guardian.address);
 
       await protection.guardian
         .connect(vars.lssAdmin)

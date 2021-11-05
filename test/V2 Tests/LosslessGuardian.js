@@ -8,8 +8,6 @@ describe('LosslessGuardian', () => {
   beforeEach(async () => {
     vars = await setupControllerAndTokens();
     protection = await deployProtection(vars.losslessController);
-    await vars.losslessController.connect(vars.lssAdmin).setLssGuardian(protection.guardian.address);
-    await protection.guardian.connect(vars.lssAdmin).setGuardian(protection.guardian.address);
   });
 
   describe('setProtectionAdmin', () => {
@@ -553,9 +551,9 @@ describe('LosslessGuardian', () => {
 
     describe('when sender is verified strategy', () => {
       beforeEach(async () => {
-        /*await vars.losslessController
+        await vars.losslessController
           .connect(vars.lssAdmin)
-          .setGuardian(protection.guardian.address);*/
+          .setGuardian(protection.guardian.address);
 
         await protection.guardian
           .connect(vars.lssAdmin)
@@ -661,9 +659,9 @@ describe('LosslessGuardian', () => {
 
   describe('removeProtectedAddresses', () => {
     beforeEach(async () => {
-      /*await vars.losslessController
+      await vars.losslessController
         .connect(vars.lssAdmin)
-        .setGuardian(protection.guardian.address);*/
+        .setGuardian(protection.guardian.address);
 
       await protection.guardian
         .connect(vars.lssAdmin)

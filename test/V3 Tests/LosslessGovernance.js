@@ -26,6 +26,8 @@ describe('Lossless Governance', () => {
       Number(time.duration.days(1)),
       env.lssController.address);
 
+    await env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 5 * 60);
+
     await env.lssToken.connect(adr.lssInitialHolder)
       .transfer(adr.reporter1.address, env.stakeAmount);
     await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 1000);
