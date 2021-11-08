@@ -256,6 +256,15 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         dexList[dexAddress] = true;
     }
 
+    /// @notice This function removes or adds an array of dex addresses from the whitelst
+    /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
+    /// @param _dexList List of dex addresses to add or remove
+    function setDexList(address[] calldata _dexList, bool value) public onlyLosslessAdmin {
+        for(uint256 i; i < _dexList.length; i++) {
+            dexList[_dexList[i]] = value;
+        }
+    }
+
     /// @notice This function removes or adds an array of addresses from the whitelst
     /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
     /// @param _addrList List of addresses to add or remove
