@@ -175,11 +175,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function getVersion() external pure returns (uint256) {
         return 3;
     }
-    
-    /// @notice Retruns the emergency state
-    function getEmergencyStatus(address token) external view returns (bool) {
-        return emergencyMode[token].emergency;
-    }
 
     /// @notice This function will return if the address is blacklisted/reported
     /// @return Returns true or false

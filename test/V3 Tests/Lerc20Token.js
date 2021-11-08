@@ -93,12 +93,6 @@ describe('Random LERC20 Token', () => {
         .report(lerc20Token.address, adr.maliciousActor1.address);
     });
 
-    it('should set emergency mode as active', async () => {
-      expect(
-        await env.lssController.getEmergencyStatus(lerc20Token.address),
-      ).to.be.equal(true);
-    });
-
     describe('when transfering once in a period', () => {
       it('should not revert', async () => {
         await ethers.provider.send('evm_increaseTime', [
