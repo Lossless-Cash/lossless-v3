@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+pragma solidity 0.8.0;
 
 import "../LosslessV1/LERC20.sol";
 
@@ -54,14 +54,14 @@ contract LosslessGuardian {
 
     // --- VIEWS ---
 
-    function isAddressVerified(address token, address addressToCheck) public view returns(bool) {
+    function isAddressVerified(address token, address addressToCheck) external view returns(bool) {
         return verifiedAddresses[token].verified[addressToCheck];
     }
 
     // --- METHODS
 
     // @dev Strategies are where all the protection implementation logic lives.
-    function verifyStrategies(address[] calldata strategies, bool value) public onlyLosslessAdmin {
+    function verifyStrategies(address[] calldata strategies, bool value) external onlyLosslessAdmin {
         for(uint8 i = 0; i < strategies.length; i++) {
             verifiedStrategies[strategies[i]] = value;
             emit StrategyVerified(strategies[i], value);
@@ -69,19 +69,19 @@ contract LosslessGuardian {
     }
 
     // @dev Lossless team has to verify projects that can use protection functionality.
-    function verifyToken(address token, bool value) public onlyLosslessAdmin {
+    function verifyToken(address token, bool value) external onlyLosslessAdmin {
         verifiedTokens[token] = value;
         emit TokenVerified(token, value);
     }
 
     // @dev Lossless team has to verify addresses that projects want to protect.
-    function verifyAddress(address token, address verifiedAddress, bool value) public onlyLosslessAdmin onlyVerifiedToken(token) {
+    function verifyAddress(address token, address verifiedAddress, bool value) external onlyLosslessAdmin onlyVerifiedToken(token) {
         verifiedAddresses[token].verified[verifiedAddress] = value;
         emit AddressVerified(token, verifiedAddress, value);
     }   
 
     // @notice Token admin sets up another admin that is responsible for managing protection.
-    function setProtectionAdmin(address token, address admin) public onlyVerifiedToken(token) {
+    function setProtectionAdmin(address token, address admin) external onlyVerifiedToken(token) {
         require(LERC20(token).getAdmin() == msg.sender, "LOSSLESS: Not token admin");
         protectionAdmin[token] = admin;
         emit ProtectionAdminSet(token, admin);

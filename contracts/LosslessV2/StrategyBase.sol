@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+pragma solidity 0.8.0;
 
 interface LosslessController {
     function admin() external returns(address);
@@ -40,7 +40,7 @@ abstract contract StrategyBase {
     // --- METHODS ---
 
     // @dev In case guardian is changed, this allows not to redeploy strategy and just update it.
-    function setGuardian(Guardian newGuardian) public {
+    function setGuardian(Guardian newGuardian) external {
         require(msg.sender == controller.admin(), "LOSSLESS: Not lossless admin");
         guardian = newGuardian;
         emit GuardianSet(address(newGuardian));

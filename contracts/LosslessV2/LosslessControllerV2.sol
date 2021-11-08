@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -67,41 +67,44 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- VIEWS ---
 
-    function getVersion() public pure returns (uint256) {
+    function getVersion() external pure returns (uint256) {
         return 2;
     }
 
     // --- V2 VIEWS ---
 
-    function isAddressProtected(address token, address protectedAddress) public view returns (bool) {
+    function isAddressProtected(address token, address protectedAddress) external view returns (bool) {
         return tokenProtections[token].protections[protectedAddress].isProtected;
     }
 
-    function getProtectedAddressStrategy(address token, address protectedAddress) public view returns (address) {
+    function getProtectedAddressStrategy(address token, address protectedAddress) external view returns (address) {
         return address(tokenProtections[token].protections[protectedAddress].strategy);
     }
 
     // --- ADMINISTRATION ---
 
-    function pause() public onlyPauseAdmin  {
+    function pause() external onlyPauseAdmin  {
         _pause();
     }    
     
-    function unpause() public onlyPauseAdmin {
+    function unpause() external onlyPauseAdmin {
         _unpause();
     }
 
-    function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
+    function setAdmin(address newAdmin) external onlyLosslessRecoveryAdmin {
+        require(newAdmin != address(0), "LERC20: Cannot be zero address");
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
     }
 
-    function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
+    function setRecoveryAdmin(address newRecoveryAdmin) external onlyLosslessRecoveryAdmin {
+        require(newRecoveryAdmin != address(0), "LERC20: Cannot be zero address");
         emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
-    function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
+    function setPauseAdmin(address newPauseAdmin) external onlyLosslessRecoveryAdmin {
+        require(newPauseAdmin != address(0), "LERC20: Cannot be zero address");
         emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
@@ -110,7 +113,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     // @notice Set a guardian contract.
     // @dev Guardian contract must be trusted as it has some access rights and can modify controller's state.
-    function setGuardian(address newGuardian) public onlyLosslessAdmin whenNotPaused {
+    function setGuardian(address newGuardian) external onlyLosslessAdmin whenNotPaused {
         emit GuardianSet(guardian, newGuardian);
         guardian = newGuardian;
     }

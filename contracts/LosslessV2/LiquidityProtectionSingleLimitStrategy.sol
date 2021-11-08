@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+pragma solidity 0.8.0;
 
 import "./StrategyBase.sol";
 
@@ -22,7 +22,7 @@ contract LiquidityProtectionSingleLimitStrategy is StrategyBase {
 
     // --- VIEWS ---
 
-    function getLimit(address token, address protectedAddress) public view returns(Limit memory) {
+    function getLimit(address token, address protectedAddress) external view returns(Limit memory) {
         return protection[token].limits[protectedAddress];
     }
 
@@ -40,7 +40,7 @@ contract LiquidityProtectionSingleLimitStrategy is StrategyBase {
         uint256 periodInSeconds,
         uint256 amountPerPeriod,
         uint256 startTimestamp
-    ) public onlyProtectionAdmin(token) {
+    ) external onlyProtectionAdmin(token) {
         for(uint8 i = 0; i < protectedAddresses.length; i++) {
             saveLimit(token, protectedAddresses[i], periodInSeconds, amountPerPeriod, startTimestamp);
             guardian.setProtectedAddress(token, protectedAddresses[i]);
@@ -55,13 +55,13 @@ contract LiquidityProtectionSingleLimitStrategy is StrategyBase {
         uint256 periodInSeconds,
         uint256 amountPerPeriod,
         uint256 startTimestamp
-    ) public onlyProtectionAdmin(token) {
+    ) external onlyProtectionAdmin(token) {
         
         saveLimit(token, protectedAddress, periodInSeconds, amountPerPeriod, startTimestamp);
         guardian.setProtectedAddress(token, protectedAddress);
     }
 
-    function removeLimits(address token, address[] calldata protectedAddresses) public onlyProtectionAdmin(token) {
+    function removeLimits(address token, address[] calldata protectedAddresses) external onlyProtectionAdmin(token) {
         for(uint8 i = 0; i < protectedAddresses.length; i++) {
             delete protection[token].limits[protectedAddresses[i]];
             guardian.removeProtectedAddresses(token, protectedAddresses[i]);
@@ -71,7 +71,7 @@ contract LiquidityProtectionSingleLimitStrategy is StrategyBase {
     // @dev Pausing is just adding a limit with amount 0.
     // @dev amountLeftInCurrentPeriod never resets because of the lastCheckpointTime
     // @dev This approach uses less gas than having a separate isPaused flag.
-    function pause(address token, address protectedAddress) public onlyProtectionAdmin(token) {
+    function pause(address token, address protectedAddress) external onlyProtectionAdmin(token) {
         require(controller.isAddressProtected(token, protectedAddress), "LOSSLESS: Address not protected");
         Limit storage limit = protection[token].limits[protectedAddress];
         limit.amountLeftInCurrentPeriod = 0;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+pragma solidity 0.8.0;
 
 import "./StrategyBase.sol";
 
@@ -30,7 +30,7 @@ contract LiquidityProtectionMultipleLimitsStrategy is StrategyBase{
         uint256[] calldata periodsInSeconds,
         uint256[] calldata amountsPerPeriod,
         uint256[] calldata startTimestamp
-    ) public onlyProtectionAdmin(token) {
+    ) external onlyProtectionAdmin(token) {
         guardian.setProtectedAddress(token, protectedAddress);
         saveLimits(token, protectedAddress, periodsInSeconds, amountsPerPeriod, startTimestamp);
     }
@@ -48,14 +48,14 @@ contract LiquidityProtectionMultipleLimitsStrategy is StrategyBase{
         uint256[] calldata periodsInSeconds,
         uint256[] calldata amountsPerPeriod,
         uint256[] calldata startTimestamp
-    ) public onlyProtectionAdmin(token) {
+    ) external onlyProtectionAdmin(token) {
         for(uint8 i = 0; i < protectedAddresses.length; i++) {
             guardian.setProtectedAddress(token, protectedAddresses[i]);
             saveLimits(token, protectedAddresses[i], periodsInSeconds, amountsPerPeriod, startTimestamp);
         }
     }
 
-    function removeLimits(address token, address[] calldata protectedAddresses) public onlyProtectionAdmin(token) {
+    function removeLimits(address token, address[] calldata protectedAddresses) external onlyProtectionAdmin(token) {
         for(uint8 i = 0; i < protectedAddresses.length; i++) {
             delete protection[token].limits[protectedAddresses[i]];
             guardian.removeProtectedAddresses(token, protectedAddresses[i]);
@@ -64,7 +64,7 @@ contract LiquidityProtectionMultipleLimitsStrategy is StrategyBase{
 
     // @dev Pausing is just adding a limit with amount 0 in the front on the limits array.
     // @dev We need to keep it at the front to reduce the gas costs of iterating through the array.
-    function pause(address token, address protectedAddress) public onlyProtectionAdmin(token) {
+    function pause(address token, address protectedAddress) external onlyProtectionAdmin(token) {
         require(controller.isAddressProtected(token, protectedAddress), "LOSSLESS: Address not protected");
         Limit[] storage limits = protection[token].limits[protectedAddress];
         Limit storage firstLimit = limits[0];
@@ -82,7 +82,7 @@ contract LiquidityProtectionMultipleLimitsStrategy is StrategyBase{
 
     // @dev Removing the first limit in the array in case it is 0.
     // @dev In case project sets a 0 limit as the first limit's array element, this would allow removing it.
-    function unpause(address token, address protectedAddress) public onlyProtectionAdmin(token) { 
+    function unpause(address token, address protectedAddress) external onlyProtectionAdmin(token) { 
         require(controller.isAddressProtected(token, protectedAddress), "LOSSLESS: Address not protected");
         Limit[] storage limits = protection[token].limits[protectedAddress];
         uint256 maxPossibleCheckpointTime = type(uint256).max - limits[0].periodInSeconds;
@@ -160,11 +160,11 @@ contract LiquidityProtectionMultipleLimitsStrategy is StrategyBase{
 
     // --- VIEWS ---
 
-    function getLimitsLength(address token, address protectedAddress) public view returns(uint256) {
+    function getLimitsLength(address token, address protectedAddress) external view returns(uint256) {
         return protection[token].limits[protectedAddress].length;
     }
 
-    function getLimit(address token, address protectedAddress, uint256 index) public view returns(Limit memory) {
+    function getLimit(address token, address protectedAddress, uint256 index) external view returns(Limit memory) {
         return protection[token].limits[protectedAddress][index];
     }
 }
