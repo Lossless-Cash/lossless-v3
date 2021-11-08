@@ -51,7 +51,9 @@ describe('Lossless Reporting', () => {
 
   describe('when generating a report', () => {
     beforeEach(async () => {
-      await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssReporting.address);
+      await env.lssController.connect(adr.lssAdmin).setWhitelist(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      );
 
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakeAmount);
@@ -109,7 +111,9 @@ describe('Lossless Reporting', () => {
 
   describe('when generating another report', () => {
     beforeEach(async () => {
-      await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssReporting.address);
+      await env.lssController.connect(adr.lssAdmin).setWhitelist(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      );
 
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakeAmount * 2);
@@ -175,7 +179,9 @@ describe('Lossless Reporting', () => {
 
   describe('when a malicious actor self reports for no reason', () => {
     beforeEach(async () => {
-      await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssReporting.address);
+      await env.lssController.connect(adr.lssAdmin).setWhitelist(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      );
 
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.maliciousActor1.address, env.stakeAmount);

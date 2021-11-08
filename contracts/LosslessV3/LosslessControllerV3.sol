@@ -262,18 +262,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         dexList[dexAddress] = true;
     }
 
-    /// @notice This function adds an address to the whitelst
+    /// @notice This function removes or adds an array of addresses from the whitelst
     /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
-    /// @param _adr Address corresponding to be added to the whitelist mapping
-    function addToWhitelist(address _adr) public onlyLosslessAdmin {
-        whitelist[_adr] = true;
-    }
-
-    /// @notice This function removes an address from the whitelst
-    /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
-    /// @param _adr Address corresponding to be removed from the whitelist mapping
-    function removeFromWhitelist(address _adr) public onlyLosslessAdmin {
-        whitelist[_adr] = false;
+    /// @param _addrList List of addresses to add or remove
+    function setWhitelist(address[] calldata _addrList, bool value) public onlyLosslessAdmin {
+        for(uint256 i; i < _addrList.length; i++) {
+            whitelist[_addrList[i]] = value;
+        }
     }
 
     /// @notice This function adds an address to the blacklist
