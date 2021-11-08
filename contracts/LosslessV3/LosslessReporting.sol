@@ -18,7 +18,7 @@ interface ILssController {
     function reportLifetime() external returns (uint256);
     function stakeAmount() external returns (uint256);
     function addToBlacklist(address _adr) external;
-    function isWhitelisted(address _adr) external view returns (bool);
+    function whitelist(address _adr) external view returns (bool);
     function activateEmergency(address token) external;
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
@@ -162,7 +162,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param token Token address of the stolen funds
     /// @param account Potential malicious address
     function report(address token, address account) public notBlacklisted whenNotPaused {
-        require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
+        require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
 
         uint256 reportId = tokenReports[token].reports[account];
         uint256 reportLifetime;
@@ -203,7 +203,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         uint256 reportLifetime;
         uint256 reportTimestamp;
 
-        require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
+        require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
 
         reportTimestamp = reportTimestamps[reportId];
         reportLifetime = losslessController.reportLifetime();

@@ -95,7 +95,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(uint256 => uint256) public reportCoefficient;
     
     mapping(address => bool) private dexList;
-    mapping(address => bool) private whitelist;
+    mapping(address => bool) public whitelist;
     mapping(address => bool) private blacklist;
 
     mapping(address => EmergencyMode) private emergencyMode;
@@ -185,12 +185,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @return Returns true or false
     function isBlacklisted(address _adr) public view returns (bool) {
         return blacklist[_adr];
-    }
-
-    /// @notice This function will return if the address is whitelisted
-    /// @return Returns true or false
-    function isWhitelisted(address _adr) external view returns (bool) {
-        return whitelist[_adr];
     }
 
     // --- ADMINISTRATION ---

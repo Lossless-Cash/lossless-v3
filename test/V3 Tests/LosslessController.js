@@ -34,16 +34,16 @@ describe('Lossless Controller', () => {
         [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true
       );
       expect(
-        await env.lssController.isWhitelisted(env.lssGovernance.address),
+        await env.lssController.whitelist(env.lssGovernance.address),
       ).to.be.equal(true);
       it('should set reporting contract', async () => {
         expect(
-          await env.lssController.isWhitelisted(env.lssReporting.address),
+          await env.lssController.whitelist(env.lssReporting.address),
         ).to.be.equal(true);
       });
       it('should set reporting contract', async () => {
         expect(
-          await env.lssController.isWhitelisted(env.lssStaking.address),
+          await env.lssController.whitelist(env.lssStaking.address),
         ).to.be.equal(true);
       });
     });
