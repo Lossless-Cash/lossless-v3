@@ -7,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
 interface ILERC20 {
-    function totalSupply() external view returns (uint256);
     function balanceOf(address account) external view returns (uint256);
     function transfer(address recipient, uint256 amount) external returns (bool);
     function allowance(address owner, address spender) external view returns (uint256);
@@ -19,10 +18,7 @@ interface ILERC20 {
 }
 
 interface ILssStaking {
-    function getIsAccountStaked(uint256 reportId, address account) external view returns(bool);
-    function getPayoutStatus(address _address, uint256 reportId) external view returns (bool);
-    function getStakerCoefficient(uint256 reportId, address _address) external view returns (uint256);
-    function setPayoutStatus(uint256 reportId, address _adr) external;
+    function admin() external view returns (address);
 }
 
 interface ILssReporting {
@@ -32,7 +28,6 @@ interface ILssReporting {
 }
 
 interface ILssGovernance {
-    function reportResolution(uint256 reportId) external view returns(bool);
     function amountReported(uint256 reportId) external view returns(uint256);
 }
 

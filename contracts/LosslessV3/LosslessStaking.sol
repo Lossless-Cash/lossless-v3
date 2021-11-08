@@ -8,15 +8,10 @@ import "hardhat/console.sol";
 
 
 interface ILERC20 {
-    function totalSupply() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
     function transfer(address recipient, uint256 amount) external returns (bool);
     function allowance(address owner, address spender) external view returns (uint256);
-    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function admin() external view returns (address);
-    function decimals() external view returns (uint256);
 }
 
 interface ILssReporting {
@@ -42,7 +37,6 @@ interface ILssController {
 }
 
 interface ILssGovernance {
-    function reportResolution(uint256 reportId) external view returns(bool);
     function isReportSolved(uint256 reportId) external view returns(bool);
     function amountReported(uint256 reportId) external view returns(uint256);
 }

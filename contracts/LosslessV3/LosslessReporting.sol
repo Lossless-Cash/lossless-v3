@@ -7,15 +7,10 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
 interface ILERC20 {
-    function totalSupply() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
     function transfer(address recipient, uint256 amount) external returns (bool);
     function allowance(address owner, address spender) external view returns (uint256);
-    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function admin() external view returns (address);
-    function decimals() external view returns (uint256);
 }
 
 interface ILssController {
@@ -25,10 +20,8 @@ interface ILssController {
     function addToBlacklist(address _adr) external;
     function isWhitelisted(address _adr) external view returns (bool);
     function activateEmergency(address token) external;
-    function addReporter(address _reporter, uint256 reportId) external;
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
-    function recoveryAdmin() external view returns (address);
 }
 
 interface ILssGovernance {
