@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicensed
-pragma solidity ^0.8.0;
+pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -151,27 +151,12 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         return reportVotes[reportId].voted[voterIndex];
     }
 
-    /// @notice This function returns if a committee member has voted    
-    /// @param reportId Report number to be checked
-    /// @param account Address of the committee member
-    /// @return True if the member has voted
-    function getIsCommitteeMemberVoted(uint256 reportId, address account) public view returns(bool) {
-        return reportVotes[reportId].committeeMemberVoted[account];
-    }
-
     /// @notice This function returns the resolution on a report by a team 
     /// @param reportId Report number to be checked
     /// @param voterIndex Voter Index to be checked
     /// @return True if it has voted
     function getVote(uint256 reportId, uint256 voterIndex) public view returns(bool) {
         return reportVotes[reportId].votes[voterIndex];
-    }
-
-    /// @notice This function returns number of votes made by the committee
-    /// @param reportId Report number to be checked
-    /// @return Number of votes made by the committee
-    function getCommitteeVotesCount(uint256 reportId) public view returns(uint256) {
-        return reportVotes[reportId].committeeVotes.length;
     }
 
     /// @notice This function returns if report has been resolved    

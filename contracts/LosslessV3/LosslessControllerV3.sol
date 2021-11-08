@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -19,9 +19,7 @@ interface ILERC20 {
 }
 
 interface ILssStaking {
-    function getReportStakes(uint256 reportId) external returns(address[] memory);
     function getIsAccountStaked(uint256 reportId, address account) external view returns(bool);
-    function getStakingTimestamp(address _address, uint256 reportId) external view returns (uint256);
     function getPayoutStatus(address _address, uint256 reportId) external view returns (bool);
     function getStakerCoefficient(uint256 reportId, address _address) external view returns (uint256);
     function setPayoutStatus(uint256 reportId, address _adr) external;
@@ -179,12 +177,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- VIEWS ---
 
     /// @notice This function will return the contract version 
-    function getVersion() public pure returns (uint256) {
+    function getVersion() external pure returns (uint256) {
         return 3;
     }
     
     /// @notice Retruns the emergency state
-    function getEmergencyStatus(address token) public view returns (bool) {
+    function getEmergencyStatus(address token) external view returns (bool) {
         return emergencyMode[token].emergency;
     }
 
@@ -196,7 +194,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function will return if the address is whitelisted
     /// @return Returns true or false
-    function isWhitelisted(address _adr) public view returns (bool) {
+    function isWhitelisted(address _adr) external view returns (bool) {
         return whitelist[_adr];
     }
 
@@ -432,7 +430,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function returns  the payout status of a reporter
     /// @param _reporter Reporter address
     /// @return status Payout status 
-    function getReporterPayoutStatus(address _reporter, uint256 reportId) public view returns (bool) {
+    function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool) {
         return reporterClaimStatus[_reporter].reportIdClaimStatus[reportId];
     }
 
@@ -443,14 +441,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 total = ILERC20(token).balanceOf(account);
         uint256 locked = getLockedAmount(token, account);
         return total - locked;
-    }
-
-    /// @notice This function will return the last funds in queue
-    /// @param token Address corresponding to the token being held
-    /// @param account Address to get the available amount
-    /// @return Returns the last funds on queue
-    function getQueueTail(address token, address account) public view returns (uint256) {
-        return tokenScopedLockedFunds[token].queue[account].last;
     }
 
     // LOCKs & QUEUES
