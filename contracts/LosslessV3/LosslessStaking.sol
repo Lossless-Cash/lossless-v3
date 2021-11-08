@@ -39,7 +39,6 @@ interface ILssController {
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
-    function getCompensationPercentage() external view returns (uint256);
 }
 
 interface ILssGovernance {

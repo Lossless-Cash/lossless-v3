@@ -25,7 +25,7 @@ interface ILssController {
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
     function recoveryAdmin() external view returns (address);
-    function getCompensationPercentage() external view returns (uint256);
+    function erroneusCompensation() external view returns (uint256);
     function stakeAmount() external view returns (uint256);
 }
 
@@ -414,7 +414,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @dev The array of addresses will contain the main reported address and the second reported address
     /// @param addresses Array of addresses to be compensated
     function compensateAddresses(address[] memory addresses) internal {
-        uint256 compensationAmount = losslessController.getCompensationPercentage();
+        uint256 compensationAmount = losslessController.erroneusCompensation();
         uint256 stakeAmount = losslessController.stakeAmount();
         
         for(uint256 i; i < addresses.length; i++) {

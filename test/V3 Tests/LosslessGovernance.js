@@ -856,7 +856,7 @@ describe('Lossless Governance', () => {
           env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation(),
         ).to.not.be.reverted;
 
-        const compensationPercentage = await env.lssController.getCompensationPercentage();
+        const compensationPercentage = await env.lssController.erroneusCompensation();
 
         expect(
           await env.lssToken.balanceOf(adr.maliciousActor1.address),

@@ -195,7 +195,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         
         losslessController.activateEmergency(token);
 
-        losslessController.addReporter(msg.sender, reportId);
         emit ReportSubmitted(token, account, reportId);
     }
 
