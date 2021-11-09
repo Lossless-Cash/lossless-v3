@@ -572,7 +572,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
-    function beforeTransfer(address sender, address recipient, uint256 amount) external notBlacklisted {
+    function beforeTransfer(address sender, address recipient, uint256 amount) external {
         if (tokenProtections[msg.sender].protections[sender].isProtected) {
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
@@ -585,7 +585,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
-    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external notBlacklisted {
+    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
         if (tokenProtections[msg.sender].protections[sender].isProtected) {
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
