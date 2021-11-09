@@ -67,6 +67,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(address => uint256) public tokenLockTimeframe;
     mapping(address => uint256) public changeSettlementTimelock;
 
+    mapping(address => bool) public tokenTransferEvaluation;
+
     uint256 public erroneusCompensation;
 
     ILERC20 public losslessToken;
@@ -238,13 +240,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         erroneusCompensation = amount;
     }
 
-    /// @notice This function adds an address to the Decentralized Exchanges mapping
-    /// @dev Only can be called by the Lossless Admin
-    /// @param dexAddress Address corresponding to the DEX
-    function addToDexList(address dexAddress) public onlyLosslessAdmin {
-        dexList[dexAddress] = true;
-    }
-
     /// @notice This function removes or adds an array of dex addresses from the whitelst
     /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
     /// @param _dexList List of dex addresses to add or remove
@@ -261,6 +256,15 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         for(uint256 i; i < _addrList.length; i++) {
             whitelist[_addrList[i]] = value;
         }
+    }
+
+    /// @notice This function lets token owners decide wheter or not add transfer evaluations
+    /// @dev Only can be called by the Token Admin
+    /// @param token Token to change
+    /// @param value Flag status
+    function setTokenEvaluation(address token, bool value) public {
+        require(msg.sender == ILERC20(token).admin(), "LSS: Only token admin");
+        tokenTransferEvaluation[token] = value;
     }
 
     /// @notice This function adds an address to the blacklist
@@ -548,7 +552,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         if (dexList[recipient] && amount > dexTranferThreshold) {
             require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
         } else if (settledAmount < amount) {
-            removeUsedUpLocks(settledAmount, sender, amount, msg.sender);
+            removeUsedUpLocks(settledAmount, sender, amount);
             require(getAvailableAmount(msg.sender, sender) >= amount, "LSS: Amt exceeds settled balance");
         }
 
@@ -572,7 +576,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[sender], "LSS: You cannot operate");
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
 
-        require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+        
+        if (tokenTransferEvaluation[msg.sender]) {
+            require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+        }
     }
 
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
@@ -586,7 +593,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
         require(!blacklist[msgSender], "LSS: Recipient is blacklisted");
 
-        require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+        if (tokenTransferEvaluation[msg.sender]) {
+            require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+        }
+
     }
 
     function beforeMint(address to, uint256 amount) external {}

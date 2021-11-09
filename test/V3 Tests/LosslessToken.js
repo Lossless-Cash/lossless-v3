@@ -17,6 +17,7 @@ describe('Lossless Token', () => {
       adr.lssBackupAdmin);
 
     await env.lssController.connect(adr.lssAdmin).setLockTimeframe(env.lssToken.address, 5 * 60);
+    await env.lssController.connect(adr.lssAdmin).setTokenEvaluation(env.lssToken.address, true);
   });
 
   describe('when transfering between users', () => {

@@ -28,11 +28,12 @@ describe('Lossless Staking', () => {
       env.lssController.address);
 
     await env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 5 * 60);
+    await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
   });
 
   describe('when paused', () => {
     beforeEach(async () => {
-      await env.lssStaking.connect(adr.lssPauseAdmin).pause()
+      await env.lssStaking.connect(adr.lssPauseAdmin).pause();
     });
 
     it('should prevent staking', async () => {
@@ -163,7 +164,7 @@ describe('Lossless Staking', () => {
 
         await expect(
           env.lssStaking.connect(adr.staker5).stake(1),
-        ).to.be.revertedWith('LSS: Amt exceeds settled balance');
+        ).to.be.revertedWith('LERC20: transfer amount exceeds balance');
       });
     });
 
