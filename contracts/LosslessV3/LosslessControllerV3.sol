@@ -548,7 +548,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         if (dexList[recipient] && amount > dexTranferThreshold) {
             require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
         } else if (settledAmount < amount) {
-            removeUsedUpLocks(settledAmount, sender, amount, msg.sender);
+            removeUsedUpLocks(settledAmount, sender, amount);
             require(getAvailableAmount(msg.sender, sender) >= amount, "LSS: Amt exceeds settled balance");
         }
 
