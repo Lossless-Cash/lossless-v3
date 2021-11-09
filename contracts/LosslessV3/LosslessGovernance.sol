@@ -371,7 +371,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         }
 
         losslessController.deactivateEmergency(token);
-        
+
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
             for(uint256 i; i < reportedAddresses.length; i++) {
