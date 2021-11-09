@@ -48,8 +48,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         mapping(address => uint256) reports;
     }
 
-    
-    mapping(address => TokenReports) private tokenReports; // Address. reported X address, on report ID
+    mapping(address => TokenReports) private tokenReports;
 
     mapping(uint256 => address) public reporter;
     mapping(uint256 => address) public reportedAddress;
