@@ -61,6 +61,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     uint256 public stakeAmount;
     uint256 public reportLifetime;
 
+    uint256 public lockCheckpointExpiration;
+
     uint256 public dexTranferThreshold;
 
     uint256 settlementTimeLock;
@@ -216,6 +218,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         whitelist[recoveryAdmin]  = true;
         whitelist[pauseAdmin]  = true;
         settlementTimeLock = 12 hours;
+        lockCheckpointExpiration = 30 seconds;
     }
     
     /// @notice This function sets the address of the Lossless Governance Token
@@ -237,6 +240,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
         erroneusCompensation = amount;
     }
+
+    /// @notice This function sets the amount of time for used up and expired tokens to be lifted
+    /// @param time Time in seconds
+    function setLocksLiftUpExpiration(uint256 time) public onlyLosslessAdmin {
+        lockCheckpointExpiration = time;
+    }
+
 
     /// @notice This function adds an address to the Decentralized Exchanges mapping
     /// @dev Only can be called by the Lossless Admin
@@ -461,7 +471,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             ReceiveCheckpoint memory checkpoint;
             checkpoint = queue.lockedFunds[i];
 
-            if ((checkpoint.timestamp - block.timestamp) >= 300)  {
+            if ((checkpoint.timestamp - block.timestamp) >= lockCheckpointExpiration)  {
                 if (checkpoint.amount > amountLeft) {
                     checkpoint.amount -= amountLeft;
                     delete amountLeft;
