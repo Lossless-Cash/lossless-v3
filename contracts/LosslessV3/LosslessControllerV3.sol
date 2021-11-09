@@ -570,7 +570,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[sender], "LSS: You cannot operate");
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
 
-        require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+        if (!dexList[sender]) {
+            require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+        }
     }
 
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
