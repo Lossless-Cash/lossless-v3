@@ -7,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
 interface ILERC20 {
-    function totalSupply() external view returns (uint256);
     function balanceOf(address account) external view returns (uint256);
     function transfer(address recipient, uint256 amount) external returns (bool);
     function allowance(address owner, address spender) external view returns (uint256);
@@ -19,10 +18,7 @@ interface ILERC20 {
 }
 
 interface ILssStaking {
-    function getIsAccountStaked(uint256 reportId, address account) external view returns(bool);
-    function getPayoutStatus(address _address, uint256 reportId) external view returns (bool);
-    function getStakerCoefficient(uint256 reportId, address _address) external view returns (uint256);
-    function setPayoutStatus(uint256 reportId, address _adr) external;
+    function admin() external view returns (address);
 }
 
 interface ILssReporting {
@@ -32,7 +28,6 @@ interface ILssReporting {
 }
 
 interface ILssGovernance {
-    function reportResolution(uint256 reportId) external view returns(bool);
     function amountReported(uint256 reportId) external view returns(uint256);
 }
 
@@ -100,8 +95,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(uint256 => uint256) public reportCoefficient;
     
     mapping(address => bool) private dexList;
-    mapping(address => bool) private whitelist;
-    mapping(address => bool) private blacklist;
+    mapping(address => bool) public whitelist;
+    mapping(address => bool) public blacklist;
 
     mapping(address => EmergencyMode) private emergencyMode;
 
@@ -180,23 +175,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function getVersion() external pure returns (uint256) {
         return 3;
     }
-    
-    /// @notice Retruns the emergency state
-    function getEmergencyStatus(address token) external view returns (bool) {
-        return emergencyMode[token].emergency;
-    }
-
-    /// @notice This function will return if the address is blacklisted/reported
-    /// @return Returns true or false
-    function isBlacklisted(address _adr) public view returns (bool) {
-        return blacklist[_adr];
-    }
-
-    /// @notice This function will return if the address is whitelisted
-    /// @return Returns true or false
-    function isWhitelisted(address _adr) external view returns (bool) {
-        return whitelist[_adr];
-    }
 
     // --- ADMINISTRATION ---
 
@@ -267,18 +245,22 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         dexList[dexAddress] = true;
     }
 
-    /// @notice This function adds an address to the whitelst
+    /// @notice This function removes or adds an array of dex addresses from the whitelst
     /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
-    /// @param _adr Address corresponding to be added to the whitelist mapping
-    function addToWhitelist(address _adr) public onlyLosslessAdmin {
-        whitelist[_adr] = true;
+    /// @param _dexList List of dex addresses to add or remove
+    function setDexList(address[] calldata _dexList, bool value) public onlyLosslessAdmin {
+        for(uint256 i; i < _dexList.length; i++) {
+            dexList[_dexList[i]] = value;
+        }
     }
 
-    /// @notice This function removes an address from the whitelst
+    /// @notice This function removes or adds an array of addresses from the whitelst
     /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
-    /// @param _adr Address corresponding to be removed from the whitelist mapping
-    function removeFromWhitelist(address _adr) public onlyLosslessAdmin {
-        whitelist[_adr] = false;
+    /// @param _addrList List of addresses to add or remove
+    function setWhitelist(address[] calldata _addrList, bool value) public onlyLosslessAdmin {
+        for(uint256 i; i < _addrList.length; i++) {
+            whitelist[_addrList[i]] = value;
+        }
     }
 
     /// @notice This function adds an address to the blacklist
@@ -286,7 +268,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     ///            The address gets blacklisted whenever a report is created on them.
     /// @param _adr Address corresponding to be added to the blacklist mapping
     function addToBlacklist(address _adr) public onlyFromAdminOrLssSC {
-        require(!isBlacklisted(_adr), "LSS: Already blacklisted");
+        require(!blacklist[_adr], "LSS: Already blacklisted");
         blacklist[_adr] = true;
     }
 
@@ -295,7 +277,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     ///           The address gets removed from the blacklist when a report gets closed and the resolution being negative.
     /// @param _adr Address corresponding to be removed from the blacklist mapping
     function removeFromBlacklist(address _adr) public onlyFromAdminOrLssSC{
-        require(isBlacklisted(_adr), "LSS: Not blacklisted");
+        require(blacklist[_adr], "LSS: Not blacklisted");
         blacklist[_adr] = false;
     }
 
@@ -595,8 +577,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
-        require(!isBlacklisted(sender), "LSS: You cannot operate");
-        require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
+        require(!blacklist[sender], "LSS: You cannot operate");
+        require(!blacklist[recipient], "LSS: Recipient is blacklisted");
 
         require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
     }
@@ -608,9 +590,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
-        require(!isBlacklisted(sender), "LSS: You cannot operate");
-        require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
-        require(!isBlacklisted(msgSender), "LSS: Recipient is blacklisted");
+        require(!blacklist[sender], "LSS: You cannot operate");
+        require(!blacklist[recipient], "LSS: Recipient is blacklisted");
+        require(!blacklist[msgSender], "LSS: Recipient is blacklisted");
 
         require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
     }

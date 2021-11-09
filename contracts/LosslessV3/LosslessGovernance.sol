@@ -10,9 +10,6 @@ interface ILssReporting {
     function reportTimestamps(uint256 reportId) external view returns (uint256);
     function reportedAddress(uint256 _reportId) external view returns (address);
     function reportTokens(uint256 reportId) external view returns(address);
-    function reportedProject(uint256 reportId) external view returns (address);
-    function stakersFee() external view returns (uint256);
-    function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
     function secondReportedAddress(uint256 reportId) external view returns (address);
     function secondReports(uint256 reportId) external view returns (bool);
 }
@@ -23,8 +20,6 @@ interface ILssController {
     function resolvedNegatively(address _adr) external;
     function deactivateEmergency(address token) external;
     function admin() external view returns (address);
-    function pauseAdmin() external view returns (address);
-    function recoveryAdmin() external view returns (address);
     function erroneusCompensation() external view returns (uint256);
     function stakeAmount() external view returns (uint256);
 }
@@ -37,7 +32,6 @@ interface ILERC20 {
     function admin() external view returns (address);
     function balanceOf(address account) external view returns (uint256);
     function transfer(address recipient, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 } 
 
 /// @title Lossless Governance Contract

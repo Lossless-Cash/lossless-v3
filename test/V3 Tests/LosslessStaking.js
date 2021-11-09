@@ -56,7 +56,9 @@ describe('Lossless Staking', () => {
 
   describe('when the staking period is active', () => {
     beforeEach(async () => {
-      await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssReporting.address);
+      await env.lssController.connect(adr.lssAdmin).setWhitelist(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      );
 
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakeAmount);
@@ -193,7 +195,9 @@ describe('Lossless Staking', () => {
   });
   describe('when the staking period is inactive', () => {
     beforeEach(async () => {
-      await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssReporting.address);
+      await env.lssController.connect(adr.lssAdmin).setWhitelist(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      );
 
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakeAmount * 2);

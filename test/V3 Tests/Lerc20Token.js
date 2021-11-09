@@ -77,7 +77,7 @@ describe('Random LERC20 Token', () => {
 
   describe('when emergency mode is active', () => {
     beforeEach(async () => {
-      await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssReporting.address);
+      await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakeAmount);
       await lerc20Token.connect(adr.lerc20InitialHolder)
@@ -91,12 +91,6 @@ describe('Random LERC20 Token', () => {
 
       await env.lssReporting.connect(adr.reporter1)
         .report(lerc20Token.address, adr.maliciousActor1.address);
-    });
-
-    it('should set emergency mode as active', async () => {
-      expect(
-        await env.lssController.getEmergencyStatus(lerc20Token.address),
-      ).to.be.equal(true);
     });
 
     describe('when transfering once in a period', () => {

@@ -7,28 +7,21 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
 interface ILERC20 {
-    function totalSupply() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
     function transfer(address recipient, uint256 amount) external returns (bool);
     function allowance(address owner, address spender) external view returns (uint256);
-    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function admin() external view returns (address);
-    function decimals() external view returns (uint256);
 }
 
 interface ILssController {
-    function isBlacklisted(address _adr) external returns (bool);
+    function blacklist(address _adr) external returns (bool);
     function reportLifetime() external returns (uint256);
     function stakeAmount() external returns (uint256);
     function addToBlacklist(address _adr) external;
-    function isWhitelisted(address _adr) external view returns (bool);
+    function whitelist(address _adr) external view returns (bool);
     function activateEmergency(address token) external;
-    function addReporter(address _reporter, uint256 reportId) external;
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
-    function recoveryAdmin() external view returns (address);
 }
 
 interface ILssGovernance {
@@ -85,7 +78,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     /// @notice Avoids execution from blacklisted addresses
     modifier notBlacklisted() {
-        require(!losslessController.isBlacklisted(msg.sender), "LSS: You cannot operate");
+        require(!losslessController.blacklist(msg.sender), "LSS: You cannot operate");
         _;
     }
 
@@ -169,7 +162,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param token Token address of the stolen funds
     /// @param account Potential malicious address
     function report(address token, address account) public notBlacklisted whenNotPaused {
-        require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
+        require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
 
         uint256 reportId = tokenReports[token].reports[account];
         uint256 reportLifetime;
@@ -210,7 +203,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         uint256 reportLifetime;
         uint256 reportTimestamp;
 
-        require(!losslessController.isWhitelisted(account), "LSS: Cannot report LSS protocol");
+        require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
 
         reportTimestamp = reportTimestamps[reportId];
         reportLifetime = losslessController.reportLifetime();

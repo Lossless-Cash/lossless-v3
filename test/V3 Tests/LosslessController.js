@@ -30,27 +30,22 @@ describe('Lossless Controller', () => {
 
   describe('when whitelisting an account', () => {
     it('should set governance contract', async () => {
-      await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssGovernance.address);
-
+      await env.lssController.connect(adr.lssAdmin).setWhitelist(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true
+      );
       expect(
-        await env.lssController.isWhitelisted(env.lssGovernance.address),
+        await env.lssController.whitelist(env.lssGovernance.address),
       ).to.be.equal(true);
-    });
-
-    it('should set reporting contract', async () => {
-      await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssReporting.address);
-
-      expect(
-        await env.lssController.isWhitelisted(env.lssReporting.address),
-      ).to.be.equal(true);
-    });
-
-    it('should set reporting contract', async () => {
-      await env.lssController.connect(adr.lssAdmin).addToWhitelist(env.lssStaking.address);
-
-      expect(
-        await env.lssController.isWhitelisted(env.lssStaking.address),
-      ).to.be.equal(true);
+      it('should set reporting contract', async () => {
+        expect(
+          await env.lssController.whitelist(env.lssReporting.address),
+        ).to.be.equal(true);
+      });
+      it('should set reporting contract', async () => {
+        expect(
+          await env.lssController.whitelist(env.lssStaking.address),
+        ).to.be.equal(true);
+      });
     });
   });
 });
