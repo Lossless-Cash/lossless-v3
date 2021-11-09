@@ -492,16 +492,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         }
     }
 
-    /// @notice This function deletes the queue of locked funds
-    /// @param recipient Address to lift the locks
-    function dequeueLockedFunds(address recipient) private {
-        LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
-
-        delete queue.lockedFunds[queue.first];
-        queue.first += 1;
-    }
-
     // --- REPORT RESOLUTION ---
 
     /// @notice This function retrieves the funds of the reported account
