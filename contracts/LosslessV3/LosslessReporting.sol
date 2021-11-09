@@ -14,7 +14,7 @@ interface ILERC20 {
 }
 
 interface ILssController {
-    function isBlacklisted(address _adr) external returns (bool);
+    function blacklist(address _adr) external returns (bool);
     function reportLifetime() external returns (uint256);
     function stakeAmount() external returns (uint256);
     function addToBlacklist(address _adr) external;
@@ -78,7 +78,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     /// @notice Avoids execution from blacklisted addresses
     modifier notBlacklisted() {
-        require(!losslessController.isBlacklisted(msg.sender), "LSS: You cannot operate");
+        require(!losslessController.blacklist(msg.sender), "LSS: You cannot operate");
         _;
     }
 

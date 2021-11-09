@@ -96,7 +96,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     
     mapping(address => bool) private dexList;
     mapping(address => bool) public whitelist;
-    mapping(address => bool) private blacklist;
+    mapping(address => bool) public blacklist;
 
     mapping(address => EmergencyMode) private emergencyMode;
 
@@ -174,12 +174,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function will return the contract version 
     function getVersion() external pure returns (uint256) {
         return 3;
-    }
-
-    /// @notice This function will return if the address is blacklisted/reported
-    /// @return Returns true or false
-    function isBlacklisted(address _adr) public view returns (bool) {
-        return blacklist[_adr];
     }
 
     // --- ADMINISTRATION ---
@@ -274,7 +268,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     ///            The address gets blacklisted whenever a report is created on them.
     /// @param _adr Address corresponding to be added to the blacklist mapping
     function addToBlacklist(address _adr) public onlyFromAdminOrLssSC {
-        require(!isBlacklisted(_adr), "LSS: Already blacklisted");
+        require(!blacklist[_adr], "LSS: Already blacklisted");
         blacklist[_adr] = true;
     }
 
@@ -283,7 +277,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     ///           The address gets removed from the blacklist when a report gets closed and the resolution being negative.
     /// @param _adr Address corresponding to be removed from the blacklist mapping
     function removeFromBlacklist(address _adr) public onlyFromAdminOrLssSC{
-        require(isBlacklisted(_adr), "LSS: Not blacklisted");
+        require(blacklist[_adr], "LSS: Not blacklisted");
         blacklist[_adr] = false;
     }
 
@@ -583,8 +577,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
-        require(!isBlacklisted(sender), "LSS: You cannot operate");
-        require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
+        require(!blacklist[sender], "LSS: You cannot operate");
+        require(!blacklist[recipient], "LSS: Recipient is blacklisted");
 
         require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
     }
@@ -596,9 +590,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
-        require(!isBlacklisted(sender), "LSS: You cannot operate");
-        require(!isBlacklisted(recipient), "LSS: Recipient is blacklisted");
-        require(!isBlacklisted(msgSender), "LSS: Recipient is blacklisted");
+        require(!blacklist[sender], "LSS: You cannot operate");
+        require(!blacklist[recipient], "LSS: Recipient is blacklisted");
+        require(!blacklist[msgSender], "LSS: Recipient is blacklisted");
 
         require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
     }

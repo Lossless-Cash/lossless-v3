@@ -26,7 +26,7 @@ interface ILssReporting {
 
 interface ILssController {
     function stakeAmount() external view returns (uint256);
-    function isBlacklisted(address _adr) external view returns (bool);
+    function blacklist(address _adr) external view returns (bool);
     function reportLifetime() external view returns (uint256);
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
     function reportCoefficient(uint256 reportId) external view returns (uint256);
@@ -86,7 +86,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     modifier notBlacklisted() {
-        require(!losslessController.isBlacklisted(msg.sender), "LSS: You cannot operate");
+        require(!losslessController.blacklist(msg.sender), "LSS: You cannot operate");
         _;
     }
 

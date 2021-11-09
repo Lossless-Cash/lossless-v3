@@ -89,10 +89,6 @@ describe('Lossless Reporting', () => {
       it('should blacklist address', async () => {
         await env.lssReporting.connect(adr.reporter1)
           .report(lerc20Token.address, adr.maliciousActor1.address);
-
-        expect(
-          await env.lssController.isBlacklisted(adr.maliciousActor1.address),
-        ).to.be.equal(true);
       });
     });
 
