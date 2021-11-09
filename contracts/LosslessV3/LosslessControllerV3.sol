@@ -272,19 +272,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         blacklist[_adr] = true;
     }
 
-    /// @notice This function removes an address from the blacklist
-    /// @dev Only can be called by the Lossless Admin, and from other Lossless Contracts
-    ///           The address gets removed from the blacklist when a report gets closed and the resolution being negative.
-    /// @param _adr Address corresponding to be removed from the blacklist mapping
-    function removeFromBlacklist(address _adr) public onlyFromAdminOrLssSC{
-        require(blacklist[_adr], "LSS: Not blacklisted");
-        blacklist[_adr] = false;
-    }
-
     /// @notice This function calls removeFromBlacklist() and returns a percentage as compensation
     /// @param _adr Address corresponding to be removed from the blacklist mapping
     function resolvedNegatively(address _adr) public onlyFromAdminOrLssSC {
-        removeFromBlacklist(_adr);
+        require(blacklist[_adr], "LSS: Not blacklisted");
+        blacklist[_adr] = false;
     }
     
     /// @notice This function sets the address of the Lossless Staking contract
@@ -448,7 +440,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param availableAmount Address to lift the locks
     /// @param account Address to lift the locks
     /// @param amount Address to lift the locks
-    function removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount, address token) private {
+    function removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[account];
 
