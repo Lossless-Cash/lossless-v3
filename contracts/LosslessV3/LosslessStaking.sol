@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -39,7 +39,6 @@ interface ILssController {
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
-    function getCompensationPercentage() external view returns (uint256);
 }
 
 interface ILssGovernance {
@@ -137,34 +136,12 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         losslessGovernance = ILssGovernance(_losslessGovernance);
     }
 
-    /// @notice This function returns all the reports where an address is staking
-    /// @param account Staker address
-    /// @return All account stakes structured as Stake[] array
-    function getAccountStakes(address account, uint256 reportId) public view returns(StakeInfo memory) {
-        return stakes[account].stakeInfoOnReport[reportId];
-    }
-
-    /// @notice This function returns the timestamp of when the stake was made
-    /// @param _address Staker address
-    /// @param reportId Report being staked
-    /// @return Timestamp of the staking
-    function getStakingTimestamp(address _address, uint256 reportId) public view returns (uint256){
-        return stakes[_address].stakeInfoOnReport[reportId].timestamp;
-    }
-
     /// @notice This function returns if an address has claimed their reward funds
     /// @param _address Staker address
     /// @param reportId Report being staked
     /// @return True if the address has already claimed
     function getPayoutStatus(address _address, uint256 reportId) public view returns (bool) {
         return stakes[_address].stakeInfoOnReport[reportId].payed;
-    }
-
-    /// @notice This function returns all the stakes made on a report
-    /// @param reportId Report being staked
-    /// @return An array of addresses currently staking on the report
-    function getReportStakes(uint256 reportId) public view returns(address[] memory) {
-        return stakers[reportId];
     }
 
     /// @notice This function returns if an address is already staking on a report

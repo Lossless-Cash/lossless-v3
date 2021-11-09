@@ -229,16 +229,6 @@ describe('Lossless Governance', () => {
     });
 
     describe('when the Committee is voting', () => {
-      it('should register all members vote', async () => {
-        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
-
-        expect(
-          await env.lssGovernance.getCommitteeVotesCount(1),
-        ).to.be.equal(3);
-      });
-
       it('should revert at a second attempt', async () => {
         await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
         await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
@@ -856,7 +846,7 @@ describe('Lossless Governance', () => {
           env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation(),
         ).to.not.be.reverted;
 
-        const compensationPercentage = await env.lssController.getCompensationPercentage();
+        const compensationPercentage = await env.lssController.erroneusCompensation();
 
         expect(
           await env.lssToken.balanceOf(adr.maliciousActor1.address),

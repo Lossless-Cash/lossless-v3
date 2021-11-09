@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -149,14 +149,14 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     /// @notice This function gets the contract version
     /// @return Version of the contract
-    function getVersion() public pure returns (uint256) {
+    function getVersion() external pure returns (uint256) {
         return 1;
     }
 
     /// @notice This function will return the Reporter reward and Lossless fee percentage
     /// @return reward Returns the reporter reward
     /// @return fee Returns the Lossless Fee
-    function getReporterRewardAndLSSFee() public view returns (uint256 reward, uint256 fee) {
+    function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee) {
         return (reporterReward, losslessFee);
     }
 
@@ -195,7 +195,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         
         losslessController.activateEmergency(token);
 
-        losslessController.addReporter(msg.sender, reportId);
         emit ReportSubmitted(token, account, reportId);
     }
 

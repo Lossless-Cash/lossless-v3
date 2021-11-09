@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -19,9 +19,7 @@ interface ILERC20 {
 }
 
 interface ILssStaking {
-    function getReportStakes(uint256 reportId) external returns(address[] memory);
     function getIsAccountStaked(uint256 reportId, address account) external view returns(bool);
-    function getStakingTimestamp(address _address, uint256 reportId) external view returns (uint256);
     function getPayoutStatus(address _address, uint256 reportId) external view returns (bool);
     function getStakerCoefficient(uint256 reportId, address _address) external view returns (uint256);
     function setPayoutStatus(uint256 reportId, address _adr) external;
@@ -74,9 +72,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(address => uint256) public tokenLockTimeframe;
     mapping(address => uint256) public changeSettlementTimelock;
 
-    uint256 emergencyCooldown;
-
-    uint256 erroneusCompensation;
+    uint256 public erroneusCompensation;
 
     ILERC20 public losslessToken;
     ILssStaking public losslessStaking;
@@ -181,12 +177,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- VIEWS ---
 
     /// @notice This function will return the contract version 
-    function getVersion() public pure returns (uint256) {
+    function getVersion() external pure returns (uint256) {
         return 3;
     }
     
     /// @notice Retruns the emergency state
-    function getEmergencyStatus(address token) public view returns (bool) {
+    function getEmergencyStatus(address token) external view returns (bool) {
         return emergencyMode[token].emergency;
     }
 
@@ -198,7 +194,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function will return if the address is whitelisted
     /// @return Returns true or false
-    function isWhitelisted(address _adr) public view returns (bool) {
+    function isWhitelisted(address _adr) external view returns (bool) {
         return whitelist[_adr];
     }
 
@@ -238,7 +234,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setControllerV3Defaults() public onlyLosslessAdmin {
         dexTranferThreshold = 2;
         erroneusCompensation = 2;
-        emergencyCooldown = 15 minutes;
         whitelist[admin] = true;
         whitelist[recoveryAdmin]  = true;
         whitelist[pauseAdmin]  = true;
@@ -261,7 +256,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function sets the amount of tokens given to the erroneously reported address
     /// @param amount Percentage to return
-    function setCompensationAmount(uint256 amount) private {
+    function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
         erroneusCompensation = amount;
     }
 
@@ -347,15 +342,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setLockTimeframe(address token, uint256 _seconds) public {
         require(ILERC20(token).admin() == msg.sender, "LSS: Must be Token Admin");
         require(block.timestamp > changeSettlementTimelock[token] + settlementTimeLock, "LSS: Must wait to change");
-        tokenLockTimeframe[token] = _seconds * 1 seconds;
+        tokenLockTimeframe[token] = _seconds;
         changeSettlementTimelock[token] = block.timestamp;
-    }
-
-    /// @notice This function sets the default time that the recieved funds get locked when in emergency mode
-    /// @dev This function should be called in seconds
-    /// @param _seconds Time frame of the recieved funds will be locked
-    function setEmergencyTimeframe(uint256 _seconds) public onlyLosslessAdmin {
-        emergencyCooldown = _seconds * 1 seconds;
     }
 
     /// @notice This function sets the payout status of a reporter
@@ -363,13 +351,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param status Payout status 
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) public onlyFromAdminOrLssSC {
         reporterClaimStatus[_reporter].reportIdClaimStatus[reportId] = status;
-    }
-
-    /// @notice This function add a reporter to the claim Status
-    /// @param _reporter Reporter address
-    /// @param reportId Report ID
-    function addReporter(address _reporter, uint256 reportId) public onlyFromAdminOrLssSC {
-        reporterClaimStatus[_reporter].reportIdClaimStatus[reportId] = false;
     }
 
     /// @notice This function adds to the total coefficient per report
@@ -449,7 +430,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function returns  the payout status of a reporter
     /// @param _reporter Reporter address
     /// @return status Payout status 
-    function getReporterPayoutStatus(address _reporter, uint256 reportId) public view returns (bool) {
+    function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool) {
         return reporterClaimStatus[_reporter].reportIdClaimStatus[reportId];
     }
 
@@ -460,22 +441,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 total = ILERC20(token).balanceOf(account);
         uint256 locked = getLockedAmount(token, account);
         return total - locked;
-    }
-
-    /// @notice This function sets the percentage of compensation
-    /// @return Compensation percentage
-    function getCompensationPercentage() public view returns (uint256) {
-        return erroneusCompensation;
-    }
-
-    /// @notice This function will return the last funds in queue
-    /// @param token Address corresponding to the token being held
-    /// @param account Address to get the available amount
-    /// @return Returns the last funds on queue
-    function getQueueTail(address token, address account) public view returns (uint256) {
-        LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[token].queue[account];
-        return queue.last;
     }
 
     // LOCKs & QUEUES
@@ -589,13 +554,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param recipient Address recieving the funds
     /// @param amount Amount to be transfered
     function evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
-        
-        uint256 totalBalance = ILERC20(msg.sender).balanceOf(sender);
-
-        require(totalBalance >= amount, "LSS: Insufficient balance");
 
         uint256 settledAmount = getAvailableAmount(msg.sender, sender);
-        uint256 unsettledAmount = totalBalance - settledAmount;
 
         if (emergencyMode[msg.sender].emergency && amount >= settledAmount) {
             require(!emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender], "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
