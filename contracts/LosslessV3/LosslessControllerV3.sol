@@ -501,7 +501,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 totalAmount;
         
         totalAmount = losslessGovernance.amountReported(reportId);
-        
+
         ILERC20(token).transferOutBlacklistedFunds(_addresses);
                 
         uint256 retrieveAmount;
@@ -545,10 +545,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         } else if (settledAmount < amount) {
             removeUsedUpLocks(settledAmount, sender, amount, msg.sender);
             require(getAvailableAmount(msg.sender, sender) >= amount, "LSS: Amt exceeds settled balance");
-        }
-
-        if (dexList[recipient]) {
-            removeExpiredLocks(recipient);
         }
 
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
