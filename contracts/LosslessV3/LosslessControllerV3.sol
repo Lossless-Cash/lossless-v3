@@ -220,7 +220,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         whitelist[recoveryAdmin]  = true;
         whitelist[pauseAdmin]  = true;
         settlementTimeLock = 12 hours;
-        lockCheckpointExpiration = 30 seconds;
+        lockCheckpointExpiration = 300 seconds;
     }
     
     /// @notice This function sets the address of the Lossless Governance Token
@@ -357,13 +357,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function activateEmergency(address token) external onlyFromAdminOrLssSC {
         emergencyMode[token].emergency = true;
         emergencyMode[token].emergencyTimestamp = block.timestamp;
+        emergencyMode[token].emergencyMappingNum += 1;
     }
 
     /// @notice This function deactivates the emergency mode
     /// @param token Token on which the emergency mode must get deactivated
     function deactivateEmergency(address token) external onlyFromAdminOrLssSC {
         emergencyMode[token].emergency = false;
-        emergencyMode[token].emergencyMappingNum += 1;
     }
 
     // --- GUARD ---
@@ -475,7 +475,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                     delete checkpoint.amount;
                 }
             }
-            
             i += 1;
         }
 
@@ -531,25 +530,27 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         uint256 settledAmount = getAvailableAmount(msg.sender, sender);
 
-        if (emergencyMode[msg.sender].emergency && amount >= settledAmount) {
-            require(!emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender], "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
-            require(!dexList[recipient] &&
-            !emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender], "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
+        if ((emergencyMode[msg.sender].emergencyTimestamp + tokenLockTimeframe[msg.sender] > block.timestamp && amount >= settledAmount)) {
+            bool regularTransferInEmergencyStatus;
+            regularTransferInEmergencyStatus = emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender];
+            require(!regularTransferInEmergencyStatus, "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
+
+            bool dexTransferInEmergencyStatus;
+            dexTransferInEmergencyStatus = emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender];
+            require(!dexList[recipient] && !dexTransferInEmergencyStatus, "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
 
             if (dexList[recipient] && amount > dexTranferThreshold){
                 emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
             } else {
                 emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
             }
-
-            return true;
-        }
-
-        if (dexList[recipient] && amount > dexTranferThreshold) {
-            require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
-        } else if (settledAmount < amount) {
-            removeUsedUpLocks(settledAmount, sender, amount);
-            require(getAvailableAmount(msg.sender, sender) >= amount, "LSS: Amt exceeds settled balance");
+        } else {
+            if (dexList[recipient] && amount > dexTranferThreshold) {
+                require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
+            } else if (settledAmount < amount) {
+                //removeUsedUpLocks(settledAmount, sender, amount);
+                require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
+            }
         }
 
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);

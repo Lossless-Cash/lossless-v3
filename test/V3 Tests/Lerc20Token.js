@@ -103,10 +103,22 @@ describe('Random LERC20 Token', () => {
         .report(lerc20Token.address, adr.maliciousActor1.address);
     });
 
+    describe('when a settlement period passes', () => {
+      it('should disable emergency mode', async () => {
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(6)),
+        ]);
+        await expect(
+          lerc20Token.connect(adr.regularUser1)
+            .transfer(adr.regularUser4.address, env.stakeAmount + 5),
+        ).to.be.revertedWith('LSS: Amt exceeds settled balance');
+      });
+    });
+
     describe('when transfering once in a period', () => {
       it('should not revert', async () => {
         await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.minutes(15)),
+          Number(time.duration.minutes(1)),
         ]);
 
         await lerc20Token.connect(adr.lerc20InitialHolder)
@@ -121,7 +133,7 @@ describe('Random LERC20 Token', () => {
     describe('when transfering unsettled tokens twice', () => {
       it('should revert', async () => {
         await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.minutes(15)),
+          Number(time.duration.minutes(1)),
         ]);
 
         await lerc20Token.connect(adr.lerc20InitialHolder)
