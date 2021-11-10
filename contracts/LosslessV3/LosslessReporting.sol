@@ -198,11 +198,13 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// It will generate a second report linked to the first one created. 
     /// This can be used in the event that the malicious actor is able to frontrun the first report by swapping the tokens or transfering.
     /// @param reportId Report that was previously generated.
-    /// @param token Token address of the stolen funds
     /// @param account Potential malicious address
-    function secondReport(uint256 reportId, address token, address account) public notBlacklisted whenNotPaused {
+    function secondReport(uint256 reportId, address account) public notBlacklisted whenNotPaused {
         uint256 reportLifetime;
         uint256 reportTimestamp;
+        address token;
+
+        token = reportTokens[reportId];
 
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
 
