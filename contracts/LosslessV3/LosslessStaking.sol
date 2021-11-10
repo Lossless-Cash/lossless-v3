@@ -179,7 +179,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 reportTimestamp;
         reportTimestamp = losslessReporting.reportTimestamps(reportId);
 
-        require(reportTimestamp + 1 minutes < block.timestamp, "LSS: Must wait 1 minute to stake");
         require(reportId > 0 && (reportTimestamp + losslessController.reportLifetime()) > block.timestamp, "LSS: report does not exists");
 
         uint256 stakeAmount = losslessController.stakeAmount();

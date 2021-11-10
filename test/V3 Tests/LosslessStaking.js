@@ -90,14 +90,6 @@ describe('Lossless Staking', () => {
         .report(lerc20Token.address, adr.maliciousActor1.address);
     });
 
-    describe('when staking before the cooldown period', () => {
-      it('should revert', async () => {
-        await expect(
-          env.lssStaking.connect(adr.staker1).stake(1),
-        ).to.be.revertedWith('LSS: Must wait 1 minute to stake');
-      });
-    });
-
     describe('when staking successfully', () => {
       it('should not revert', async () => {
         await ethers.provider.send('evm_increaseTime', [
