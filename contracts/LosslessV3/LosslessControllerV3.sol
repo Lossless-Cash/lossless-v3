@@ -71,7 +71,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     mapping(address => bool) public tokenTransferEvaluation;
 
-    uint256 public erroneusCompensation;
+    uint256 public erroneousCompensation;
 
     ILERC20 public losslessToken;
     ILssStaking public losslessStaking;
@@ -215,7 +215,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Called on startur
     function setControllerV3Defaults() public onlyLosslessAdmin {
         dexTranferThreshold = 2;
-        erroneusCompensation = 2;
+        erroneousCompensation = 2;
         whitelist[admin] = true;
         whitelist[recoveryAdmin]  = true;
         whitelist[pauseAdmin]  = true;
@@ -240,7 +240,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the amount of tokens given to the erroneously reported address
     /// @param amount Percentage to return
     function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
-        erroneusCompensation = amount;
+        erroneousCompensation = amount;
     }
 
     /// @notice This function sets the amount of time for used up and expired tokens to be lifted
