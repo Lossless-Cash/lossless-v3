@@ -26,12 +26,13 @@ describe('Lossless Controller', () => {
       env.lssController.address);
 
     await env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 5 * 60);
+    await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
   });
 
   describe('when whitelisting an account', () => {
     it('should set governance contract', async () => {
       await env.lssController.connect(adr.lssAdmin).setWhitelist(
-        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
       );
       expect(
         await env.lssController.whitelist(env.lssGovernance.address),

@@ -26,6 +26,16 @@ describe('Random LERC20 Token', () => {
       env.lssController.address);
 
     await env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 5 * 60);
+    await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
+  });
+
+  describe('when setting up transfer evaluation flag', () => {
+    it('should prevent non admin to execute', async () => {
+      await expect(
+        env.lssController.connect(adr.maliciousActor1)
+          .setTokenEvaluation(lerc20Token.address, true),
+      ).to.be.revertedWith('LSS: Only token admin');
+    });
   });
 
   describe('when setting up the settlement period', () => {

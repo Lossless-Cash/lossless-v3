@@ -27,6 +27,7 @@ describe('Lossless Reporting', () => {
       env.lssController.address);
 
     await env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 5 * 60);
+    await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
   });
 
   describe('when paused', () => {
