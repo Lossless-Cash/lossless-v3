@@ -276,22 +276,6 @@ describe('Lossless Staking', () => {
     });
 
     describe('when claiming', () => {
-      describe('when verifying reporter claimable amount by a non reporter', () => {
-        it('should revert', async () => {
-          await expect(
-            env.lssStaking.connect(adr.staker1).reporterClaimableAmount(1),
-          ).to.be.revertedWith('LSS: Must be the reporter');
-        });
-      });
-
-      describe('when verifying staker claimable amount by the reporter', () => {
-        it('should revert', async () => {
-          await expect(
-            env.lssStaking.connect(adr.reporter1).stakerClaimableAmount(1),
-          ).to.be.revertedWith('LSS: You\'re not staking');
-        });
-      });
-
       describe('when verifying reporter claimable amount by the reporter', () => {
         it('should return amount', async () => {
           expect(
