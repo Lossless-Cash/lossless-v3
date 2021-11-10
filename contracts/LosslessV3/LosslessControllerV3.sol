@@ -61,6 +61,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     uint256 public stakeAmount;
     uint256 public reportLifetime;
 
+    uint256 public lockCheckpointExpiration;
+
     uint256 public dexTranferThreshold;
 
     uint256 settlementTimeLock;
@@ -218,6 +220,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         whitelist[recoveryAdmin]  = true;
         whitelist[pauseAdmin]  = true;
         settlementTimeLock = 12 hours;
+        lockCheckpointExpiration = 30 seconds;
     }
     
     /// @notice This function sets the address of the Lossless Governance Token
@@ -240,6 +243,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         erroneusCompensation = amount;
     }
 
+    /// @notice This function sets the amount of time for used up and expired tokens to be lifted
+    /// @param time Time in seconds
+    function setLocksLiftUpExpiration(uint256 time) public onlyLosslessAdmin {
+        lockCheckpointExpiration = time;
+    }
+    
     /// @notice This function removes or adds an array of dex addresses from the whitelst
     /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
     /// @param _dexList List of dex addresses to add or remove
@@ -457,7 +466,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             ReceiveCheckpoint memory checkpoint;
             checkpoint = queue.lockedFunds[i];
 
-            if ((checkpoint.timestamp - block.timestamp) >= 300)  {
+            if ((checkpoint.timestamp - block.timestamp) >= lockCheckpointExpiration)  {
                 if (checkpoint.amount > amountLeft) {
                     checkpoint.amount -= amountLeft;
                     delete amountLeft;
@@ -488,32 +497,19 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         }
     }
 
-    /// @notice This function deletes the queue of locked funds
-    /// @param recipient Address to lift the locks
-    function dequeueLockedFunds(address recipient) private {
-        LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
-
-        delete queue.lockedFunds[queue.first];
-        queue.first += 1;
-    }
-
     // --- REPORT RESOLUTION ---
 
     /// @notice This function retrieves the funds of the reported account
     /// @param _addresses Array of addreses to retrieve the locked funds
     function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) public onlyFromAdminOrLssSC returns(uint256){
-        uint256 blacklistedAmount;
 
-        for(uint256 i; i < _addresses.length; i++) {
-            blacklistedAmount += ILERC20(token).balanceOf(_addresses[i]);
-        }
-        ILERC20(token).transferOutBlacklistedFunds(_addresses);
-                
-        uint256 retrieveAmount;
         uint256 totalAmount;
         
         totalAmount = losslessGovernance.amountReported(reportId);
+
+        ILERC20(token).transferOutBlacklistedFunds(_addresses);
+                
+        uint256 retrieveAmount;
 
         (uint256 reporterReward, uint256 losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
 
@@ -556,10 +552,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             require(getAvailableAmount(msg.sender, sender) >= amount, "LSS: Amt exceeds settled balance");
         }
 
-        if (dexList[recipient]) {
-            removeExpiredLocks(recipient);
-        }
-
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
         enqueueLockedFunds(newCheckpoint, recipient);
 
@@ -568,23 +560,22 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
-    function beforeTransfer(address sender, address recipient, uint256 amount) external notBlacklisted {
+    function beforeTransfer(address sender, address recipient, uint256 amount) external {
         if (tokenProtections[msg.sender].protections[sender].isProtected) {
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
         require(!blacklist[sender], "LSS: You cannot operate");
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
-
         
-        if (tokenTransferEvaluation[msg.sender]) {
+        if (tokenTransferEvaluation[msg.sender] && !dexList[sender]) {
             require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
         }
     }
 
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
-    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external notBlacklisted {
+    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
         if (tokenProtections[msg.sender].protections[sender].isProtected) {
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
