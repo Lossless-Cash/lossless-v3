@@ -20,7 +20,7 @@ interface ILssController {
     function resolvedNegatively(address _adr) external;
     function deactivateEmergency(address token) external;
     function admin() external view returns (address);
-    function erroneusCompensation() external view returns (uint256);
+    function erroneousCompensation() external view returns (uint256);
     function stakeAmount() external view returns (uint256);
 }
 
@@ -370,7 +370,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             reportedAddresses.push(secondReportedAddress);
         }
 
-        losslessController.deactivateEmergency(token);
+        //losslessController.deactivateEmergency(token);
 
         if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
@@ -393,7 +393,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @dev The array of addresses will contain the main reported address and the second reported address
     /// @param addresses Array of addresses to be compensated
     function compensateAddresses(address[] memory addresses) internal {
-        uint256 compensationAmount = losslessController.erroneusCompensation();
+        uint256 compensationAmount = losslessController.erroneousCompensation();
         uint256 stakeAmount = losslessController.stakeAmount();
         
         for(uint256 i; i < addresses.length; i++) {

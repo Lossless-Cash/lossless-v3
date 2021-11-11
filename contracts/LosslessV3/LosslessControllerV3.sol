@@ -71,7 +71,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     mapping(address => bool) public tokenTransferEvaluation;
 
-    uint256 public erroneusCompensation;
+    uint256 public erroneousCompensation;
 
     ILERC20 public losslessToken;
     ILssStaking public losslessStaking;
@@ -215,12 +215,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Called on startur
     function setControllerV3Defaults() public onlyLosslessAdmin {
         dexTranferThreshold = 2;
-        erroneusCompensation = 2;
+        erroneousCompensation = 2;
         whitelist[admin] = true;
         whitelist[recoveryAdmin]  = true;
         whitelist[pauseAdmin]  = true;
         settlementTimeLock = 12 hours;
-        lockCheckpointExpiration = 30 seconds;
+        lockCheckpointExpiration = 300 seconds;
     }
     
     /// @notice This function sets the address of the Lossless Governance Token
@@ -240,7 +240,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the amount of tokens given to the erroneously reported address
     /// @param amount Percentage to return
     function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
-        erroneusCompensation = amount;
+        erroneousCompensation = amount;
     }
 
     /// @notice This function sets the amount of time for used up and expired tokens to be lifted
@@ -357,13 +357,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function activateEmergency(address token) external onlyFromAdminOrLssSC {
         emergencyMode[token].emergency = true;
         emergencyMode[token].emergencyTimestamp = block.timestamp;
+        emergencyMode[token].emergencyMappingNum += 1;
     }
 
     /// @notice This function deactivates the emergency mode
     /// @param token Token on which the emergency mode must get deactivated
     function deactivateEmergency(address token) external onlyFromAdminOrLssSC {
         emergencyMode[token].emergency = false;
-        emergencyMode[token].emergencyMappingNum += 1;
     }
 
     // --- GUARD ---
@@ -475,7 +475,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                     delete checkpoint.amount;
                 }
             }
-            
             i += 1;
         }
 
@@ -531,25 +530,27 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         uint256 settledAmount = getAvailableAmount(msg.sender, sender);
 
-        if (emergencyMode[msg.sender].emergency && amount >= settledAmount) {
-            require(!emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender], "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
-            require(!dexList[recipient] &&
-            !emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender], "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
+        if ((emergencyMode[msg.sender].emergencyTimestamp + tokenLockTimeframe[msg.sender] > block.timestamp && amount >= settledAmount)) {
+            bool regularTransferInEmergencyStatus;
+            regularTransferInEmergencyStatus = emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender];
+            require(!regularTransferInEmergencyStatus, "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
+
+            bool dexTransferInEmergencyStatus;
+            dexTransferInEmergencyStatus = emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender];
+            require(!dexList[recipient] && !dexTransferInEmergencyStatus, "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
 
             if (dexList[recipient] && amount > dexTranferThreshold){
                 emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
             } else {
                 emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
             }
-
-            return true;
-        }
-
-        if (dexList[recipient] && amount > dexTranferThreshold) {
-            require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
-        } else if (settledAmount < amount) {
-            removeUsedUpLocks(settledAmount, sender, amount);
-            require(getAvailableAmount(msg.sender, sender) >= amount, "LSS: Amt exceeds settled balance");
+        } else {
+            if (dexList[recipient] && amount > dexTranferThreshold) {
+                require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
+            } else if (settledAmount < amount) {
+                //removeUsedUpLocks(settledAmount, sender, amount);
+                require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
+            }
         }
 
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);

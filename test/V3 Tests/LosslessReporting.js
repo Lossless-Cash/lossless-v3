@@ -45,7 +45,7 @@ describe('Lossless Reporting', () => {
     it('should prevent staker claiming', async () => {
       await expect(
         env.lssReporting.connect(adr.reporter1)
-          .secondReport(1, lerc20Token.address, adr.maliciousActor2.address),
+          .secondReport(1, adr.maliciousActor2.address),
       ).to.be.revertedWith('Pausable: paused');
     });
   });
@@ -148,7 +148,7 @@ describe('Lossless Reporting', () => {
       it('should not revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
-            .secondReport(1, lerc20Token.address, adr.maliciousActor2.address),
+            .secondReport(1, adr.maliciousActor2.address),
         ).to.not.be.reverted;
       });
     });
@@ -157,7 +157,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
-            .secondReport(1, lerc20Token.address, env.lssReporting.address),
+            .secondReport(1, env.lssReporting.address),
         ).to.be.revertedWith('LSS: Cannot report LSS protocol');
       });
     });
@@ -166,7 +166,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
-            .secondReport(5, lerc20Token.address, adr.maliciousActor1.address),
+            .secondReport(5, adr.maliciousActor1.address),
         ).to.be.revertedWith('LSS: report does not exists');
       });
     });
@@ -175,7 +175,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter2)
-            .secondReport(1, lerc20Token.address, adr.maliciousActor1.address),
+            .secondReport(1, adr.maliciousActor1.address),
         ).to.be.revertedWith('LSS: invalid reporter');
       });
     });
@@ -184,7 +184,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter2)
-            .secondReport(1, lerc20Token.address, adr.maliciousActor1.address),
+            .secondReport(1, adr.maliciousActor1.address),
         ).to.be.revertedWith('LSS: invalid reporter');
       });
     });
