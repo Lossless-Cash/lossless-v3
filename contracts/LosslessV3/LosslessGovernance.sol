@@ -461,7 +461,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @notice This function retrieves the fund to the accepted proposed wallet
     /// @param reportId Report to propose the wallet
     function retrieveFunds(uint256 reportId) public whenNotPaused {
- 
+        require(msg.sender != address(0), "LERC20: Cannot be zero address");
         require(block.timestamp >= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
         require(!proposedWalletOnReport[reportId].status, "LSS: Funds already claimed");
 

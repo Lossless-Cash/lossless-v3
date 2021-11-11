@@ -194,16 +194,19 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Only can be called by the Recovery admin
     /// @param newAdmin Address corresponding to the new Lossless Admin
     function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
+        require(msg.sender != address(0), "LERC20: Cannot be zero address");
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
     }
 
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
+        require(msg.sender != address(0), "LERC20: Cannot be zero address");
         emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
     function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
+        require(msg.sender != address(0), "LERC20: Cannot be zero address");
         emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
@@ -227,6 +230,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessToken Address corresponding to the Lossless Governance Token
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
+        require(_losslessToken != address(0), "LERC20: Cannot be zero address");
         losslessToken = ILERC20(_losslessToken);
     }
 
@@ -295,18 +299,21 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the address of the Lossless Staking contract
     /// @param _adr Address corresponding to the Lossless Staking contract
     function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
+        require(_adr != address(0), "LERC20: Cannot be zero address");
         losslessStaking = ILssStaking(_adr);
     }
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _adr Address corresponding to the Lossless Reporting contract
     function setReportingContractAddress(address _adr) public onlyLosslessAdmin {
+        require(_adr != address(0), "LERC20: Cannot be zero address");
         losslessReporting = ILssReporting(_adr);
     }
 
     /// @notice This function sets the address of the Lossless Governance contract
     /// @param _adr Address corresponding to the Lossless Governance contract
     function setGovernanceContractAddress(address _adr) public onlyLosslessAdmin {
+        require(_adr != address(0), "LERC20: Cannot be zero address");
         losslessGovernance = ILssGovernance(_adr);
     }
 
