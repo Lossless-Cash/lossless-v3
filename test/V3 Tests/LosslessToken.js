@@ -16,7 +16,16 @@ describe('Lossless Token', () => {
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
 
-    await env.lssController.connect(adr.lssAdmin).setLockTimeframe(env.lssToken.address, 5 * 60);
+    await env.lssController.connect(adr.lssAdmin)
+      .proposeNewSettlementPeriod(env.lssToken.address, 5 * 60);
+
+    await ethers.provider.send('evm_increaseTime', [
+      Number(time.duration.hours(13)),
+    ]);
+
+    await env.lssController.connect(adr.lssAdmin)
+      .executeNewSettlementPeriod(env.lssToken.address);
+
     await env.lssController.connect(adr.lssAdmin).setTokenEvaluation(env.lssToken.address, true);
   });
 

@@ -27,7 +27,16 @@ describe('Lossless Staking', () => {
       Number(time.duration.days(1)),
       env.lssController.address);
 
-    await env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 5 * 60);
+    await env.lssController.connect(adr.lerc20Admin)
+      .proposeNewSettlementPeriod(lerc20Token.address, 5 * 60);
+
+    await ethers.provider.send('evm_increaseTime', [
+      Number(time.duration.hours(13)),
+    ]);
+
+    await env.lssController.connect(adr.lerc20Admin)
+      .executeNewSettlementPeriod(lerc20Token.address);
+
     await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
   });
 
