@@ -299,7 +299,7 @@ describe('Lossless Staking', () => {
 
           expect(
             await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.not.be.equal(0);
+          ).to.be.equal(0);
 
           expect(
             balance = await env.lssToken.balanceOf(adr.staker1.address),

@@ -22,9 +22,8 @@ interface ILssStaking {
 }
 
 interface ILssReporting {
-    function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
+    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
     function amountReported(uint256 reportId) external view returns (uint256);
-    function stakersFee() external view returns (uint256);
 }
 
 interface ILssGovernance {
@@ -510,9 +509,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                 
         uint256 retrieveAmount;
 
-        (uint256 reporterReward, uint256 losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
+        (uint256 reporterReward, uint256 losslessFee, uint256 committeeFee, uint256 stakersFee) = losslessReporting.getFees();
 
-        retrieveAmount = totalAmount * (losslessReporting.stakersFee() + reporterReward + losslessFee) / 10**2;
+        retrieveAmount = totalAmount * (stakersFee + reporterReward + losslessFee + committeeFee) / 10**2;
 
         ILERC20(token).transfer(address(losslessStaking), retrieveAmount);
         ILERC20(token).transfer(address(losslessGovernance), totalAmount - retrieveAmount);

@@ -19,9 +19,8 @@ interface ILssReporting {
     function reportedAddress(uint256 _reportId) external view returns (address);
     function reporter(uint256 _reportId) external view returns (address);
     function reportTimestamps(uint256 _reportId) external view returns (uint256);
-    function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee);
+    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
     function amountReported(uint256 reportId) external view returns (uint256);
-    function stakersFee() external view returns (uint256);
 }
 
 interface ILssController {
@@ -216,14 +215,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function reporterClaimableAmount(uint256 reportId) public view returns (uint256) {
 
         uint256 reporterReward;
-        uint256 losslessFee;
         uint256 amountStakedOnReport;
         uint256 stakeAmount;
         stakeAmount = losslessController.stakeAmount();
 
         amountStakedOnReport = losslessGovernance.amountReported(reportId);
 
-        (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
+        (reporterReward,,,) = losslessReporting.getFees();
 
         return amountStakedOnReport * reporterReward / 10**2;
     }
@@ -235,7 +233,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function stakerClaimableAmount(uint256 reportId) public view returns (uint256) {
 
         uint256 reporterReward;
-        uint256 losslessFee;
+        uint256 stakersFee;
         uint256 amountStakedOnReport;
         uint256 stakerCoefficient;
         uint256 stakerPercentage;
@@ -250,13 +248,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         amountStakedOnReport = losslessGovernance.amountReported(reportId);
 
-        (reporterReward, losslessFee) = losslessReporting.getReporterRewardAndLSSFee();
+        (reporterReward,,,stakersFee) = losslessReporting.getFees();
 
         reportedToken = losslessReporting.reportTokens(reportId);
 
         reportedWallet = losslessReporting.reportedAddress(reportId);
 
-        amountStakedOnReport = amountStakedOnReport * losslessReporting.stakersFee() / 10**2;
+        amountStakedOnReport = amountStakedOnReport * stakersFee / 10**2;
 
         stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
         reportCoefficient = losslessController.reportCoefficient(reportId);
