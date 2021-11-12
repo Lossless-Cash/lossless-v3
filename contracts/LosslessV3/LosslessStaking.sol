@@ -113,6 +113,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
     function setLssReporting(address _losslessReporting) public onlyLosslessAdmin {
+        require(_losslessReporting != address(0), "LERC20: Cannot be zero address");
         losslessReporting = ILssReporting(_losslessReporting);
     }
 
@@ -120,6 +121,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessToken Address corresponding to the Lossless Governance Token
     function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
+        require(_losslessToken != address(0), "LERC20: Cannot be zero address");
         losslessToken = ILERC20(_losslessToken);
     }
 
@@ -127,6 +129,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessGovernance Address corresponding to the Lossless Governance Token
     function setLosslessGovernance(address _losslessGovernance) public onlyLosslessAdmin {
+        require(_losslessGovernance != address(0), "LERC20: Cannot be zero address");
         losslessGovernance = ILssGovernance(_losslessGovernance);
     }
 
@@ -274,7 +277,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function is for the stakers to claim their rewards
     /// @param reportId Staked report
     function stakerClaim(uint256 reportId) public notBlacklisted whenNotPaused {
-
+        require(msg.sender != address(0), "LERC20: Cannot be zero address");
         require( losslessReporting.reporter(reportId) != msg.sender, "LSS: Must use reporterClaim");
         require(!getPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
