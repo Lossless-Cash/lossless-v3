@@ -67,7 +67,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     uint256 settlementTimeLock;
     mapping(address => uint256) public tokenLockTimeframe;
+    mapping(address => uint256) public proposedTokenLockTimeframe;
     mapping(address => uint256) public changeSettlementTimelock;
+    mapping(address => bool) public isNewSettlementProposed;
 
     mapping(address => bool) public tokenTransferEvaluation;
 
@@ -322,15 +324,27 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         reportLifetime = _lifetime;
     }
 
-    /// @notice This function sets the default time that the recieved funds get locked
+    /// @notice This function starts the Timelock to change the settlement period
     /// @dev This function should be called in seconds
     /// @param token to set time settlement period on
     /// @param _seconds Time frame of the recieved funds will be locked
-    function setLockTimeframe(address token, uint256 _seconds) public {
+    function proposeNewSettlementPeriod(address token, uint256 _seconds) public {
         require(ILERC20(token).admin() == msg.sender, "LSS: Must be Token Admin");
-        require(block.timestamp > changeSettlementTimelock[token] + settlementTimeLock, "LSS: Must wait to change");
-        tokenLockTimeframe[token] = _seconds;
-        changeSettlementTimelock[token] = block.timestamp;
+        changeSettlementTimelock[token] = block.timestamp + settlementTimeLock;
+        isNewSettlementProposed[token] = true;
+        proposedTokenLockTimeframe[token] = _seconds;
+        //Add event
+    }
+
+    /// @notice This function executes the new settlement period after the timelock
+    /// @param token to set time settlement period on
+    function executeNewSettlementPeriod(address token) public {
+        require(ILERC20(token).admin() == msg.sender, "LSS: Must be Token Admin");
+        require(isNewSettlementProposed[token] == true, "LSS: New Settlement not proposed");
+        require(changeSettlementTimelock[token] <= block.timestamp, "LSS: Time lock in progress");
+        tokenLockTimeframe[token] = proposedTokenLockTimeframe[token];
+        isNewSettlementProposed[token] = false;
+        //Add event 
     }
 
     /// @notice This function sets the payout status of a reporter
