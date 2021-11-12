@@ -35,6 +35,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     uint256 public reporterReward;
     uint256 public losslessFee;
     uint256 public stakersFee;
+    uint256 public committeeFee;
 
     uint256 public reportCount;
 
@@ -83,7 +84,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     function initialize(address _losslessController) public initializer {
         losslessController = ILssController(_losslessController);
-        stakersFee = 2;
     }
     
     // --- SETTERS ---
@@ -139,6 +139,12 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         stakersFee = fee;
     }
 
+    /// @notice This function sets the default Committee Fee
+    /// @param fee Percentage attributed to Stakers when a report gets resolved positively
+    function setCommitteeFee(uint256 fee) public onlyLosslessAdmin {
+        committeeFee = fee;
+    }
+
 
     // --- GETTERS ---
 
@@ -149,10 +155,12 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
     /// @notice This function will return the Reporter reward and Lossless fee percentage
-    /// @return reward Returns the reporter reward
-    /// @return fee Returns the Lossless Fee
-    function getReporterRewardAndLSSFee() external view returns (uint256 reward, uint256 fee) {
-        return (reporterReward, losslessFee);
+    /// @return reporter Returns the reporter reward
+    /// @return lossless Returns the Lossless Fee
+    /// @return committee Returns the committee Fee
+    /// @return stakers Returns the stakers Fee
+    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers) {
+        return (reporterReward, losslessFee, committeeFee, stakersFee);
     }
 
     // --- REPORTS ---
