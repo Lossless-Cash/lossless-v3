@@ -248,7 +248,7 @@ describe('Lossless Staking', () => {
       await env.lssStaking.connect(adr.staker4).stake(1);
 
       await env.lssGovernance.connect(adr.lssAdmin)
-        .addCommitteeMembers([adr.member1.address, adr.member2.address, adr.member3.address], 2);
+        .addCommitteeMembers([adr.member1.address, adr.member2.address, adr.member3.address]);
 
       await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
       await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);

@@ -60,14 +60,14 @@ describe('Lossless Governance', () => {
     it('should prevent adding committee members', async () => {
       await expect(
         env.lssGovernance.connect(adr.lssAdmin)
-          .addCommitteeMembers([adr.member1.address], 1),
+          .addCommitteeMembers([adr.member1.address]),
       ).to.be.revertedWith('Pausable: paused');
     });
 
     it('should prevent removing committee members', async () => {
       await expect(
         env.lssGovernance.connect(adr.lssAdmin)
-          .removeCommitteeMembers([adr.member1.address], 0),
+          .removeCommitteeMembers([adr.member1.address]),
       ).to.be.revertedWith('Pausable: paused');
     });
 
@@ -130,12 +130,11 @@ describe('Lossless Governance', () => {
 
   describe('when setting up the Committee', () => {
     describe('when adding Committe members', () => {
-      it('should add members and update quorum', async () => {
+      it('should add members', async () => {
         await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
           adr.member1.address,
           adr.member2.address,
-          adr.member3.address],
-        2);
+          adr.member3.address]);
 
         expect(
           await env.lssGovernance.isCommitteeMember(adr.member1.address),
@@ -148,25 +147,20 @@ describe('Lossless Governance', () => {
         expect(
           await env.lssGovernance.isCommitteeMember(adr.member3.address),
         ).to.be.equal(true);
-
-        expect(
-          await env.lssGovernance.quorumSize(),
-        ).to.be.equal(2);
       });
     });
 
     describe('when removing Committee members', () => {
-      it('should remove members and update quorum', async () => {
+      it('should remove members', async () => {
         await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
           adr.member1.address,
           adr.member2.address,
           adr.member3.address,
           adr.member4.address,
-          adr.member5.address],
-        3);
+          adr.member5.address]);
 
         await env.lssGovernance.connect(adr.lssAdmin)
-          .removeCommitteeMembers([adr.member2.address, adr.member4.address], 2);
+          .removeCommitteeMembers([adr.member2.address, adr.member4.address]);
 
         expect(
           await env.lssGovernance.isCommitteeMember(adr.member2.address),
@@ -175,10 +169,6 @@ describe('Lossless Governance', () => {
         expect(
           await env.lssGovernance.isCommitteeMember(adr.member4.address),
         ).to.be.equal(false);
-
-        expect(
-          await env.lssGovernance.quorumSize(),
-        ).to.be.equal(2);
       });
     });
   });
@@ -190,8 +180,7 @@ describe('Lossless Governance', () => {
         adr.member2.address,
         adr.member3.address,
         adr.member4.address,
-        adr.member5.address],
-      3);
+        adr.member5.address]);
     });
 
     describe('when the Lossless Team is voting', () => {
@@ -282,8 +271,7 @@ describe('Lossless Governance', () => {
         adr.member2.address,
         adr.member3.address,
         adr.member4.address,
-        adr.member5.address],
-      3);
+        adr.member5.address]);
     });
 
     describe('when only 2/3 parts vote', () => {
