@@ -35,7 +35,7 @@ describe('Lossless Reporting', () => {
 
     await env.lssController.connect(adr.lerc20Admin)
       .executeNewSettlementPeriod(lerc20Token.address);
-      
+
     await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
   });
 
@@ -83,6 +83,18 @@ describe('Lossless Reporting', () => {
           env.lssReporting.connect(adr.reporter1)
             .report(lerc20Token.address, env.lssReporting.address),
         ).to.be.revertedWith('LSS: Cannot report LSS protocol');
+      });
+    });
+
+    describe('when reporting a Dex address', () => {
+      beforeEach(async () => {
+        await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
+      });
+      it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, adr.dexAddress.address),
+        ).to.be.revertedWith('LSS: Cannot report Dex');
       });
     });
 
