@@ -25,8 +25,6 @@ describe('Random LERC20 Token', () => {
       Number(time.duration.days(1)),
       env.lssController.address);
 
-    console.log('Set up tokens and env ok');
-
     await env.lssController.connect(adr.lerc20Admin)
       .proposeNewSettlementPeriod(lerc20Token.address, 5 * 60);
 

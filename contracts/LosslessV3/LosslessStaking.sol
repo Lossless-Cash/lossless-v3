@@ -90,10 +90,10 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     /// @notice Avoids execution from other than the Lossless Admin or Lossless Environment
-    modifier onlyFromAdminOrLssSC {
+    modifier onlyLosslessEnv {
         require(msg.sender == address(losslessController) ||
-                msg.sender == address(losslessGovernance) ||
-                msg.sender == losslessController.admin(), "LSS: Admin or LSS SC only");
+                msg.sender == address(losslessGovernance),
+                "LSS: Lss SC only");
         _;
     }
 
@@ -297,7 +297,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function allows the governance token to retribute an erroneous report
     /// @param adr retribution address
     /// @param amount amount to be retrieved
-    function retrieveCompensation(address adr, uint256 amount) public onlyFromAdminOrLssSC {
+    function retrieveCompensation(address adr, uint256 amount) public onlyLosslessEnv {
         losslessToken.transfer(adr, amount);
     }
 
