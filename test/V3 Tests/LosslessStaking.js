@@ -56,12 +56,6 @@ describe('Lossless Staking', () => {
         env.lssStaking.connect(adr.staker1).stakerClaim(1),
       ).to.be.revertedWith('Pausable: paused');
     });
-
-    it('should prevent reporter claiming', async () => {
-      await expect(
-        env.lssStaking.connect(adr.staker1).reporterClaim(1),
-      ).to.be.revertedWith('Pausable: paused');
-    });
   });
 
   describe('when the staking period is active', () => {
@@ -348,7 +342,7 @@ describe('Lossless Staking', () => {
             balance = await env.lssToken.balanceOf(adr.reporter1.address),
           ).to.be.equal(2500);
 
-          await env.lssStaking.connect(adr.reporter1).reporterClaim(1);
+          await env.lssReporting.connect(adr.reporter1).reporterClaim(1);
 
           expect(
             await lerc20Token.balanceOf(adr.reporter1.address),
@@ -362,10 +356,10 @@ describe('Lossless Staking', () => {
 
       describe('when reporter claims two times', () => {
         it('should revert', async () => {
-          await env.lssStaking.connect(adr.reporter1).reporterClaim(1);
+          await env.lssReporting.connect(adr.reporter1).reporterClaim(1);
 
           await expect(
-            env.lssStaking.connect(adr.reporter1).reporterClaim(1),
+            env.lssReporting.connect(adr.reporter1).reporterClaim(1),
           ).to.be.revertedWith('LSS: You already claimed');
         });
       });
