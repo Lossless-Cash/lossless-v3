@@ -380,12 +380,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         emergencyMode[token].emergencyMappingNum += 1;
     }
 
-    /// @notice This function deactivates the emergency mode
-    /// @param token Token on which the emergency mode must get deactivated
-    function deactivateEmergency(address token) external onlyLosslessEnv {
-        emergencyMode[token].emergency = false;
-    }
-
     // --- GUARD ---
 
     // @notice Set a guardian contract.
