@@ -12,20 +12,20 @@ interface ILssReporting {
     function reportTokens(uint256 reportId) external view returns(address);
     function secondReportedAddress(uint256 reportId) external view returns (address);
     function secondReports(uint256 reportId) external view returns (bool);
+    function reportLifetime() external view returns(uint256);
 }
 
 interface ILssController {
-    function reportLifetime() external view returns(uint256);
     function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) external returns(uint256);
     function resolvedNegatively(address _adr) external;
     function deactivateEmergency(address token) external;
     function admin() external view returns (address);
     function erroneousCompensation() external view returns (uint256);
-    function stakingAmount() external view returns (uint256);
 }
 
 interface ILssStaking {
     function retrieveCompensation(address adr, uint256 amount) external;
+    function stakingAmount() external view returns (uint256);
 }
 
 interface ILERC20 {
@@ -237,7 +237,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + losslessController.reportLifetime() > block.timestamp, "LSS: report is not valid");
+        require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
         
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -258,7 +258,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(!isReportSolved(reportId), "LSS: Report already solved.");
 
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + losslessController.reportLifetime() > block.timestamp, "LSS: report is not valid");
+        require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
 
         require(ILERC20(losslessReporting.reportTokens(reportId)).admin() == msg.sender, "LSS: must be token owner");
 
@@ -282,7 +282,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(isCommitteeMember(msg.sender), "LSS: must be a committee member");
 
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + losslessController.reportLifetime() > block.timestamp, "LSS: report is not valid");
+        require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
 
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -371,7 +371,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param addresses Array of addresses to be compensated
     function compensateAddresses(address[] memory addresses) internal {
         uint256 compensationAmount = losslessController.erroneousCompensation();
-        uint256 stakingAmount = losslessController.stakingAmount();
+        uint256 stakingAmount = losslessStaking.stakingAmount();
         
         for(uint256 i; i < addresses.length; i++) {
             losslessController.resolvedNegatively(addresses[i]);      

@@ -15,8 +15,6 @@ interface ILERC20 {
 
 interface ILssController {
     function blacklist(address _adr) external returns (bool);
-    function reportLifetime() external returns (uint256);
-    function stakingAmount() external returns (uint256);
     function reportingAmount() external returns (uint256);
     function addToBlacklist(address _adr) external;
     function whitelist(address _adr) external view returns (bool);
@@ -44,14 +42,15 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     uint256 public stakersFee;
     uint256 public committeeFee;
 
+    uint256 public reportLifetime;
+    uint256 public reportingAmount;
+
     uint256 public reportCount;
 
     ILERC20 public losslessToken;
     ILssController public losslessController;
     ILssGovernance public losslessGovernance;
     ILssStaking public losslessStaking;
-
-    address stakingAddress;
 
     struct TokenReports {
         mapping(address => uint256) reports;
@@ -129,11 +128,10 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         losslessStaking = ILssStaking(_losslessStaking);
     }
 
-    /// @notice This function sets the address of the Lossless Staking contract
-    /// @param _adr Address corresponding to the Lossless Staking contract
-    function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
-        require(_adr != address(0), "LERC20: Cannot be zero address");
-        stakingAddress = _adr;
+    /// @notice This function sets the amount of tokens to be staked when reporting or staking
+    /// @param _reportingAmount Amount to be staked
+    function setReportingAmount(uint256 _reportingAmount) public onlyLosslessAdmin {
+        reportingAmount = _reportingAmount;
     }
 
     /// @notice This function sets the default reporter reward
@@ -159,6 +157,13 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     function setCommitteeFee(uint256 fee) public onlyLosslessAdmin {
         committeeFee = fee;
     }
+
+    /// @notice This function sets the default lifetime of the reports
+    /// @param _lifetime Time frame of which a report is active
+    function setReportLifetime(uint256 _lifetime) public onlyLosslessAdmin {
+        reportLifetime = _lifetime;
+    }
+
 
 
     // --- GETTERS ---
@@ -190,11 +195,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
 
         uint256 reportId = tokenReports[token].reports[account];
-        uint256 reportLifetime;
-        uint256 reportingAmount;
-
-        reportLifetime = losslessController.reportLifetime();
-        reportingAmount = losslessController.reportingAmount();
 
         require(reportId == 0 || reportTimestamps[reportId] + reportLifetime < block.timestamp || losslessGovernance.isReportSolved(reportId), "LSS: Report already exists");
 
@@ -226,7 +226,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param reportId Report that was previously generated.
     /// @param account Potential malicious address
     function secondReport(uint256 reportId, address account) public notBlacklisted whenNotPaused {
-        uint256 reportLifetime;
         uint256 reportTimestamp;
         address token;
 
@@ -235,7 +234,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
 
         reportTimestamp = reportTimestamps[reportId];
-        reportLifetime = losslessController.reportLifetime();
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(secondReports[reportId] == false, "LSS: Another already submitted");
@@ -259,15 +257,13 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
         uint256 amountToClaim;
-        uint256 stakingAmount;
 
         amountToClaim = losslessStaking.reporterClaimableAmount(reportId);
-        stakingAmount = losslessController.stakingAmount();
 
         losslessController.setReporterPayoutStatus(msg.sender, true, reportId);
 
         ILERC20(reportTokens[reportId]).transfer(msg.sender, amountToClaim);
-        losslessToken.transfer(msg.sender, stakingAmount);
+        losslessToken.transfer(msg.sender, reportingAmount);
     }
 
 }

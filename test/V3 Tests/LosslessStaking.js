@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prefer-destructuring */
@@ -305,7 +306,7 @@ describe('Lossless Staking', () => {
 
           expect(
             await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(0);
+          ).to.be.equal(17856);
 
           expect(
             balance = await env.lssToken.balanceOf(adr.staker1.address),
@@ -343,7 +344,7 @@ describe('Lossless Staking', () => {
 
           expect(
             balance = await env.lssToken.balanceOf(adr.reporter1.address),
-          ).to.be.equal(2500);
+          ).to.be.equal(4000);
 
           await env.lssReporting.connect(adr.reporter1).reporterClaim(1);
 

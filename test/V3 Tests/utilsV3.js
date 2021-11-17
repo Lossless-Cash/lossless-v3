@@ -158,22 +158,21 @@ const setupEnvironment = async (lssAdmin,
     { initializer: 'initialize' },
   );
 
-  await lssController.connect(lssAdmin).setStakingAmount(stakingAmount);
-  await lssController.connect(lssAdmin).setReportingAmount(reportingAmount);
-  await lssController.connect(lssAdmin).setReportLifetime(Number(reportLifetime));
   await lssController.connect(lssAdmin).setLosslessToken(lssToken.address);
   await lssController.connect(lssAdmin).setStakingContractAddress(lssStaking.address);
   await lssController.connect(lssAdmin).setReportingContractAddress(lssReporting.address);
   await lssController.connect(lssAdmin).setGovernanceContractAddress(lssGovernance.address);
   await lssController.connect(lssAdmin).setControllerV3Defaults();
 
+  await lssStaking.connect(lssAdmin).setStakingAmount(stakingAmount);
   await lssStaking.connect(lssAdmin).setLosslessToken(lssToken.address);
   await lssStaking.connect(lssAdmin).setLosslessGovernance(lssGovernance.address);
 
+  await lssReporting.connect(lssAdmin).setReportLifetime(Number(reportLifetime));
+  await lssReporting.connect(lssAdmin).setReportingAmount(reportingAmount);
   await lssReporting.connect(lssAdmin).setLosslessToken(lssToken.address);
   await lssReporting.connect(lssAdmin).setLosslessStaking(lssStaking.address);
   await lssReporting.connect(lssAdmin).setLosslessGovernance(lssGovernance.address);
-  await lssReporting.connect(lssAdmin).setStakingContractAddress(lssStaking.address);
   await lssReporting.connect(lssAdmin).setReporterReward(2);
   await lssReporting.connect(lssAdmin).setLosslessFee(10);
   await lssReporting.connect(lssAdmin).setStakersFee(2);
