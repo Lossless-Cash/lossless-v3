@@ -24,7 +24,7 @@ interface ILssReporting {
 }
 
 interface ILssController {
-    function stakeAmount() external view returns (uint256);
+    function stakingAmount() external view returns (uint256);
     function blacklist(address _adr) external view returns (bool);
     function reportLifetime() external view returns (uint256);
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
@@ -183,7 +183,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         require(reportId > 0 && (reportTimestamp + losslessController.reportLifetime()) > block.timestamp, "LSS: report does not exists");
 
-        uint256 stakeAmount = losslessController.stakeAmount();
+        uint256 stakingAmount = losslessController.stakingAmount();
 
         uint256 stakerCoefficient;
         stakerCoefficient = _calculateCoefficient(reportTimestamp);
@@ -196,9 +196,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         losslessController.addToReportCoefficient(reportId, stakerCoefficient);
         
-        losslessToken.transferFrom(msg.sender, address(this), stakeAmount);
+        losslessToken.transferFrom(msg.sender, address(this), stakingAmount);
 
-        totalStakedOnReport[reportId] += stakeAmount;
+        totalStakedOnReport[reportId] += stakingAmount;
         
         emit Staked(losslessReporting.reportTokens(reportId), msg.sender, reportId);
     }
@@ -219,8 +219,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         uint256 reporterReward;
         uint256 amountStakedOnReport;
-        uint256 stakeAmount;
-        stakeAmount = losslessController.stakeAmount();
+        uint256 stakingAmount;
+        stakingAmount = losslessController.stakingAmount();
 
         amountStakedOnReport = losslessGovernance.amountReported(reportId);
 
@@ -242,12 +242,12 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 stakerPercentage;
         uint256 stakerAmountToClaim;
         uint256 secondsCoefficient;
-        uint256 stakeAmount;
+        uint256 stakingAmount;
         uint256 reportCoefficient;
         address reportedToken;
         address reportedWallet;
 
-        stakeAmount = losslessController.stakeAmount();
+        stakingAmount = losslessController.stakingAmount();
 
         amountStakedOnReport = losslessGovernance.amountReported(reportId);
         console.log("amountStakedOnReport %s", amountStakedOnReport);
@@ -285,18 +285,18 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
         uint256 amountToClaim;
-        uint256 stakeAmount;
+        uint256 stakingAmount;
         address token;
 
         amountToClaim = stakerClaimableAmount(reportId);
         console.log("amountToClaim: %s", amountToClaim);
-        stakeAmount = losslessController.stakeAmount();
+        stakingAmount = losslessController.stakingAmount();
         token = losslessReporting.reportTokens(reportId);
 
         _setPayoutStatus(reportId, msg.sender);
 
         ILERC20(token).transfer(msg.sender, amountToClaim);
-        losslessToken.transfer( msg.sender, stakeAmount);
+        losslessToken.transfer( msg.sender, stakingAmount);
     }
 
     /// @notice This function allows the governance token to retribute an erroneous report

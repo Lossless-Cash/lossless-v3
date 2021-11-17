@@ -66,11 +66,11 @@ describe('Lossless Reporting', () => {
       );
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter1.address, env.stakeAmount);
+        .transfer(adr.reporter1.address, env.stakingAmount);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter2.address, env.stakeAmount);
+        .transfer(adr.reporter2.address, env.stakingAmount);
 
-      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakeAmount);
+      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
@@ -138,12 +138,12 @@ describe('Lossless Reporting', () => {
       );
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter1.address, env.stakeAmount * 2);
+        .transfer(adr.reporter1.address, env.stakingAmount * 2);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter2.address, env.stakeAmount);
+        .transfer(adr.reporter2.address, env.stakingAmount);
 
       await env.lssToken.connect(adr.reporter1)
-        .approve(env.lssReporting.address, env.stakeAmount * 2);
+        .approve(env.lssReporting.address, env.stakingAmount * 2);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
@@ -206,17 +206,17 @@ describe('Lossless Reporting', () => {
       );
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.maliciousActor1.address, env.stakeAmount);
+        .transfer(adr.maliciousActor1.address, env.stakingAmount);
 
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.maliciousActor2.address, 100);
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter1.address, env.stakeAmount);
+        .transfer(adr.reporter1.address, env.stakingAmount);
 
-      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakeAmount);
+      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
       await env.lssToken.connect(adr.maliciousActor1)
-        .approve(env.lssReporting.address, env.stakeAmount);
+        .approve(env.lssReporting.address, env.stakingAmount);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),

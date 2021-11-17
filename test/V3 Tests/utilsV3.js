@@ -80,7 +80,8 @@ const setupEnvironment = async (lssAdmin,
   const tokenOwnersVoteIndex = 1;
   const committeeVoteIndex = 2;
 
-  const stakeAmount = 2500;
+  const stakingAmount = 2500;
+  const reportingAmount = 1000;
   const reportLifetime = time.duration.days(1);
 
   const lssName = 'Lossless';
@@ -157,7 +158,8 @@ const setupEnvironment = async (lssAdmin,
     { initializer: 'initialize' },
   );
 
-  await lssController.connect(lssAdmin).setStakeAmount(stakeAmount);
+  await lssController.connect(lssAdmin).setStakingAmount(stakingAmount);
+  await lssController.connect(lssAdmin).setReportingAmount(reportingAmount);
   await lssController.connect(lssAdmin).setReportLifetime(Number(reportLifetime));
   await lssController.connect(lssAdmin).setLosslessToken(lssToken.address);
   await lssController.connect(lssAdmin).setStakingContractAddress(lssStaking.address);
@@ -185,7 +187,8 @@ const setupEnvironment = async (lssAdmin,
     lssTeamVoteIndex,
     tokenOwnersVoteIndex,
     committeeVoteIndex,
-    stakeAmount,
+    stakingAmount,
+    reportingAmount,
     reportLifetime,
     lssToken,
   };

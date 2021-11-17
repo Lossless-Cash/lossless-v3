@@ -21,7 +21,7 @@ interface ILssController {
     function deactivateEmergency(address token) external;
     function admin() external view returns (address);
     function erroneousCompensation() external view returns (uint256);
-    function stakeAmount() external view returns (uint256);
+    function stakingAmount() external view returns (uint256);
 }
 
 interface ILssStaking {
@@ -371,11 +371,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param addresses Array of addresses to be compensated
     function compensateAddresses(address[] memory addresses) internal {
         uint256 compensationAmount = losslessController.erroneousCompensation();
-        uint256 stakeAmount = losslessController.stakeAmount();
+        uint256 stakingAmount = losslessController.stakingAmount();
         
         for(uint256 i; i < addresses.length; i++) {
             losslessController.resolvedNegatively(addresses[i]);      
-            compensation[addresses[i]].amount +=  (stakeAmount * compensationAmount) / 10**2;
+            compensation[addresses[i]].amount +=  (stakingAmount * compensationAmount) / 10**2;
             compensation[addresses[i]].payed =  false;
         }
     }

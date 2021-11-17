@@ -57,7 +57,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V3 VARIABLES ---
 
-    uint256 public stakeAmount;
+    uint256 public stakingAmount;
+    uint256 public reportingAmount;
     uint256 public reportLifetime;
 
     uint256 public lockCheckpointExpiration;
@@ -319,10 +320,17 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     /// @notice This function sets the amount of tokens to be staked when reporting or staking
-    /// @param _stakeAmount Amount to be staked
-    function setStakeAmount(uint256 _stakeAmount) public onlyLosslessAdmin {
-        stakeAmount = _stakeAmount;
+    /// @param _stakingAmount Amount to be staked
+    function setStakingAmount(uint256 _stakingAmount) public onlyLosslessAdmin {
+        stakingAmount = _stakingAmount;
     }
+
+    /// @notice This function sets the amount of tokens to be staked when reporting or staking
+    /// @param _reportingAmount Amount to be staked
+    function setReportingAmount(uint256 _reportingAmount) public onlyLosslessAdmin {
+        reportingAmount = _reportingAmount;
+    }
+
 
     /// @notice This function sets the default lifetime of the reports
     /// @param _lifetime Time frame of which a report is active

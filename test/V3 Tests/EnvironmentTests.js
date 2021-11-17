@@ -21,8 +21,14 @@ describe('Lossless Environment', () => {
     describe('when the Lossless Controller contract has been set up', () => {
       it('should set the stake amount correctly', async () => {
         expect(
-          await env.lssController.stakeAmount(),
-        ).to.be.equal(env.stakeAmount);
+          await env.lssController.stakingAmount(),
+        ).to.be.equal(env.stakingAmount);
+      });
+
+      it('should set the reporting amount correctly', async () => {
+        expect(
+          await env.lssController.reportingAmount(),
+        ).to.be.equal(env.reportingAmount);
       });
 
       it('should set the report lifetime correctly', async () => {

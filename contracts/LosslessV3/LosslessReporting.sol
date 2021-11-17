@@ -16,7 +16,8 @@ interface ILERC20 {
 interface ILssController {
     function blacklist(address _adr) external returns (bool);
     function reportLifetime() external returns (uint256);
-    function stakeAmount() external returns (uint256);
+    function stakingAmount() external returns (uint256);
+    function reportingAmount() external returns (uint256);
     function addToBlacklist(address _adr) external;
     function whitelist(address _adr) external view returns (bool);
     function activateEmergency(address token) external;
@@ -190,10 +191,10 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         uint256 reportId = tokenReports[token].reports[account];
         uint256 reportLifetime;
-        uint256 stakeAmount;
+        uint256 reportingAmount;
 
         reportLifetime = losslessController.reportLifetime();
-        stakeAmount = losslessController.stakeAmount();
+        reportingAmount = losslessController.reportingAmount();
 
         require(reportId == 0 || reportTimestamps[reportId] + reportLifetime < block.timestamp || losslessGovernance.isReportSolved(reportId), "LSS: Report already exists");
 
@@ -205,7 +206,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportTimestamps[reportId] = block.timestamp;
         reportTokens[reportId] = token;
 
-        losslessToken.transferFrom(msg.sender, address(this), stakeAmount);
+        losslessToken.transferFrom(msg.sender, address(this), reportingAmount);
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
@@ -258,15 +259,15 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
         uint256 amountToClaim;
-        uint256 stakeAmount;
+        uint256 stakingAmount;
 
         amountToClaim = losslessStaking.reporterClaimableAmount(reportId);
-        stakeAmount = losslessController.stakeAmount();
+        stakingAmount = losslessController.stakingAmount();
 
         losslessController.setReporterPayoutStatus(msg.sender, true, reportId);
 
         ILERC20(reportTokens[reportId]).transfer(msg.sender, amountToClaim);
-        losslessToken.transfer(msg.sender, stakeAmount);
+        losslessToken.transfer(msg.sender, stakingAmount);
     }
 
 }
