@@ -250,24 +250,29 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakeAmount = losslessController.stakeAmount();
 
         amountStakedOnReport = losslessGovernance.amountReported(reportId);
+        console.log("amountStakedOnReport %s", amountStakedOnReport);
 
         (reporterReward,,,stakersFee) = losslessReporting.getFees();
+        console.log("stakersFee %s", stakersFee);
 
         reportedToken = losslessReporting.reportTokens(reportId);
 
         reportedWallet = losslessReporting.reportedAddress(reportId);
 
         amountStakedOnReport = amountStakedOnReport * stakersFee / 10**2;
+        console.log("amountStakedOnReport after redefine %s", amountStakedOnReport);
 
         stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
+        console.log("stakerCoefficient %s", stakerCoefficient);
         reportCoefficient = losslessController.reportCoefficient(reportId);
-
+        console.log("reportCoefficient %s", reportCoefficient);
         secondsCoefficient = 10**4/reportCoefficient;
-
+        console.log("secondsCoefficient %s", secondsCoefficient);
         stakerPercentage = (secondsCoefficient * stakerCoefficient);
 
+        console.log("stakerPercentage %s", stakerPercentage);
         stakerAmountToClaim = (amountStakedOnReport * stakerPercentage) / 10**4;
-
+        console.log("stakerAmountToClaim %s", stakerAmountToClaim);
         return stakerAmountToClaim;
     }
 
@@ -276,7 +281,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Staked report
     function stakerClaim(uint256 reportId) public notBlacklisted whenNotPaused {
         require(msg.sender != address(0), "LERC20: Cannot be zero address");
-        require( losslessReporting.reporter(reportId) != msg.sender, "LSS: Must use reporterClaim");
         require(!getPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
@@ -285,6 +289,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         address token;
 
         amountToClaim = stakerClaimableAmount(reportId);
+        console.log("amountToClaim: %s", amountToClaim);
         stakeAmount = losslessController.stakeAmount();
         token = losslessReporting.reportTokens(reportId);
 
