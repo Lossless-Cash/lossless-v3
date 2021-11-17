@@ -294,26 +294,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         losslessToken.transfer( msg.sender, stakeAmount);
     }
 
-    /// @notice This function is for the reporter to claim their rewards
-    /// @param reportId Staked report
-    function reporterClaim(uint256 reportId) public notBlacklisted whenNotPaused {
-        
-        require(losslessReporting.reporter(reportId) == msg.sender, "LSS: Must use stakerClaim");
-        require(!losslessController.getReporterPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
-        require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
-
-        uint256 amountToClaim;
-        uint256 stakeAmount;
-
-        amountToClaim = reporterClaimableAmount(reportId);
-        stakeAmount = losslessController.stakeAmount();
-
-        losslessController.setReporterPayoutStatus(msg.sender, true, reportId);
-
-        ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, amountToClaim);
-        losslessToken.transfer(msg.sender, stakeAmount);
-    }
-
     /// @notice This function allows the governance token to retribute an erroneous report
     /// @param adr retribution address
     /// @param amount amount to be retrieved
