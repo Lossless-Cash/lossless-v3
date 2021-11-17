@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prefer-destructuring */
@@ -9,7 +10,7 @@ let adr;
 let env;
 let lerc20Token;
 
-describe('Lossless Reporting', () => {
+describe.only('Lossless Reporting', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -35,7 +36,7 @@ describe('Lossless Reporting', () => {
 
     await env.lssController.connect(adr.lerc20Admin)
       .executeNewSettlementPeriod(lerc20Token.address);
-      
+
     await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
   });
 

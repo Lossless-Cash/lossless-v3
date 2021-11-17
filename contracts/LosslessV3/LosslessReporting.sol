@@ -143,18 +143,21 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the default Lossless Fee
     /// @param fee Percentage attributed to Lossless when a report gets resolved positively
     function setLosslessFee(uint256 fee) public onlyLosslessAdmin {
+        require(0 < fee && fee < 100, "LSS: Invalid amount");
         losslessFee = fee;
     }
 
     /// @notice This function sets the default Stakers Fee
     /// @param fee Percentage attributed to Stakers when a report gets resolved positively
     function setStakersFee(uint256 fee) public onlyLosslessAdmin {
+        require(0 < fee && fee < 100, "LSS: Invalid amount");
         stakersFee = fee;
     }
 
     /// @notice This function sets the default Committee Fee
     /// @param fee Percentage attributed to Stakers when a report gets resolved positively
     function setCommitteeFee(uint256 fee) public onlyLosslessAdmin {
+        require(0 < fee && fee < 100, "LSS: Invalid amount");
         committeeFee = fee;
     }
 
