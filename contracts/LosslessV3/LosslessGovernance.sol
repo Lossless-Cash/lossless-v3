@@ -176,7 +176,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @notice This function returns if the majority of the commitee voted and the resolution of the votes
     /// @param reportId Report number to be checked
     /// @return isMajorityReached result Returns True if the majority has voted and the true if the result is positive
-    function getCommitteeMajorityReachedResult(uint256 reportId) private view returns(bool isMajorityReached, bool result) {        
+    function _getCommitteeMajorityReachedResult(uint256 reportId) private view returns(bool isMajorityReached, bool result) {        
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
 
@@ -313,7 +313,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         reportVote.committeeMemberVoted[msg.sender] = true;
         reportVote.committeeVotes.push(vote);
 
-        (bool isMajorityReached, bool result) = getCommitteeMajorityReachedResult(reportId);
+        (bool isMajorityReached, bool result) = _getCommitteeMajorityReachedResult(reportId);
 
         if (isMajorityReached) {
             reportVote.votes[committeeVoteIndex] = result;
@@ -351,7 +351,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         if (getVote(reportId, tokenOwnersVoteIndex)){ aggreeCount += 1;}}
 
         if (voteCount == 1 || (voteCount + aggreeCount) % 2 != 0) {
-            (bool committeeResoluted, bool committeeResolution) = getCommitteeMajorityReachedResult(reportId);
+            (bool committeeResoluted, bool committeeResolution) = _getCommitteeMajorityReachedResult(reportId);
             if (committeeResoluted) {voteCount += 1;
             if (committeeResolution) {aggreeCount += 1;}}
         }
@@ -466,7 +466,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         address proposedAddress = proposedWalletOnReport[reportId].wallet;
         require(proposedAddress == msg.sender, "LSS: Only proposed adr can claim");
 
-        require(determineProposedWallet(reportId), "LSS: Proposed wallet rejected");
+        require(_determineProposedWallet(reportId), "LSS: Proposed wallet rejected");
 
         address token;
         token = losslessReporting.reportTokens(reportId);
@@ -480,7 +480,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     /// @notice This function determins is the refund wallet was accepted
     /// @param reportId Report to propose the wallet
-    function determineProposedWallet(uint256 reportId) private returns(bool){
+    function _determineProposedWallet(uint256 reportId) private returns(bool){
         
         uint256 agreementCount;
         

@@ -454,7 +454,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function will remove the locks that have already been lifted
     /// @param recipient Address to lift the locks
-    function removeExpiredLocks (address recipient) private {
+    function _removeExpiredLocks (address recipient) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
 
@@ -473,7 +473,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param availableAmount Address to lift the locks
     /// @param account Address to lift the locks
     /// @param amount Address to lift the locks
-    function removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
+    function _removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[account];
 
@@ -504,7 +504,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function add transfers to the lock queues
     /// @param checkpoint Address to lift the locks
     /// @param recipient Address to lift the locks
-    function enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
+    function _enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
 
@@ -549,7 +549,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param sender Address sending the funds
     /// @param recipient Address recieving the funds
     /// @param amount Amount to be transfered
-    function evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
+    function _evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
 
         uint256 settledAmount = getAvailableAmount(msg.sender, sender);
 
@@ -571,13 +571,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             if (dexList[recipient] && amount > dexTranferThreshold) {
                 require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
             } else if (settledAmount < amount) {
-                //removeUsedUpLocks(settledAmount, sender, amount);
+                //_removeUsedUpLocks(settledAmount, sender, amount);
                 require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
             }
         }
 
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
-        enqueueLockedFunds(newCheckpoint, recipient);
+        _enqueueLockedFunds(newCheckpoint, recipient);
 
         return true;
     }
@@ -593,7 +593,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
         
         if (tokenTransferEvaluation[msg.sender] && !dexList[sender]) {
-            require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+            require(_evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
         }
     }
 
@@ -609,7 +609,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[msgSender], "LSS: Recipient is blacklisted");
 
         if (tokenTransferEvaluation[msg.sender]) {
-            require(evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+            require(_evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
         }
 
     }

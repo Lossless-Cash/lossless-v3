@@ -155,7 +155,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @dev The closer to the reportLifetime the staking happen, the higher the coefficient
     /// @param _timestamp Timestamp of the staking
     /// @return The coefficient from the following formula "reportLifetime/(block.timestamp - stakingTimestamp)"
-    function calculateCoefficient(uint256 _timestamp) private view returns (uint256) {
+    function _calculateCoefficient(uint256 _timestamp) private view returns (uint256) {
         return  losslessController.reportLifetime()/((block.timestamp - _timestamp));
     }
 
@@ -186,7 +186,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 stakeAmount = losslessController.stakeAmount();
 
         uint256 stakerCoefficient;
-        stakerCoefficient = calculateCoefficient(reportTimestamp);
+        stakerCoefficient = _calculateCoefficient(reportTimestamp);
 
         stakers[reportId].push(msg.sender);
         stakes[msg.sender].stakeInfoOnReport[reportId].timestamp = block.timestamp;
@@ -205,7 +205,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function sets the payout status to true when claiming
     /// @param reportId Report to change the payout status on
-    function setPayoutStatus(uint256 reportId, address _adr) private {
+    function _setPayoutStatus(uint256 reportId, address _adr) private {
         stakes[_adr].stakeInfoOnReport[reportId].payed = true;
     }
 
@@ -288,7 +288,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakeAmount = losslessController.stakeAmount();
         token = losslessReporting.reportTokens(reportId);
 
-        setPayoutStatus(reportId, msg.sender);
+        _setPayoutStatus(reportId, msg.sender);
 
         ILERC20(token).transfer(msg.sender, amountToClaim);
         losslessToken.transfer( msg.sender, stakeAmount);
