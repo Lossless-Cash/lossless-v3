@@ -160,11 +160,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V3 MODIFIERS ---
 
     /// @notice Avoids execution from other than the Lossless Admin or Lossless Environment
-    modifier onlyFromAdminOrLssSC {
-        require(msg.sender == address(losslessStaking) ||
-                msg.sender == address(losslessReporting)  || 
-                msg.sender == address(losslessGovernance) ||
-                msg.sender == admin, "LSS: Admin or LSS SC only");
+    modifier onlyLosslessEnv {
+        require(msg.sender == address(losslessStaking)   ||
+                msg.sender == address(losslessReporting) || 
+                msg.sender == address(losslessGovernance),
+                "LSS: Lss SC only");
         _;
     }
 
@@ -285,14 +285,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Only can be called by the Lossless Admin, and from other Lossless Contracts
     ///            The address gets blacklisted whenever a report is created on them.
     /// @param _adr Address corresponding to be added to the blacklist mapping
-    function addToBlacklist(address _adr) public onlyFromAdminOrLssSC {
+    function addToBlacklist(address _adr) public onlyLosslessEnv {
         require(!blacklist[_adr], "LSS: Already blacklisted");
         blacklist[_adr] = true;
     }
 
     /// @notice This function calls removeFromBlacklist() and returns a percentage as compensation
     /// @param _adr Address corresponding to be removed from the blacklist mapping
-    function resolvedNegatively(address _adr) public onlyFromAdminOrLssSC {
+    function resolvedNegatively(address _adr) public onlyLosslessEnv {
         require(blacklist[_adr], "LSS: Not blacklisted");
         blacklist[_adr] = false;
     }
@@ -356,7 +356,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the payout status of a reporter
     /// @param _reporter Reporter address
     /// @param status Payout status 
-    function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) public onlyFromAdminOrLssSC {
+    function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) public onlyLosslessEnv {
         reporterClaimStatus[_reporter].reportIdClaimStatus[reportId] = status;
     }
 
@@ -364,7 +364,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev It takes part on the claimableAmount calculation of the Lossless Staking contract
     /// @param reportId Report to be added the coefficient
     /// @param _amt Coefficient amount
-    function addToReportCoefficient(uint256 reportId, uint256 _amt) external onlyFromAdminOrLssSC {
+    function addToReportCoefficient(uint256 reportId, uint256 _amt) external onlyLosslessEnv {
         reportCoefficient[reportId] += _amt;
     }
 
@@ -374,7 +374,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// It gets activated by the Lossless Reporting contract .
     /// It deactivated when a resolution has been reached by the Lossless Governance contract.
     /// @param token Token on which the emergency mode must get activated
-    function activateEmergency(address token) external onlyFromAdminOrLssSC {
+    function activateEmergency(address token) external onlyLosslessEnv {
         emergencyMode[token].emergency = true;
         emergencyMode[token].emergencyTimestamp = block.timestamp;
         emergencyMode[token].emergencyMappingNum += 1;
@@ -382,7 +382,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function deactivates the emergency mode
     /// @param token Token on which the emergency mode must get deactivated
-    function deactivateEmergency(address token) external onlyFromAdminOrLssSC {
+    function deactivateEmergency(address token) external onlyLosslessEnv {
         emergencyMode[token].emergency = false;
     }
 
@@ -520,7 +520,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function retrieves the funds of the reported account
     /// @param _addresses Array of addreses to retrieve the locked funds
-    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) public onlyFromAdminOrLssSC returns(uint256){
+    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) public onlyLosslessEnv returns(uint256){
 
         uint256 totalAmount;
         
