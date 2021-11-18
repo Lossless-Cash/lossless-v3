@@ -28,7 +28,6 @@ interface ILssController {
     function blacklist(address _adr) external view returns (bool);
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
     function reportCoefficient(uint256 reportId) external view returns (uint256);
-    function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool);
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
