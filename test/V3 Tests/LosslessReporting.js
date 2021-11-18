@@ -10,7 +10,7 @@ let adr;
 let env;
 let lerc20Token;
 
-describe.only('Lossless Reporting', () => {
+describe('Lossless Reporting', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,

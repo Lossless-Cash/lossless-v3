@@ -27,6 +27,7 @@ interface ILssController {
 
 interface ILssGovernance {
     function isReportSolved(uint256 reportId) external returns (bool);
+    function reportResolution(uint256 reportId) external view returns(bool);
 }
 
 interface ILssStaking {
@@ -258,6 +259,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(reporter[reportId] == msg.sender, "LSS: Must use stakerClaim");
         require(!losslessController.getReporterPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
+        require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
         uint256 amountToClaim;
 

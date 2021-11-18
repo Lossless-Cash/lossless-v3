@@ -37,6 +37,7 @@ interface ILssController {
 interface ILssGovernance {
     function isReportSolved(uint256 reportId) external view returns(bool);
     function amountReported(uint256 reportId) external view returns(uint256);
+    function reportResolution(uint256 reportId) external view returns(bool);
 }
 
 /// @title Lossless Staking Contract
@@ -263,6 +264,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(msg.sender != address(0), "LERC20: Cannot be zero address");
         require(!getPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
+        require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
         uint256 amountToClaim;
         address token;
