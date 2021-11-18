@@ -104,17 +104,19 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     struct EmergencyMode {
         bool emergency;
         uint256 emergencyTimestamp;
-        uint256 emergencyMappingNum;
-        mapping( uint256 => mapping(address => bool)) emergencyTransfer;
-        mapping( uint256 => mapping(address => bool)) emergencyDexTransfer;
     }
 
-    
     struct ReporterClaimStatus {
         mapping(uint256 => bool) reportIdClaimStatus;
     }
 
     mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
+
+    struct PeriodTransfers {
+        mapping (address => uint256) timestampInToken;
+    }
+
+    mapping (address => PeriodTransfers) private tokenTransferInPeriod;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -236,6 +238,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param newTimelock Timelock in seconds
     function setSettlementTimeLock(uint256 newTimelock) public onlyLosslessAdmin {
         settlementTimeLock = newTimelock;
+    }
+
+    /// @notice This function sets the transfer threshold for Dexes
+    /// @dev Only can be called by the Lossless Admin
+    /// @param newThreshold Timelock in seconds
+    function setDexTrasnferThreshold(uint256 newThreshold) public onlyLosslessAdmin {
+        dexTranferThreshold = newThreshold;
     }
 
     /// @notice This function sets the amount of tokens given to the erroneously reported address
@@ -361,7 +370,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function activateEmergency(address token) external onlyLosslessEnv {
         emergencyMode[token].emergency = true;
         emergencyMode[token].emergencyTimestamp = block.timestamp;
-        emergencyMode[token].emergencyMappingNum += 1;
     }
 
     // --- GUARD ---
@@ -480,8 +488,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     /// @notice This function add transfers to the lock queues
-    /// @param checkpoint Address to lift the locks
-    /// @param recipient Address to lift the locks
+    /// @param checkpoint Address to add the locks
+    /// @param recipient Address to add the locks
     function _enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
@@ -530,30 +538,19 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function _evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
 
         uint256 settledAmount = getAvailableAmount(msg.sender, sender);
+        
+        require(emergencyMode[msg.sender].emergencyTimestamp + tokenLockTimeframe[msg.sender] > block.timestamp 
+                && amount > settledAmount, "LSS: Emergency mode active, cannot transfer unsettled tokens");
+        
+        require(dexList[recipient] && amount > settledAmount && amount - settledAmount >= dexTranferThreshold,
+                "LSS: Cannot transfer over the dex threshold");
 
-        if ((emergencyMode[msg.sender].emergencyTimestamp + tokenLockTimeframe[msg.sender] > block.timestamp && amount >= settledAmount)) {
-            bool regularTransferInEmergencyStatus;
-            regularTransferInEmergencyStatus = emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender];
-            require(!regularTransferInEmergencyStatus, "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
+        require(settledAmount >= amount && tokenTransferInPeriod[sender].timestampInToken[msg.sender] > block.timestamp,
+                "LSS: Amt exceeds settled balance");
 
-            bool dexTransferInEmergencyStatus;
-            dexTransferInEmergencyStatus = emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender];
-            require(!dexList[recipient] && !dexTransferInEmergencyStatus, "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
+        tokenTransferInPeriod[sender].timestampInToken[msg.sender] = block.timestamp + tokenLockTimeframe[msg.sender];
 
-            if (dexList[recipient] && amount > dexTranferThreshold){
-                emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
-            } else {
-                emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
-            }
-        } else {
-            if (dexList[recipient] && amount > dexTranferThreshold) {
-                require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
-            } else if (settledAmount < amount) {
-                //_removeUsedUpLocks(settledAmount, sender, amount);
-                require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
-            }
-        }
-
+        _removeUsedUpLocks(settledAmount, sender, amount);
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
         _enqueueLockedFunds(newCheckpoint, recipient);
 
@@ -570,7 +567,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[sender], "LSS: You cannot operate");
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
         
-        if (tokenTransferEvaluation[msg.sender] && !dexList[sender]) {
+        if (tokenLockTimeframe[msg.sender] != 0) {
             require(_evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
         }
     }
@@ -582,11 +579,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
-        require(!blacklist[sender], "LSS: You cannot operate");
+        require(!blacklist[msgSender], "LSS: You cannot operate");
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
-        require(!blacklist[msgSender], "LSS: Recipient is blacklisted");
+        require(!blacklist[sender], "LSS: Sender is blacklisted");
 
-        if (tokenTransferEvaluation[msg.sender]) {
+        if (tokenLockTimeframe[msg.sender] != 0) {
             require(_evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
         }
 
