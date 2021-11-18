@@ -38,6 +38,7 @@ const setupAddresses = async () => {
     regularUser3,
     regularUser4,
     regularUser5,
+    dexAddress,
   ] = await ethers.getSigners();
 
   return {
@@ -71,6 +72,7 @@ const setupAddresses = async () => {
     regularUser3,
     regularUser4,
     regularUser5,
+    dexAddress,
   };
 };
 

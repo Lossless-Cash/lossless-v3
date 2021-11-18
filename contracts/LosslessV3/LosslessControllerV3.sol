@@ -99,7 +99,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     mapping(uint256 => uint256) public reportCoefficient;
     
-    mapping(address => bool) private dexList;
+    mapping(address => bool) public dexList;
     mapping(address => bool) public whitelist;
     mapping(address => bool) public blacklist;
 

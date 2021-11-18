@@ -22,6 +22,7 @@ interface ILssController {
     function activateEmergency(address token) external;
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
+    function dexList(address dexAddress) external returns (bool);
     function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool);
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
 }
@@ -187,6 +188,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param account Potential malicious address
     function report(address token, address account) public notBlacklisted whenNotPaused returns (uint256){
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
+        require(!losslessController.dexList(account), "LSS: Cannot report Dex");
 
         uint256 reportId = tokenReports[token].reports[account];
         uint256 reportLifetime;
@@ -232,6 +234,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         token = reportTokens[reportId];
 
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
+        require(!losslessController.dexList(account), "LSS: Cannot report Dex");
 
         reportTimestamp = reportTimestamps[reportId];
         reportLifetime = losslessController.reportLifetime();
