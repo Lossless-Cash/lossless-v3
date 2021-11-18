@@ -45,7 +45,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     bytes32 private constant COMMITTEE_ROLE = keccak256("COMMITTEE_ROLE");
 
     uint256 public committeeMembersCount;
-    uint256 public quorumSize;
 
     uint256 public walletDisputePeriod;
 
@@ -200,13 +199,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     /// @notice This function adds committee members    
     /// @param members Array of members to be added
-    /// @param newQuorum New quorum number, based on the members
-    function addCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin whenNotPaused {
-        
-        require(newQuorum > 0, "LSS: Quorum cannot be zero");
-
+    function addCommitteeMembers(address[] memory members) public onlyLosslessAdmin whenNotPaused {
         committeeMembersCount += members.length;
-        quorumSize = newQuorum;
 
         //_updateQuorum(committeeMembersCount);
 
@@ -220,14 +214,10 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     /// @notice This function removes Committee members    
     /// @param members Array of members to be added
-    /// @param newQuorum New quorum number, based on the members
-    function removeCommitteeMembers(address[] memory members, uint256 newQuorum) public onlyLosslessAdmin whenNotPaused {
-        
+    function removeCommitteeMembers(address[] memory members) public onlyLosslessAdmin whenNotPaused {  
         require(committeeMembersCount != 0, "LSS: committee has no members");
-        require(newQuorum > 0, "LSS: Quorum cannot be zero");
 
         committeeMembersCount -= members.length;
-        quorumSize = newQuorum;
 
         //_updateQuorum(committeeMembersCount);
 
@@ -237,17 +227,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         }
 
         emit CommitteeMembersRemoved(members);
-    }
-
-    /// @notice This function automatically updates the quorum number
-    /// @dev Not yet implemented
-    /// @param _newTeamSize Size of the committee 
-    function _updateQuorum(uint256 _newTeamSize) private {
-        if (_newTeamSize != 0) {
-            quorumSize = ((_newTeamSize/2)+1);
-        } else {
-            delete quorumSize;
-        }
     }
 
     /// @notice This function emits a vote on a report by the Lossless Team

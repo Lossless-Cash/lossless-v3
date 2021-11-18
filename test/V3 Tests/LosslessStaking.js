@@ -64,6 +64,9 @@ describe('Lossless Staking', () => {
         [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
       );
 
+      await lerc20Token.connect(adr.lerc20InitialHolder)
+        .transfer(adr.maliciousActor1.address, 1000000);
+
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakeAmount);
 
@@ -214,7 +217,7 @@ describe('Lossless Staking', () => {
       await env.lssToken.connect(adr.staker4).approve(env.lssStaking.address, env.stakeAmount * 2);
 
       await lerc20Token.connect(adr.lerc20InitialHolder)
-        .transfer(adr.maliciousActor1.address, 1000);
+        .transfer(adr.maliciousActor1.address, 1000000);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
@@ -248,7 +251,7 @@ describe('Lossless Staking', () => {
       await env.lssStaking.connect(adr.staker4).stake(1);
 
       await env.lssGovernance.connect(adr.lssAdmin)
-        .addCommitteeMembers([adr.member1.address, adr.member2.address, adr.member3.address], 2);
+        .addCommitteeMembers([adr.member1.address, adr.member2.address, adr.member3.address]);
 
       await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
       await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
@@ -346,7 +349,7 @@ describe('Lossless Staking', () => {
 
           expect(
             await lerc20Token.balanceOf(adr.reporter1.address),
-          ).to.be.equal(20);
+          ).to.be.equal(20000);
 
           expect(
             balance = await env.lssToken.balanceOf(adr.reporter1.address),

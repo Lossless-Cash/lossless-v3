@@ -254,7 +254,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
 /// @notice This function is for the reporter to claim their rewards
     /// @param reportId Staked report
-    function reporterClaim(uint256 reportId) public notBlacklisted whenNotPaused {
+    function reporterClaim(uint256 reportId) public whenNotPaused {
         
         require(reporter[reportId] == msg.sender, "LSS: Must use stakerClaim");
         require(!losslessController.getReporterPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
