@@ -98,11 +98,11 @@ describe('Random LERC20 Token', () => {
     beforeEach(async () => {
       await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter1.address, env.stakeAmount);
+        .transfer(adr.reporter1.address, env.stakingAmount);
       await lerc20Token.connect(adr.lerc20InitialHolder)
-        .transfer(adr.regularUser1.address, env.stakeAmount);
-      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakeAmount);
-      await env.lssToken.connect(adr.regularUser1).approve(env.lssStaking.address, env.stakeAmount);
+        .transfer(adr.regularUser1.address, env.stakingAmount);
+      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
+      await env.lssToken.connect(adr.regularUser1).approve(env.lssStaking.address, env.stakingAmount);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
@@ -119,7 +119,7 @@ describe('Random LERC20 Token', () => {
         ]);
         await expect(
           lerc20Token.connect(adr.regularUser1)
-            .transfer(adr.regularUser4.address, env.stakeAmount + 5),
+            .transfer(adr.regularUser4.address, env.stakingAmount + 5),
         ).to.be.revertedWith('LSS: Amt exceeds settled balance');
       });
     });
@@ -131,10 +131,10 @@ describe('Random LERC20 Token', () => {
         ]);
 
         await lerc20Token.connect(adr.lerc20InitialHolder)
-          .transfer(adr.regularUser1.address, env.stakeAmount);
+          .transfer(adr.regularUser1.address, env.stakingAmount);
 
         await expect(
-          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, env.stakeAmount),
+          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, env.stakingAmount),
         ).to.not.be.reverted;
       });
     });
@@ -146,14 +146,14 @@ describe('Random LERC20 Token', () => {
         ]);
 
         await lerc20Token.connect(adr.lerc20InitialHolder)
-          .transfer(adr.regularUser1.address, env.stakeAmount);
+          .transfer(adr.regularUser1.address, env.stakingAmount);
 
         await expect(
-          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, env.stakeAmount),
+          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, env.stakingAmount),
         ).to.not.be.reverted;
 
         await expect(
-          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, env.stakeAmount),
+          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, env.stakingAmount),
         ).to.be.revertedWith('LSS: Emergency mode active, one transfer of unsettled tokens per period allowed');
       });
     });
@@ -161,7 +161,7 @@ describe('Random LERC20 Token', () => {
     describe('when transfering settled tokens multiple times', () => {
       it('should not revert', async () => {
         await lerc20Token.connect(adr.lerc20InitialHolder)
-          .transfer(adr.regularUser2.address, env.stakeAmount);
+          .transfer(adr.regularUser2.address, env.stakingAmount);
 
         await expect(
           lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser3.address, 1),
@@ -188,10 +188,10 @@ describe('Random LERC20 Token', () => {
     describe('when transfering all unsettled tokens once', () => {
       it('should not revert', async () => {
         await lerc20Token.connect(adr.lerc20InitialHolder)
-          .transfer(adr.regularUser2.address, env.stakeAmount);
+          .transfer(adr.regularUser2.address, env.stakingAmount);
 
         await expect(
-          lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser3.address, env.stakeAmount),
+          lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser3.address, env.stakingAmount),
         ).to.not.be.reverted;
       });
     });

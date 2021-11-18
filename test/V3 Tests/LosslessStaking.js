@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prefer-destructuring */
@@ -68,25 +69,25 @@ describe('Lossless Staking', () => {
         .transfer(adr.maliciousActor1.address, 1000000);
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter1.address, env.stakeAmount);
+        .transfer(adr.reporter1.address, env.stakingAmount);
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.staker1.address, env.stakeAmount);
+        .transfer(adr.staker1.address, env.stakingAmount);
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.staker2.address, env.stakeAmount);
+        .transfer(adr.staker2.address, env.stakingAmount);
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.staker3.address, env.stakeAmount);
+        .transfer(adr.staker3.address, env.stakingAmount);
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.staker4.address, env.stakeAmount);
+        .transfer(adr.staker4.address, env.stakingAmount);
 
-      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakeAmount);
-      await env.lssToken.connect(adr.staker1).approve(env.lssStaking.address, env.stakeAmount);
-      await env.lssToken.connect(adr.staker2).approve(env.lssStaking.address, env.stakeAmount);
-      await env.lssToken.connect(adr.staker3).approve(env.lssStaking.address, env.stakeAmount);
-      await env.lssToken.connect(adr.staker4).approve(env.lssStaking.address, env.stakeAmount);
+      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
+      await env.lssToken.connect(adr.staker1).approve(env.lssStaking.address, env.stakingAmount);
+      await env.lssToken.connect(adr.staker2).approve(env.lssStaking.address, env.stakingAmount);
+      await env.lssToken.connect(adr.staker3).approve(env.lssStaking.address, env.stakingAmount);
+      await env.lssToken.connect(adr.staker4).approve(env.lssStaking.address, env.stakingAmount);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
@@ -199,22 +200,22 @@ describe('Lossless Staking', () => {
       );
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter1.address, env.stakeAmount * 2);
+        .transfer(adr.reporter1.address, env.stakingAmount * 2);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.staker1.address, env.stakeAmount + env.stakeAmount);
+        .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.staker2.address, env.stakeAmount * 2);
+        .transfer(adr.staker2.address, env.stakingAmount * 2);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.staker3.address, env.stakeAmount * 2);
+        .transfer(adr.staker3.address, env.stakingAmount * 2);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.staker4.address, env.stakeAmount * 2);
+        .transfer(adr.staker4.address, env.stakingAmount * 2);
 
       await env.lssToken.connect(adr.reporter1)
-        .approve(env.lssReporting.address, env.stakeAmount * 2);
-      await env.lssToken.connect(adr.staker1).approve(env.lssStaking.address, env.stakeAmount * 2);
-      await env.lssToken.connect(adr.staker2).approve(env.lssStaking.address, env.stakeAmount * 2);
-      await env.lssToken.connect(adr.staker3).approve(env.lssStaking.address, env.stakeAmount * 2);
-      await env.lssToken.connect(adr.staker4).approve(env.lssStaking.address, env.stakeAmount * 2);
+        .approve(env.lssReporting.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker1).approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker2).approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker3).approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker4).approve(env.lssStaking.address, env.stakingAmount * 2);
 
       await lerc20Token.connect(adr.lerc20InitialHolder)
         .transfer(adr.maliciousActor1.address, 1000000);
@@ -295,7 +296,7 @@ describe('Lossless Staking', () => {
           let balance;
           expect(
             balance = await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(0);
+          ).to.not.be.empty;
 
           expect(
             balance = await env.lssToken.balanceOf(adr.staker1.address),
@@ -305,11 +306,11 @@ describe('Lossless Staking', () => {
 
           expect(
             await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(0);
+          ).to.not.be.empty;
 
           expect(
             balance = await env.lssToken.balanceOf(adr.staker1.address),
-          ).to.be.equal(env.stakeAmount * 2);
+          ).to.be.equal(env.stakingAmount * 2);
         });
       });
 
@@ -343,7 +344,7 @@ describe('Lossless Staking', () => {
 
           expect(
             balance = await env.lssToken.balanceOf(adr.reporter1.address),
-          ).to.be.equal(2500);
+          ).to.be.equal(4000);
 
           await env.lssReporting.connect(adr.reporter1).reporterClaim(1);
 
@@ -353,7 +354,7 @@ describe('Lossless Staking', () => {
 
           expect(
             balance = await env.lssToken.balanceOf(adr.reporter1.address),
-          ).to.be.equal(env.stakeAmount * 2);
+          ).to.be.equal(env.stakingAmount * 2);
         });
       });
 

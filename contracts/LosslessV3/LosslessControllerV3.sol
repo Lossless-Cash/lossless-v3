@@ -56,10 +56,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     // --- V3 VARIABLES ---
-
-    uint256 public stakeAmount;
-    uint256 public reportLifetime;
-
     uint256 public lockCheckpointExpiration;
 
     uint256 public dexTranferThreshold;
@@ -316,18 +312,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setGovernanceContractAddress(address _adr) public onlyLosslessAdmin {
         require(_adr != address(0), "LERC20: Cannot be zero address");
         losslessGovernance = ILssGovernance(_adr);
-    }
-
-    /// @notice This function sets the amount of tokens to be staked when reporting or staking
-    /// @param _stakeAmount Amount to be staked
-    function setStakeAmount(uint256 _stakeAmount) public onlyLosslessAdmin {
-        stakeAmount = _stakeAmount;
-    }
-
-    /// @notice This function sets the default lifetime of the reports
-    /// @param _lifetime Time frame of which a report is active
-    function setReportLifetime(uint256 _lifetime) public onlyLosslessAdmin {
-        reportLifetime = _lifetime;
     }
 
     /// @notice This function starts the Timelock to change the settlement period

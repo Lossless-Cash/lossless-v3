@@ -39,10 +39,10 @@ describe('Lossless Governance', () => {
     await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
 
     await env.lssToken.connect(adr.lssInitialHolder)
-      .transfer(adr.reporter1.address, env.stakeAmount);
+      .transfer(adr.reporter1.address, env.stakingAmount);
     await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 1000);
 
-    await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakeAmount);
+    await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
 
     await ethers.provider.send('evm_increaseTime', [
       Number(time.duration.minutes(5)),
@@ -809,18 +809,18 @@ describe('Lossless Governance', () => {
         ]);
 
         await env.lssToken.connect(adr.lssInitialHolder)
-          .transfer(adr.staker1.address, env.stakeAmount + env.stakeAmount);
+          .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
         await env.lssToken.connect(adr.lssInitialHolder)
-          .transfer(adr.staker2.address, env.stakeAmount * 2);
+          .transfer(adr.staker2.address, env.stakingAmount * 2);
         await env.lssToken.connect(adr.lssInitialHolder)
-          .transfer(adr.staker3.address, env.stakeAmount * 2);
+          .transfer(adr.staker3.address, env.stakingAmount * 2);
 
         await env.lssToken.connect(adr.staker1)
-          .approve(env.lssStaking.address, env.stakeAmount * 2);
+          .approve(env.lssStaking.address, env.stakingAmount * 2);
         await env.lssToken.connect(adr.staker2)
-          .approve(env.lssStaking.address, env.stakeAmount * 2);
+          .approve(env.lssStaking.address, env.stakingAmount * 2);
         await env.lssToken.connect(adr.staker3)
-          .approve(env.lssStaking.address, env.stakeAmount * 2);
+          .approve(env.lssStaking.address, env.stakingAmount * 2);
 
         await ethers.provider.send('evm_increaseTime', [
           Number(time.duration.minutes(5)),
@@ -848,7 +848,7 @@ describe('Lossless Governance', () => {
 
         expect(
           await env.lssToken.balanceOf(adr.maliciousActor1.address),
-        ).to.be.equal(env.stakeAmount * compensationPercentage / 100);
+        ).to.be.equal(env.stakingAmount * compensationPercentage / 100);
       });
 
       it('should revert if tries to retrieve twice', async () => {
@@ -857,18 +857,18 @@ describe('Lossless Governance', () => {
         ]);
 
         await env.lssToken.connect(adr.lssInitialHolder)
-          .transfer(adr.staker1.address, env.stakeAmount + env.stakeAmount);
+          .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
         await env.lssToken.connect(adr.lssInitialHolder)
-          .transfer(adr.staker2.address, env.stakeAmount * 2);
+          .transfer(adr.staker2.address, env.stakingAmount * 2);
         await env.lssToken.connect(adr.lssInitialHolder)
-          .transfer(adr.staker3.address, env.stakeAmount * 2);
+          .transfer(adr.staker3.address, env.stakingAmount * 2);
 
         await env.lssToken.connect(adr.staker1)
-          .approve(env.lssStaking.address, env.stakeAmount * 2);
+          .approve(env.lssStaking.address, env.stakingAmount * 2);
         await env.lssToken.connect(adr.staker2)
-          .approve(env.lssStaking.address, env.stakeAmount * 2);
+          .approve(env.lssStaking.address, env.stakingAmount * 2);
         await env.lssToken.connect(adr.staker3)
-          .approve(env.lssStaking.address, env.stakeAmount * 2);
+          .approve(env.lssStaking.address, env.stakingAmount * 2);
 
         await ethers.provider.send('evm_increaseTime', [
           Number(time.duration.minutes(5)),
@@ -903,18 +903,18 @@ describe('Lossless Governance', () => {
         ]);
 
         await env.lssToken.connect(adr.lssInitialHolder)
-          .transfer(adr.staker1.address, env.stakeAmount + env.stakeAmount);
+          .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
         await env.lssToken.connect(adr.lssInitialHolder)
-          .transfer(adr.staker2.address, env.stakeAmount * 2);
+          .transfer(adr.staker2.address, env.stakingAmount * 2);
         await env.lssToken.connect(adr.lssInitialHolder)
-          .transfer(adr.staker3.address, env.stakeAmount * 2);
+          .transfer(adr.staker3.address, env.stakingAmount * 2);
 
         await env.lssToken.connect(adr.staker1)
-          .approve(env.lssStaking.address, env.stakeAmount * 2);
+          .approve(env.lssStaking.address, env.stakingAmount * 2);
         await env.lssToken.connect(adr.staker2)
-          .approve(env.lssStaking.address, env.stakeAmount * 2);
+          .approve(env.lssStaking.address, env.stakingAmount * 2);
         await env.lssToken.connect(adr.staker3)
-          .approve(env.lssStaking.address, env.stakeAmount * 2);
+          .approve(env.lssStaking.address, env.stakingAmount * 2);
 
         await ethers.provider.send('evm_increaseTime', [
           Number(time.duration.minutes(5)),
