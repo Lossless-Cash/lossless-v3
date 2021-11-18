@@ -208,12 +208,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         emit Staked(losslessReporting.reportTokens(reportId), msg.sender, reportId);
     }
 
-    /// @notice This function sets the payout status to true when claiming
-    /// @param reportId Report to change the payout status on
-    function _setPayoutStatus(uint256 reportId, address _adr) private {
-        stakes[_adr].stakeInfoOnReport[reportId].payed = true;
-    }
-
     // --- CLAIM ---
 
     /// @notice This function returns the claimable amount by the reporter
@@ -276,7 +270,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         amountToClaim = stakerClaimableAmount(reportId);
         token = losslessReporting.reportTokens(reportId);
 
-        _setPayoutStatus(reportId, msg.sender);
+        stakes[msg.sender].stakeInfoOnReport[reportId].payed = true;
 
         ILERC20(token).transfer(msg.sender, amountToClaim);
         losslessToken.transfer( msg.sender, stakingAmount);
