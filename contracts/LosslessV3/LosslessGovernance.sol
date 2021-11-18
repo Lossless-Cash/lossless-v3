@@ -13,6 +13,7 @@ interface ILssReporting {
     function secondReportedAddress(uint256 reportId) external view returns (address);
     function secondReports(uint256 reportId) external view returns (bool);
     function reportLifetime() external view returns(uint256);
+    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
 }
 
 interface ILssController {
@@ -498,5 +499,23 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         compensation[msg.sender].amount = 0;
 
         emit CompensationRetrieved(msg.sender);
+    }
+
+    ///@notice This function is for committee members to claim their rewards
+    ///@param reportId report ID to claim reward from
+    function claimCommitteeRewardClaim(uint256 reportId) public {
+        require(isCommitteeMember(msg.sender), "LSS: Must be committee member");
+        require(isReportSolved(reportId), "LSS: Report is not solved.");
+        require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
+
+        uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
+        (,,uint256 committeeFee,) = losslessReporting.getFees();
+        uint256 compensationPerMember = (retrievalAmount[reportId] * committeeFee /  10**2) / numberOfMembersVote;
+
+        console.log("numberOfMembersVote %s", numberOfMembersVote);
+        console.log("committeeFee %s", committeeFee);
+        console.log("retrievalAmount[reportId] %s", retrievalAmount[reportId]);
+        console.log("compensationPerMember %s", compensationPerMember);
+        //Transfer the individual value
     }
 }

@@ -9,7 +9,7 @@ const { setupAddresses, setupEnvironment, setupToken } = require('./utilsV3');
 let adr;
 let env;
 
-describe('Lossless Governance', () => {
+describe.only('Lossless Governance', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -355,7 +355,7 @@ describe('Lossless Governance', () => {
           });
         });
       });
-      describe('when only Lossless Team and Committee vote', () => {
+      describe.only('when only Lossless Team and Committee vote', () => {
         describe('when both vote positively', () => {
           beforeEach(async () => {
             await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
@@ -385,6 +385,12 @@ describe('Lossless Governance', () => {
             expect(
               await env.lssGovernance.reportResolution(1),
             ).to.be.equal(true);
+
+            await env.lssGovernance.connect(adr.member1).claimCommitteeRewardClaim(1);
+
+            await expect(
+              env.lssGovernance.connect(adr.member5).claimCommitteeRewardClaim(1),
+            ).to.be.revertedWith('LSS: Did not vote on report');
           });
         });
         describe('when both vote negatively', () => {

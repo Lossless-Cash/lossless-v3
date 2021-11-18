@@ -506,8 +506,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                 
         (uint256 reporterReward, uint256 losslessFee, uint256 committeeFee, uint256 stakersFee) = losslessReporting.getFees();
 
-        uint256 feesRetrieveAmount = totalAmount * (stakersFee + losslessFee + committeeFee) / 10**2;
-        
+        uint256 feesRetrieveAmount = totalAmount * (stakersFee + losslessFee) / 10**2;
         uint256 reporterFeeRetrieveAmount = totalAmount * (reporterReward) / 10**2;
 
         ILERC20(token).transfer(address(losslessStaking), feesRetrieveAmount);
