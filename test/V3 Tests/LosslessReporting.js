@@ -87,6 +87,18 @@ describe('Lossless Reporting', () => {
       });
     });
 
+    describe('when reporting a Dex address', () => {
+      beforeEach(async () => {
+        await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
+      });
+      it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, adr.dexAddress.address),
+        ).to.be.revertedWith('LSS: Cannot report Dex');
+      });
+    });
+
     describe('when succesfully generating a report', () => {
       it('should not revert', async () => {
         await env.lssReporting.connect(adr.reporter1)
