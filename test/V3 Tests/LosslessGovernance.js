@@ -9,7 +9,7 @@ const { setupAddresses, setupEnvironment, setupToken } = require('./utilsV3');
 let adr;
 let env;
 
-describe.only('Lossless Governance', () => {
+describe('Lossless Governance', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -355,7 +355,7 @@ describe.only('Lossless Governance', () => {
           });
         });
       });
-      describe.only('when only Lossless Team and Committee vote', () => {
+      describe('when only Lossless Team and Committee vote', () => {
         describe('when both vote positively', () => {
           beforeEach(async () => {
             await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
@@ -375,6 +375,14 @@ describe.only('Lossless Governance', () => {
             ).to.be.equal(true);
           });
 
+          describe('when members try to claim before the report is solved', () => {
+            it('should revert', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member1).claimCommitteeReward(1),
+              ).to.be.revertedWith('LSS: Report is not solved.');
+            });
+          });
+
           it('should resolve positvely', async () => {
             await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -385,12 +393,45 @@ describe.only('Lossless Governance', () => {
             expect(
               await env.lssGovernance.reportResolution(1),
             ).to.be.equal(true);
+          });
 
-            await env.lssGovernance.connect(adr.member1).claimCommitteeRewardClaim(1);
+          describe('when members claim their rewards', () => {
+            beforeEach(async () => {
+              await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+            });
 
-            await expect(
-              env.lssGovernance.connect(adr.member5).claimCommitteeRewardClaim(1),
-            ).to.be.revertedWith('LSS: Did not vote on report');
+            it('should revert if member didnt vote', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member5).claimCommitteeReward(1),
+              ).to.be.revertedWith('LSS: Did not vote on report');
+            });
+
+            it('should revert if its not a committee member', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.regularUser1).claimCommitteeReward(1),
+              ).to.be.revertedWith('LSS: Must be committee member');
+            });
+
+            it('should not revert when member 1 claims', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member1).claimCommitteeReward(1),
+              ).to.not.be.reverted;
+            });
+            it('should not revert when member 2 claims', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member2).claimCommitteeReward(1),
+              ).to.not.be.reverted;
+            });
+            it('should not revert when member 3 claims', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member3).claimCommitteeReward(1),
+              ).to.not.be.reverted;
+            });
+            it('should not revert when member 4 claims', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member4).claimCommitteeReward(1),
+              ).to.not.be.reverted;
+            });
           });
         });
         describe('when both vote negatively', () => {
@@ -422,6 +463,45 @@ describe.only('Lossless Governance', () => {
             expect(
               await env.lssGovernance.reportResolution(1),
             ).to.be.equal(false);
+          });
+
+          describe('when members claim their rewards', () => {
+            beforeEach(async () => {
+              await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+            });
+
+            it('should revert if member didnt vote', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member5).claimCommitteeReward(1),
+              ).to.be.revertedWith('LSS: Did not vote on report');
+            });
+
+            it('should revert if its not a committee member', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.regularUser1).claimCommitteeReward(1),
+              ).to.be.revertedWith('LSS: Must be committee member');
+            });
+
+            it('should not revert when member 1 claims', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member1).claimCommitteeReward(1),
+              ).to.not.be.reverted;
+            });
+            it('should not revert when member 2 claims', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member2).claimCommitteeReward(1),
+              ).to.not.be.reverted;
+            });
+            it('should not revert when member 3 claims', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member3).claimCommitteeReward(1),
+              ).to.not.be.reverted;
+            });
+            it('should not revert when member 4 claims', async () => {
+              await expect(
+                env.lssGovernance.connect(adr.member4).claimCommitteeReward(1),
+              ).to.not.be.reverted;
+            });
           });
         });
         describe('when Lossless Team votes negative and Token Owners positive', () => {
