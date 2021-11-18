@@ -223,13 +223,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function reporterClaimableAmount(uint256 reportId) public view returns (uint256) {
 
         uint256 reporterReward;
-        uint256 amountStakedOnReport;
+        uint256 amountReported;
 
-        amountStakedOnReport = losslessGovernance.amountReported(reportId);
+        amountReported = losslessGovernance.amountReported(reportId);
 
         (reporterReward,,,) = losslessReporting.getFees();
 
-        return amountStakedOnReport * reporterReward / 10**2;
+        return amountReported * reporterReward / 10**2;
     }
     
     /// @notice This function returns the claimable amount by the stakers
