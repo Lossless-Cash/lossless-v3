@@ -185,13 +185,11 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(!getIsAccountStaked(reportId, msg.sender), "LSS: already staked");
         require(losslessReporting.reporter(reportId) != msg.sender, "LSS: reporter can not stake");   
 
-        uint256 reportTimestamp;
-        reportTimestamp = losslessReporting.reportTimestamps(reportId);
+        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
 
         require(reportId > 0 && (reportTimestamp + losslessReporting.reportLifetime()) > block.timestamp, "LSS: report does not exists");
 
-        uint256 stakerCoefficient;
-        stakerCoefficient = _calculateCoefficient(reportTimestamp);
+        uint256 stakerCoefficient = _calculateCoefficient(reportTimestamp);
 
         stakers[reportId].push(msg.sender);
         stakes[msg.sender].stakeInfoOnReport[reportId].timestamp = block.timestamp;
@@ -222,12 +220,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Staked report    
     function reporterClaimableAmount(uint256 reportId) public view returns (uint256) {
 
-        uint256 reporterReward;
-        uint256 amountStakedOnReport;
-
-        amountStakedOnReport = losslessGovernance.amountReported(reportId);
-
-        (reporterReward,,,) = losslessReporting.getFees();
+        uint256 amountStakedOnReport = losslessGovernance.amountReported(reportId);
+        (uint256 reporterReward,,,) = losslessReporting.getFees();
 
         return amountStakedOnReport * reporterReward / 10**2;
     }
@@ -238,27 +232,16 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Staked report
     function stakerClaimableAmount(uint256 reportId) public view returns (uint256) {
 
-        uint256 reporterReward;
-        uint256 stakersFee;
-        uint256 amountStakedOnReport;
-        uint256 stakerCoefficient;
-        uint256 stakerPercentage;
-        uint256 stakerAmountToClaim;
-        uint256 secondsCoefficient;
-        uint256 reportCoefficient;
-        address reportedToken;
-        address reportedWallet;
-
-        amountStakedOnReport = losslessGovernance.amountReported(reportId);
-        (reporterReward,,,stakersFee) = losslessReporting.getFees();
-        reportedToken = losslessReporting.reportTokens(reportId);
-        reportedWallet = losslessReporting.reportedAddress(reportId);
+        address reportedToken = losslessReporting.reportTokens(reportId);
+        address reportedWallet = losslessReporting.reportedAddress(reportId);
+        (uint256 reporterReward,,, uint256 stakersFee) = losslessReporting.getFees();
+        uint256 amountStakedOnReport = losslessGovernance.amountReported(reportId);
         amountStakedOnReport = amountStakedOnReport * stakersFee / 10**2;
-        stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
-        reportCoefficient = losslessController.reportCoefficient(reportId);
-        secondsCoefficient = 10**4/reportCoefficient;
-        stakerPercentage = (secondsCoefficient * stakerCoefficient);
-        stakerAmountToClaim = (amountStakedOnReport * stakerPercentage) / 10**4;
+        uint256 stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
+        uint256 reportCoefficient = losslessController.reportCoefficient(reportId);
+        uint256 secondsCoefficient = 10**4/reportCoefficient;
+        uint256 stakerPercentage = (secondsCoefficient * stakerCoefficient);
+        uint256 stakerAmountToClaim = (amountStakedOnReport * stakerPercentage) / 10**4;
         return stakerAmountToClaim;
     }
 
@@ -270,11 +253,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(!getPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
-        uint256 amountToClaim;
-        address token;
-
-        amountToClaim = stakerClaimableAmount(reportId);
-        token = losslessReporting.reportTokens(reportId);
+        uint256 amountToClaim = stakerClaimableAmount(reportId);
+        address token = losslessReporting.reportTokens(reportId);
 
         _setPayoutStatus(reportId, msg.sender);
 

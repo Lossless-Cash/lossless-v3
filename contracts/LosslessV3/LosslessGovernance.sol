@@ -314,8 +314,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
                 || msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
                 "LSS: Role cannot resolve.");
         
-        address token;
-        token = losslessReporting.reportTokens(reportId);
+        address token = losslessReporting.reportTokens(reportId);
 
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -338,14 +337,12 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(voteCount >= 2, "LSS: Not enough votes");
         require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need anothe vote to untie");
         
-        address reportedAddress;
-        reportedAddress = losslessReporting.reportedAddress(reportId);
+        address reportedAddress = losslessReporting.reportedAddress(reportId);
 
         reportedAddresses.push(reportedAddress);
 
         if (losslessReporting.secondReports(reportId)) {
-            address secondReportedAddress;
-            secondReportedAddress = losslessReporting.secondReportedAddress(reportId);
+            address secondReportedAddress = losslessReporting.secondReportedAddress(reportId);
             reportedAddresses.push(secondReportedAddress);
         }
 
@@ -447,8 +444,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         require(_determineProposedWallet(reportId), "LSS: Proposed wallet rejected");
 
-        address token;
-        token = losslessReporting.reportTokens(reportId);
+        address token = losslessReporting.reportTokens(reportId);
 
         proposedWalletOnReport[reportId].status = true;
 

@@ -231,15 +231,11 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param reportId Report that was previously generated.
     /// @param account Potential malicious address
     function secondReport(uint256 reportId, address account) public notBlacklisted whenNotPaused {
-        uint256 reportTimestamp;
-        address token;
-
-        token = reportTokens[reportId];
-
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
         require(!losslessController.dexList(account), "LSS: Cannot report Dex");
 
-        reportTimestamp = reportTimestamps[reportId];
+        uint256 reportTimestamp = reportTimestamps[reportId];
+        address token = reportTokens[reportId];
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(secondReports[reportId] == false, "LSS: Another already submitted");
@@ -262,9 +258,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(!losslessController.getReporterPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
 
-        uint256 amountToClaim;
-
-        amountToClaim = losslessStaking.reporterClaimableAmount(reportId);
+        uint256 amountToClaim = losslessStaking.reporterClaimableAmount(reportId);
 
         losslessController.setReporterPayoutStatus(msg.sender, true, reportId);
 

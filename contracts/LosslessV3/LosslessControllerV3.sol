@@ -500,19 +500,15 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _addresses Array of addreses to retrieve the locked funds
     function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) public onlyLosslessEnv returns(uint256){
 
-        uint256 totalAmount;
+        uint256 totalAmount = losslessGovernance.amountReported(reportId);
         
-        totalAmount = losslessGovernance.amountReported(reportId);
-
         ILERC20(token).transferOutBlacklistedFunds(_addresses);
                 
-        uint256 feesRetrieveAmount;
-        uint256 reporterFeeRetrieveAmount;
-
         (uint256 reporterReward, uint256 losslessFee, uint256 committeeFee, uint256 stakersFee) = losslessReporting.getFees();
 
-        feesRetrieveAmount = totalAmount * (stakersFee + losslessFee + committeeFee) / 10**2;
-        reporterFeeRetrieveAmount = totalAmount * (reporterReward) / 10**2;
+        uint256 feesRetrieveAmount = totalAmount * (stakersFee + losslessFee + committeeFee) / 10**2;
+        
+        uint256 reporterFeeRetrieveAmount = totalAmount * (reporterReward) / 10**2;
 
         ILERC20(token).transfer(address(losslessStaking), feesRetrieveAmount);
         ILERC20(token).transfer(address(losslessReporting), reporterFeeRetrieveAmount);
