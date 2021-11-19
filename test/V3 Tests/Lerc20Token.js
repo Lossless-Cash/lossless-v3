@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-undef */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prefer-destructuring */
@@ -73,10 +74,10 @@ describe('Random LERC20 Token', () => {
       await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
     });
 
-    it('should revert if 5 minutes haven\'t passed', async () => {
+    it('should not revert if 5 minutes haven\'t passed but its the first transfer', async () => {
       await expect(
         lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 5),
-      ).to.be.revertedWith('LSS: Amt exceeds settled balance');
+      ).to.not.be.reverted;
     });
 
     it('should not revert', async () => {
@@ -100,7 +101,7 @@ describe('Random LERC20 Token', () => {
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakingAmount);
       await lerc20Token.connect(adr.lerc20InitialHolder)
-        .transfer(adr.regularUser1.address, env.stakingAmount);
+        .transfer(adr.regularUser1.address, env.stakingAmount + 200);
       await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
       await env.lssToken.connect(adr.regularUser1).approve(env.lssStaking.address, env.stakingAmount);
 
@@ -113,18 +114,15 @@ describe('Random LERC20 Token', () => {
     });
 
     describe('when a settlement period passes', () => {
-      it('should disable emergency mode', async () => {
-        await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.minutes(6)),
-        ]);
+      it('should not revert', async () => {
         await expect(
           lerc20Token.connect(adr.regularUser1)
-            .transfer(adr.regularUser4.address, env.stakingAmount + 5),
-        ).to.be.revertedWith('LSS: Amt exceeds settled balance');
+            .transfer(adr.regularUser1.address, env.stakingAmount + 5),
+        ).to.not.be.reverted;
       });
     });
 
-    describe('when transfering once in a period', () => {
+    describe('when transfering settled tokens', () => {
       it('should not revert', async () => {
         await ethers.provider.send('evm_increaseTime', [
           Number(time.duration.minutes(1)),
@@ -139,22 +137,14 @@ describe('Random LERC20 Token', () => {
       });
     });
 
-    describe('when transfering unsettled tokens twice', () => {
-      it('should revert', async () => {
-        await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.minutes(1)),
-        ]);
-
+    describe('when transfering unsettled tokens for the first time in a period', () => {
+      it('should not revert', async () => {
         await lerc20Token.connect(adr.lerc20InitialHolder)
           .transfer(adr.regularUser1.address, env.stakingAmount);
 
         await expect(
           lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, env.stakingAmount),
         ).to.not.be.reverted;
-
-        await expect(
-          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, env.stakingAmount),
-        ).to.be.revertedWith('LSS: Emergency mode active, one transfer of unsettled tokens per period allowed');
       });
     });
 
@@ -162,6 +152,10 @@ describe('Random LERC20 Token', () => {
       it('should not revert', async () => {
         await lerc20Token.connect(adr.lerc20InitialHolder)
           .transfer(adr.regularUser2.address, env.stakingAmount);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(16)),
+        ]);
 
         await expect(
           lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser3.address, 1),
@@ -192,7 +186,7 @@ describe('Random LERC20 Token', () => {
 
         await expect(
           lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser3.address, env.stakingAmount),
-        ).to.not.be.reverted;
+        ).to.be.revertedWith('LSS: Emergency mode active, cannot transfer unsettled tokens');
       });
     });
   });

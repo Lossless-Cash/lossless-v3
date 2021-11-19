@@ -543,18 +543,17 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                 require(amount - settledAmount >= dexTranferThreshold,
                         "LSS: Cannot transfer over the dex threshold");
             } else {
+                _removeUsedUpLocks(settledAmount, sender, amount);
                 require(tokenTransferInPeriod[sender].timestampInToken[msg.sender] < block.timestamp,
                         "LSS: Amt exceeds settled balance");
-                _removeUsedUpLocks(settledAmount, sender, amount);
-                _removeExpiredLocks(recipient);
             }
-
         }
 
         tokenTransferInPeriod[sender].timestampInToken[msg.sender] = block.timestamp + tokenLockTimeframe[msg.sender];
 
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
         _enqueueLockedFunds(newCheckpoint, recipient);
+        _removeExpiredLocks(recipient);
         return true;
     }
 
