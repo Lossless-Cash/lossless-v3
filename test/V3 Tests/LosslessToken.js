@@ -45,7 +45,7 @@ describe('Lossless Token', () => {
       ).to.not.be.reverted;
       await expect(
         env.lssToken.connect(adr.regularUser2).transfer(adr.regularUser3.address, 5),
-      ).to.be.revertedWith('LSS: Amt exceeds settled balance');
+      ).to.be.revertedWith('LSS: Transfers limit reached');
     });
 
     it('should not revert', async () => {
