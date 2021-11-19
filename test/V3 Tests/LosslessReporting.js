@@ -36,8 +36,6 @@ describe('Lossless Reporting', () => {
 
     await env.lssController.connect(adr.lerc20Admin)
       .executeNewSettlementPeriod(lerc20Token.address);
-
-    await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
   });
 
   describe('when paused', () => {

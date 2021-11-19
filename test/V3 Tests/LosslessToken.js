@@ -25,8 +25,6 @@ describe('Lossless Token', () => {
 
     await env.lssController.connect(adr.lssAdmin)
       .executeNewSettlementPeriod(env.lssToken.address);
-
-    await env.lssController.connect(adr.lssAdmin).setTokenEvaluation(env.lssToken.address, true);
   });
 
   describe('when transfering between users', () => {

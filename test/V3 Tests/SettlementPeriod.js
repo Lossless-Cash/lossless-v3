@@ -246,4 +246,92 @@ describe('Settlement Period', () => {
       });
     });
   });
+
+  describe('when settlement period is inactive', () => {
+    beforeEach(async () => {
+      await env.lssController.connect(adr.lerc20Admin)
+        .proposeNewSettlementPeriod(lerc20Token.address, 0);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.hours(13)),
+      ]);
+
+      await env.lssController.connect(adr.lerc20Admin)
+        .executeNewSettlementPeriod(lerc20Token.address);
+    });
+
+    describe('when transfering to a dex', () => {
+      beforeEach(async () => {
+        await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(6)),
+        ]);
+
+        await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 50);
+      });
+
+      it('should not revert when transfering unsettled over the dex threshold', async () => {
+        await expect(
+          lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 145),
+        ).to.not.be.reverted;
+      });
+
+      it('should not revert when transfering unsettled below the dex threshold', async () => {
+        await expect(
+          lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 115),
+        ).to.not.be.reverted;
+      });
+
+      it('should not revert when transfering settled tokens', async () => {
+        await expect(
+          lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 99),
+        ).to.not.be.reverted;
+      });
+    });
+
+    describe('when transfering between users', () => {
+      beforeEach(async () => {
+        await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(6)),
+        ]);
+
+        await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 50);
+      });
+
+      it('should not revert if it\'s the first unsettled transfer in a period', async () => {
+        await expect(
+          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser2.address, 145),
+        ).to.not.be.reverted;
+      });
+
+      it('should not revert if transfering settled tokens', async () => {
+        await expect(
+          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser2.address, 50),
+        ).to.not.be.reverted;
+      });
+
+      it('should not revert when settlement period pass', async () => {
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(6)),
+        ]);
+
+        await expect(
+          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser2.address, 150),
+        ).to.not.be.reverted;
+      });
+
+      it('should not revert if it\'s not the first unsettled transfer in a period', async () => {
+        await expect(
+          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser2.address, 110),
+        ).to.not.be.reverted;
+
+        await expect(
+          lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser2.address, 10),
+        ).to.not.be.reverted;
+      });
+    });
+  });
 });
