@@ -216,7 +216,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets default values for Contoller V3
     /// @dev Called on startur
     function setControllerV3Defaults() public onlyLosslessAdmin {
-        dexTranferThreshold = 2;
+        dexTranferThreshold = 20;
         erroneousCompensation = 2;
         whitelist[admin] = true;
         whitelist[recoveryAdmin]  = true;
@@ -277,15 +277,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         }
     }
 
-    /// @notice This function lets token owners decide wheter or not add transfer evaluations
-    /// @dev Only can be called by the Token Admin
-    /// @param token Token to change
-    /// @param value Flag status
-    function setTokenEvaluation(address token, bool value) public {
-        require(msg.sender == ILERC20(token).admin(), "LSS: Only token admin");
-        tokenTransferEvaluation[token] = value;
-    }
-
     /// @notice This function adds an address to the blacklist
     /// @dev Only can be called by the Lossless Admin, and from other Lossless Contracts
     ///            The address gets blacklisted whenever a report is created on them.
@@ -329,6 +320,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _seconds Time frame of the recieved funds will be locked
     function proposeNewSettlementPeriod(address token, uint256 _seconds) public {
         require(ILERC20(token).admin() == msg.sender, "LSS: Must be Token Admin");
+        require(changeSettlementTimelock[token] <= block.timestamp, "LSS: Time lock in progress");
         changeSettlementTimelock[token] = block.timestamp + settlementTimeLock;
         isNewSettlementProposed[token] = true;
         proposedTokenLockTimeframe[token] = _seconds;
@@ -535,12 +527,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param amount Amount to be transfered
     function _evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
         uint256 settledAmount = getAvailableAmount(msg.sender, sender);
-
         if (amount > settledAmount) {
             require(emergencyMode[msg.sender].emergencyTimestamp + tokenLockTimeframe[msg.sender] < block.timestamp,
                     "LSS: Emergency mode active, cannot transfer unsettled tokens");
             if (dexList[recipient]) {
-                require(amount - settledAmount >= dexTranferThreshold,
+                require(amount - settledAmount <= dexTranferThreshold,
                         "LSS: Cannot transfer over the dex threshold");
             } else {
                 _removeUsedUpLocks(settledAmount, sender, amount);
