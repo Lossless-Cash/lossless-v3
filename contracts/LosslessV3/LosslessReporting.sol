@@ -28,6 +28,7 @@ interface ILssController {
 
 interface ILssGovernance {
     function isReportSolved(uint256 reportId) external returns (bool);
+    function reportResolution(uint256 reportId) external view returns(bool);
 }
 
 interface ILssStaking {
@@ -58,6 +59,12 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
     mapping(address => TokenReports) private tokenReports;
+
+    struct ReporterClaimStatus {
+        mapping(uint256 => bool) reportIdClaimStatus;
+    }
+
+    mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
 
     mapping(uint256 => address) public reporter;
     mapping(uint256 => address) public reportedAddress;
@@ -168,8 +175,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportLifetime = _lifetime;
     }
 
-
-
     // --- GETTERS ---
 
     /// @notice This function gets the contract version
@@ -231,15 +236,12 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param reportId Report that was previously generated.
     /// @param account Potential malicious address
     function secondReport(uint256 reportId, address account) public notBlacklisted whenNotPaused {
-        uint256 reportTimestamp;
-        address token;
-
-        token = reportTokens[reportId];
-
+        require(!losslessGovernance.isReportSolved(reportId), "LSS: Report already solved.");
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
         require(!losslessController.dexList(account), "LSS: Cannot report Dex");
 
-        reportTimestamp = reportTimestamps[reportId];
+        uint256 reportTimestamp = reportTimestamps[reportId];
+        address token = reportTokens[reportId];
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(secondReports[reportId] == false, "LSS: Another already submitted");
@@ -259,14 +261,13 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     function reporterClaim(uint256 reportId) public whenNotPaused {
         
         require(reporter[reportId] == msg.sender, "LSS: Must use stakerClaim");
-        require(!losslessController.getReporterPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
+        require(!reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId], "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
+        require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
-        uint256 amountToClaim;
+        uint256 amountToClaim = losslessStaking.reporterClaimableAmount(reportId);
 
-        amountToClaim = losslessStaking.reporterClaimableAmount(reportId);
-
-        losslessController.setReporterPayoutStatus(msg.sender, true, reportId);
+        reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId] = true;
 
         ILERC20(reportTokens[reportId]).transfer(msg.sender, amountToClaim);
         losslessToken.transfer(msg.sender, reportingAmount);

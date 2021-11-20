@@ -106,12 +106,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 emergencyTimestamp;
     }
 
-    struct ReporterClaimStatus {
-        mapping(uint256 => bool) reportIdClaimStatus;
-    }
-
-    mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
-
     struct PeriodTransfers {
         mapping (address => uint256) timestampInToken;
     }
@@ -338,13 +332,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         //Add event 
     }
 
-    /// @notice This function sets the payout status of a reporter
-    /// @param _reporter Reporter address
-    /// @param status Payout status 
-    function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) public onlyLosslessEnv {
-        reporterClaimStatus[_reporter].reportIdClaimStatus[reportId] = status;
-    }
-
     /// @notice This function adds to the total coefficient per report
     /// @dev It takes part on the claimableAmount calculation of the Lossless Staking contract
     /// @param reportId Report to be added the coefficient
@@ -412,13 +399,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         return lockedAmount;
     }
 
-    /// @notice This function returns  the payout status of a reporter
-    /// @param _reporter Reporter address
-    /// @return status Payout status 
-    function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool) {
-        return reporterClaimStatus[_reporter].reportIdClaimStatus[reportId];
-    }
-
     /// @notice This function will calculate the available amount that an address has to transfer. 
     /// @param token Address corresponding to the token being held
     /// @param account Address to get the available amount
@@ -451,19 +431,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _addresses Array of addreses to retrieve the locked funds
     function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) public onlyLosslessEnv returns(uint256){
 
-        uint256 totalAmount;
+        uint256 totalAmount = losslessGovernance.amountReported(reportId);
         
-        totalAmount = losslessGovernance.amountReported(reportId);
-
         ILERC20(token).transferOutBlacklistedFunds(_addresses);
                 
-        uint256 feesRetrieveAmount;
-        uint256 reporterFeeRetrieveAmount;
-
         (uint256 reporterReward, uint256 losslessFee, uint256 committeeFee, uint256 stakersFee) = losslessReporting.getFees();
 
-        feesRetrieveAmount = totalAmount * (stakersFee + losslessFee + committeeFee) / 10**2;
-        reporterFeeRetrieveAmount = totalAmount * (reporterReward) / 10**2;
+        uint256 feesRetrieveAmount = totalAmount * (stakersFee + losslessFee) / 10**2;
+        uint256 reporterFeeRetrieveAmount = totalAmount * (reporterReward) / 10**2;
 
         ILERC20(token).transfer(address(losslessStaking), feesRetrieveAmount);
         ILERC20(token).transfer(address(losslessReporting), reporterFeeRetrieveAmount);

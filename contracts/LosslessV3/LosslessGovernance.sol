@@ -13,6 +13,7 @@ interface ILssReporting {
     function secondReportedAddress(uint256 reportId) external view returns (address);
     function secondReports(uint256 reportId) external view returns (bool);
     function reportLifetime() external view returns(uint256);
+    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
 }
 
 interface ILssController {
@@ -314,8 +315,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
                 || msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
                 "LSS: Role cannot resolve.");
         
-        address token;
-        token = losslessReporting.reportTokens(reportId);
+        address token = losslessReporting.reportTokens(reportId);
 
         Vote storage reportVote;
         reportVote = reportVotes[reportId];
@@ -338,14 +338,12 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(voteCount >= 2, "LSS: Not enough votes");
         require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need anothe vote to untie");
         
-        address reportedAddress;
-        reportedAddress = losslessReporting.reportedAddress(reportId);
+        address reportedAddress = losslessReporting.reportedAddress(reportId);
 
         reportedAddresses.push(reportedAddress);
 
         if (losslessReporting.secondReports(reportId)) {
-            address secondReportedAddress;
-            secondReportedAddress = losslessReporting.secondReportedAddress(reportId);
+            address secondReportedAddress = losslessReporting.secondReportedAddress(reportId);
             reportedAddresses.push(secondReportedAddress);
         }
 
@@ -447,8 +445,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         require(_determineProposedWallet(reportId), "LSS: Proposed wallet rejected");
 
-        address token;
-        token = losslessReporting.reportTokens(reportId);
+        address token = losslessReporting.reportTokens(reportId);
 
         proposedWalletOnReport[reportId].status = true;
 
@@ -502,5 +499,21 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         compensation[msg.sender].amount = 0;
 
         emit CompensationRetrieved(msg.sender);
+    }
+
+    ///@notice This function is for committee members to claim their rewards
+    ///@param reportId report ID to claim reward from
+    function claimCommitteeReward(uint256 reportId) public {
+        require(isReportSolved(reportId), "LSS: Report is not solved.");
+        require(isCommitteeMember(msg.sender), "LSS: Must be committee member");
+        require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
+
+        uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
+        (,,uint256 committeeFee,) = losslessReporting.getFees();
+        uint256 compensationPerMember = (retrievalAmount[reportId] * committeeFee /  10**2) / numberOfMembersVote;
+
+        address token = losslessReporting.reportTokens(reportId);
+
+        ILERC20(token).transfer(msg.sender, compensationPerMember);
     }
 }
