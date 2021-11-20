@@ -28,6 +28,7 @@ interface ILssController {
 
 interface ILssGovernance {
     function isReportSolved(uint256 reportId) external returns (bool);
+    function reportResolution(uint256 reportId) external view returns(bool);
 }
 
 interface ILssStaking {
@@ -58,6 +59,12 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
     mapping(address => TokenReports) private tokenReports;
+
+    struct ReporterClaimStatus {
+        mapping(uint256 => bool) reportIdClaimStatus;
+    }
+
+    mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
 
     mapping(uint256 => address) public reporter;
     mapping(uint256 => address) public reportedAddress;
@@ -168,8 +175,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportLifetime = _lifetime;
     }
 
-
-
     // --- GETTERS ---
 
     /// @notice This function gets the contract version
@@ -231,6 +236,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param reportId Report that was previously generated.
     /// @param account Potential malicious address
     function secondReport(uint256 reportId, address account) public notBlacklisted whenNotPaused {
+        require(!losslessGovernance.isReportSolved(reportId), "LSS: Report already solved.");
         uint256 reportTimestamp;
         address token;
 
@@ -259,14 +265,15 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     function reporterClaim(uint256 reportId) public whenNotPaused {
         
         require(reporter[reportId] == msg.sender, "LSS: Must use stakerClaim");
-        require(!losslessController.getReporterPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
+        require(!reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId], "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
+        require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
         uint256 amountToClaim;
 
         amountToClaim = losslessStaking.reporterClaimableAmount(reportId);
 
-        losslessController.setReporterPayoutStatus(msg.sender, true, reportId);
+        reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId] = true;
 
         ILERC20(reportTokens[reportId]).transfer(msg.sender, amountToClaim);
         losslessToken.transfer(msg.sender, reportingAmount);

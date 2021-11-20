@@ -28,7 +28,6 @@ interface ILssController {
     function blacklist(address _adr) external view returns (bool);
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
     function reportCoefficient(uint256 reportId) external view returns (uint256);
-    function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool);
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
@@ -37,6 +36,7 @@ interface ILssController {
 interface ILssGovernance {
     function isReportSolved(uint256 reportId) external view returns(bool);
     function amountReported(uint256 reportId) external view returns(uint256);
+    function reportResolution(uint256 reportId) external view returns(bool);
 }
 
 /// @title Lossless Staking Contract
@@ -208,12 +208,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         emit Staked(losslessReporting.reportTokens(reportId), msg.sender, reportId);
     }
 
-    /// @notice This function sets the payout status to true when claiming
-    /// @param reportId Report to change the payout status on
-    function _setPayoutStatus(uint256 reportId, address _adr) private {
-        stakes[_adr].stakeInfoOnReport[reportId].payed = true;
-    }
-
     // --- CLAIM ---
 
     /// @notice This function returns the claimable amount by the reporter
@@ -223,13 +217,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function reporterClaimableAmount(uint256 reportId) public view returns (uint256) {
 
         uint256 reporterReward;
-        uint256 amountStakedOnReport;
+        uint256 amountReported;
 
-        amountStakedOnReport = losslessGovernance.amountReported(reportId);
+        amountReported = losslessGovernance.amountReported(reportId);
 
         (reporterReward,,,) = losslessReporting.getFees();
 
-        return amountStakedOnReport * reporterReward / 10**2;
+        return amountReported * reporterReward / 10**2;
     }
     
     /// @notice This function returns the claimable amount by the stakers
@@ -269,6 +263,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(msg.sender != address(0), "LERC20: Cannot be zero address");
         require(!getPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
+        require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
         uint256 amountToClaim;
         address token;
@@ -276,7 +271,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         amountToClaim = stakerClaimableAmount(reportId);
         token = losslessReporting.reportTokens(reportId);
 
-        _setPayoutStatus(reportId, msg.sender);
+        stakes[msg.sender].stakeInfoOnReport[reportId].payed = true;
 
         ILERC20(token).transfer(msg.sender, amountToClaim);
         losslessToken.transfer( msg.sender, stakingAmount);
