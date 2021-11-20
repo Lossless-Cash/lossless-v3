@@ -15,6 +15,8 @@ interface ILERC20 {
 
 interface ILssController {
     function blacklist(address _adr) external returns (bool);
+    function reportLifetime() external returns (uint256);
+    function stakeAmount() external view returns (uint256);
     function reportingAmount() external returns (uint256);
     function addToBlacklist(address _adr) external;
     function whitelist(address _adr) external view returns (bool);
@@ -28,11 +30,8 @@ interface ILssController {
 
 interface ILssGovernance {
     function isReportSolved(uint256 reportId) external returns (bool);
+    function amountReported(uint256 reportId) external view returns(uint256);
     function reportResolution(uint256 reportId) external view returns(bool);
-}
-
-interface ILssStaking {
-    function reporterClaimableAmount(uint256 reportId) external view returns (uint256);
 }
 
 /// @title Lossless Reporting Contract
@@ -52,7 +51,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     ILERC20 public losslessToken;
     ILssController public losslessController;
     ILssGovernance public losslessGovernance;
-    ILssStaking public losslessStaking;
 
     struct TokenReports {
         mapping(address => uint256) reports;
@@ -127,13 +125,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     function setLosslessGovernance(address _losslessGovernance) public onlyLosslessAdmin {
         require(_losslessGovernance != address(0), "LERC20: Cannot be zero address");
         losslessGovernance = ILssGovernance(_losslessGovernance);
-    }
-
-    /// @notice This function sets the address of the Lossless Staking smart contract
-    /// @dev Only can be called by the Lossless Admin
-    /// @param _losslessStaking Address corresponding to the Lossless Staking smart contract
-    function setLosslessStaking(address _losslessStaking) public onlyLosslessAdmin {
-        losslessStaking = ILssStaking(_losslessStaking);
     }
 
     /// @notice This function sets the amount of tokens to be staked when reporting or staking
@@ -256,16 +247,15 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         emit SecondReportsubmitted(token, account, reportId);
     }
 
-/// @notice This function is for the reporter to claim their rewards
+    /// @notice This function is for the reporter to claim their rewards
     /// @param reportId Staked report
     function reporterClaim(uint256 reportId) public whenNotPaused {
-        
         require(reporter[reportId] == msg.sender, "LSS: Must use stakerClaim");
         require(!reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId], "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
-        uint256 amountToClaim = losslessStaking.reporterClaimableAmount(reportId);
+        uint256 amountToClaim = reporterClaimableAmount(reportId);
 
         reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId] = true;
 
@@ -273,4 +263,14 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         losslessToken.transfer(msg.sender, reportingAmount);
     }
 
+    // --- CLAIM ---
+
+    /// @notice This function returns the claimable amount by the reporter
+    /// @dev Only can be used by the reporter.
+    /// The reporter has a fixed percentage as reward.
+    /// @param reportId Staked report    
+    function reporterClaimableAmount(uint256 reportId) public view returns (uint256) {
+        uint256 reportedAmount = losslessGovernance.amountReported(reportId);
+        return reportedAmount * reporterReward / 10**2;
+    }
 }

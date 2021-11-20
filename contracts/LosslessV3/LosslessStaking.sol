@@ -21,6 +21,7 @@ interface ILssReporting {
     function reportTimestamps(uint256 _reportId) external view returns (uint256);
     function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
     function amountReported(uint256 reportId) external view returns (uint256);
+    function losslessFee() external view returns (uint256 losslessFee);
     function reportLifetime() external view returns (uint256);
 }
 
@@ -52,6 +53,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 coefficient;
         bool staked;
         bool payed;
+        bool losslessPayed;
     }
 
     ILERC20 public losslessToken;
@@ -65,6 +67,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     mapping(uint256 => address[]) public stakers;
 
     mapping(uint256 => uint256) public totalStakedOnReport;
+    mapping(uint256 => bool) public losslessPayed;
 
     event Staked(address indexed token, address indexed account, uint256 reportId);
 
@@ -158,14 +161,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     // STAKING
 
-    /// @notice This function returns the coefficient of the staker taking into consideration the timestamp
-    /// @dev The closer to the reportLifetime the staking happen, the higher the coefficient
-    /// @param _timestamp Timestamp of the staking
-    /// @return The coefficient from the following formula "reportLifetime/(block.timestamp - stakingTimestamp)"
-    function _calculateCoefficient(uint256 _timestamp) private view returns (uint256) {
-        return  losslessReporting.reportLifetime()/((block.timestamp - _timestamp));
-    }
-
     /// @notice This function returns the coefficient of a staker in a report
     /// @param reportId Report where the address staked
     /// @param _address Staking address
@@ -189,7 +184,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         require(reportId > 0 && (reportTimestamp + losslessReporting.reportLifetime()) > block.timestamp, "LSS: report does not exists");
 
-        uint256 stakerCoefficient = _calculateCoefficient(reportTimestamp);
+        uint256 stakerCoefficient = reportTimestamp + losslessReporting.reportLifetime() - block.timestamp;
 
         stakers[reportId].push(msg.sender);
         stakes[msg.sender].stakeInfoOnReport[reportId].timestamp = block.timestamp;
@@ -207,17 +202,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     // --- CLAIM ---
-
-    /// @notice This function returns the claimable amount by the reporter
-    /// @dev Only can be used by the reporter.
-    /// The reporter has a fixed percentage as reward.
-    /// @param reportId Staked report    
-    function reporterClaimableAmount(uint256 reportId) public view returns (uint256) {
-        uint256 amountStakedOnReport = losslessGovernance.amountReported(reportId);
-        (uint256 reporterReward,,,) = losslessReporting.getFees();
-
-        return amountReported * reporterReward / 10**2;
-    }
     
     /// @notice This function returns the claimable amount by the stakers
     /// @dev Only can be used by the stakers.
@@ -254,6 +238,18 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         ILERC20(token).transfer(msg.sender, amountToClaim);
         losslessToken.transfer( msg.sender, stakingAmount);
+    }
+
+        /// @notice This function is for the stakers to claim their rewards
+    /// @param reportId Staked report
+    function losslessClaim(uint256 reportId) public notBlacklisted whenNotPaused onlyLosslessAdmin {
+        require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
+        require(!losslessPayed[reportId], "LSS: Already claimed");
+
+        address token = losslessReporting.reportTokens(reportId);
+        uint256 amountToClaim = losslessGovernance.amountReported(reportId) * losslessReporting.losslessFee() / 10**2;
+        losslessPayed[reportId] = true;
+        ILERC20(token).transfer(losslessController.admin(), amountToClaim);
     }
 
     /// @notice This function allows the governance token to retribute an erroneous report

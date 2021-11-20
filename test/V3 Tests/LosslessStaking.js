@@ -13,29 +13,35 @@ let lerc20Token;
 describe('Lossless Staking', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
-    env = await setupEnvironment(adr.lssAdmin,
+    env = await setupEnvironment(
+      adr.lssAdmin,
       adr.lssRecoveryAdmin,
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
-      adr.lssBackupAdmin);
+      adr.lssBackupAdmin,
+    );
 
-    lerc20Token = await setupToken(2000000,
+    lerc20Token = await setupToken(
+      2000000,
       'Random Token',
       'RAND',
       adr.lerc20InitialHolder,
       adr.lerc20Admin.address,
       adr.lerc20BackupAdmin.address,
       Number(time.duration.days(1)),
-      env.lssController.address);
+      env.lssController.address,
+    );
 
-    await env.lssController.connect(adr.lerc20Admin)
+    await env.lssController
+      .connect(adr.lerc20Admin)
       .proposeNewSettlementPeriod(lerc20Token.address, 5 * 60);
 
     await ethers.provider.send('evm_increaseTime', [
       Number(time.duration.hours(13)),
     ]);
 
-    await env.lssController.connect(adr.lerc20Admin)
+    await env.lssController
+      .connect(adr.lerc20Admin)
       .executeNewSettlementPeriod(lerc20Token.address);
   });
 
@@ -59,39 +65,63 @@ describe('Lossless Staking', () => {
 
   describe('when the staking period is active', () => {
     beforeEach(async () => {
-      await env.lssController.connect(adr.lssAdmin).setWhitelist(
-        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
-      );
+      await env.lssController
+        .connect(adr.lssAdmin)
+        .setWhitelist(
+          [
+            env.lssGovernance.address,
+            env.lssReporting.address,
+            env.lssStaking.address,
+          ],
+          true,
+        );
 
-      await lerc20Token.connect(adr.lerc20InitialHolder)
+      await lerc20Token
+        .connect(adr.lerc20InitialHolder)
         .transfer(adr.maliciousActor1.address, 1000000);
 
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakingAmount);
 
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.staker1.address, env.stakingAmount);
 
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.staker2.address, env.stakingAmount);
 
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.staker3.address, env.stakingAmount);
 
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.staker4.address, env.stakingAmount);
 
-      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
-      await env.lssToken.connect(adr.staker1).approve(env.lssStaking.address, env.stakingAmount);
-      await env.lssToken.connect(adr.staker2).approve(env.lssStaking.address, env.stakingAmount);
-      await env.lssToken.connect(adr.staker3).approve(env.lssStaking.address, env.stakingAmount);
-      await env.lssToken.connect(adr.staker4).approve(env.lssStaking.address, env.stakingAmount);
+      await env.lssToken
+        .connect(adr.reporter1)
+        .approve(env.lssReporting.address, env.stakingAmount);
+      await env.lssToken
+        .connect(adr.staker1)
+        .approve(env.lssStaking.address, env.stakingAmount);
+      await env.lssToken
+        .connect(adr.staker2)
+        .approve(env.lssStaking.address, env.stakingAmount);
+      await env.lssToken
+        .connect(adr.staker3)
+        .approve(env.lssStaking.address, env.stakingAmount);
+      await env.lssToken
+        .connect(adr.staker4)
+        .approve(env.lssStaking.address, env.stakingAmount);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
       ]);
 
-      await env.lssReporting.connect(adr.reporter1)
+      await env.lssReporting
+        .connect(adr.reporter1)
         .report(lerc20Token.address, adr.maliciousActor1.address);
     });
 
@@ -193,36 +223,59 @@ describe('Lossless Staking', () => {
   });
   describe('when the staking period is inactive', () => {
     beforeEach(async () => {
-      await env.lssController.connect(adr.lssAdmin).setWhitelist(
-        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
-      );
+      await env.lssController
+        .connect(adr.lssAdmin)
+        .setWhitelist(
+          [
+            env.lssGovernance.address,
+            env.lssReporting.address,
+            env.lssStaking.address,
+          ],
+          true,
+        );
 
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakingAmount * 2);
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.staker2.address, env.stakingAmount * 2);
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.staker3.address, env.stakingAmount * 2);
-      await env.lssToken.connect(adr.lssInitialHolder)
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
         .transfer(adr.staker4.address, env.stakingAmount * 2);
 
-      await env.lssToken.connect(adr.reporter1)
+      await env.lssToken
+        .connect(adr.reporter1)
         .approve(env.lssReporting.address, env.stakingAmount * 2);
-      await env.lssToken.connect(adr.staker1).approve(env.lssStaking.address, env.stakingAmount * 2);
-      await env.lssToken.connect(adr.staker2).approve(env.lssStaking.address, env.stakingAmount * 2);
-      await env.lssToken.connect(adr.staker3).approve(env.lssStaking.address, env.stakingAmount * 2);
-      await env.lssToken.connect(adr.staker4).approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken
+        .connect(adr.staker1)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken
+        .connect(adr.staker2)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken
+        .connect(adr.staker3)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken
+        .connect(adr.staker4)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
 
-      await lerc20Token.connect(adr.lerc20InitialHolder)
+      await lerc20Token
+        .connect(adr.lerc20InitialHolder)
         .transfer(adr.maliciousActor1.address, 1000000);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
       ]);
 
-      await env.lssReporting.connect(adr.reporter1)
+      await env.lssReporting
+        .connect(adr.reporter1)
         .report(lerc20Token.address, adr.maliciousActor1.address);
 
       await ethers.provider.send('evm_increaseTime', [
@@ -249,8 +302,13 @@ describe('Lossless Staking', () => {
 
       await env.lssStaking.connect(adr.staker4).stake(1);
 
-      await env.lssGovernance.connect(adr.lssAdmin)
-        .addCommitteeMembers([adr.member1.address, adr.member2.address, adr.member3.address]);
+      await env.lssGovernance
+        .connect(adr.lssAdmin)
+        .addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address,
+        ]);
 
       await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
       await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
@@ -276,7 +334,9 @@ describe('Lossless Staking', () => {
       describe('when verifying reporter claimable amount by the reporter', () => {
         it('should return amount', async () => {
           expect(
-            await env.lssStaking.connect(adr.reporter1).reporterClaimableAmount(1),
+            await env.lssReporting
+              .connect(adr.reporter1)
+              .reporterClaimableAmount(1),
           ).to.not.be.empty;
         });
       });
@@ -292,22 +352,20 @@ describe('Lossless Staking', () => {
       describe('when stakers claims', () => {
         it('should not revert', async () => {
           let balance;
-          expect(
-            balance = await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.not.be.empty;
+          expect((balance = await lerc20Token.balanceOf(adr.staker1.address)))
+            .to.not.be.empty;
 
           expect(
-            balance = await env.lssToken.balanceOf(adr.staker1.address),
+            (balance = await env.lssToken.balanceOf(adr.staker1.address)),
           ).to.be.equal(2500);
 
           await env.lssStaking.connect(adr.staker1).stakerClaim(1);
 
-          expect(
-            await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.not.be.empty;
+          expect(await lerc20Token.balanceOf(adr.staker1.address)).to.not.be
+            .empty;
 
           expect(
-            balance = await env.lssToken.balanceOf(adr.staker1.address),
+            (balance = await env.lssToken.balanceOf(adr.staker1.address)),
           ).to.be.equal(env.stakingAmount * 2);
         });
       });
@@ -337,11 +395,11 @@ describe('Lossless Staking', () => {
         it('should not revert', async () => {
           let balance;
           expect(
-            balance = await lerc20Token.balanceOf(adr.reporter1.address),
+            (balance = await lerc20Token.balanceOf(adr.reporter1.address)),
           ).to.be.equal(0);
 
           expect(
-            balance = await env.lssToken.balanceOf(adr.reporter1.address),
+            (balance = await env.lssToken.balanceOf(adr.reporter1.address)),
           ).to.be.equal(4000);
 
           await env.lssReporting.connect(adr.reporter1).reporterClaim(1);
@@ -351,7 +409,7 @@ describe('Lossless Staking', () => {
           ).to.be.equal(20000);
 
           expect(
-            balance = await env.lssToken.balanceOf(adr.reporter1.address),
+            (balance = await env.lssToken.balanceOf(adr.reporter1.address)),
           ).to.be.equal(env.stakingAmount * 2);
         });
       });
@@ -363,6 +421,39 @@ describe('Lossless Staking', () => {
           await expect(
             env.lssReporting.connect(adr.reporter1).reporterClaim(1),
           ).to.be.revertedWith('LSS: You already claimed');
+        });
+      });
+
+      describe('when lossless team claims', () => {
+        it('should not revert', async () => {
+          let balance;
+          expect(
+            (balance = await lerc20Token.balanceOf(adr.lssAdmin.address)),
+          ).to.be.equal(0);
+
+          await env.lssStaking.connect(adr.lssAdmin).losslessClaim(1);
+
+          expect(await lerc20Token.balanceOf(adr.lssAdmin.address)).to.be.equal(
+            100000,
+          );
+        });
+      });
+
+      describe('when lossless team claims two times', () => {
+        it('should revert', async () => {
+          await env.lssStaking.connect(adr.lssAdmin).losslessClaim(1);
+
+          await expect(
+            env.lssStaking.connect(adr.lssAdmin).losslessClaim(1),
+          ).to.be.revertedWith('LSS: Already claimed');
+        });
+      });
+
+      describe('when lossless claim is called by not lossless admin two times', () => {
+        it('should revert', async () => {
+          await expect(
+            env.lssStaking.connect(adr.reporter1).losslessClaim(1),
+          ).to.be.revertedWith('LSS: Must be admin');
         });
       });
     });
