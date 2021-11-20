@@ -434,7 +434,7 @@ describe('Lossless Staking', () => {
           await env.lssStaking.connect(adr.lssAdmin).losslessClaim(1);
 
           expect(await lerc20Token.balanceOf(adr.lssAdmin.address)).to.be.equal(
-            100,
+            100000,
           );
         });
       });
