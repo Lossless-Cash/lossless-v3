@@ -36,8 +36,6 @@ describe('Lossless Governance', () => {
     await env.lssController.connect(adr.lerc20Admin)
       .executeNewSettlementPeriod(lerc20Token.address);
 
-    await env.lssController.connect(adr.lerc20Admin).setTokenEvaluation(lerc20Token.address, true);
-
     await env.lssToken.connect(adr.lssInitialHolder)
       .transfer(adr.reporter1.address, env.stakingAmount);
     await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 1000);

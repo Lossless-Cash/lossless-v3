@@ -20,15 +20,6 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: '0.8.9',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
         version: '0.8.0',
         settings: {
           optimizer: {
@@ -68,12 +59,12 @@ module.exports = {
   },
   paths: {
     artifacts: './src/artifacts',
-  }, 
+  },
   networks: {
     hardhat: {
       chainId: 1337,
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/WpZq7dbPsInJFOhzMtNSNXkib7dL7A1O`,
+        url: 'https://eth-mainnet.alchemyapi.io/v2/WpZq7dbPsInJFOhzMtNSNXkib7dL7A1O',
         blockNumber: 12644052,
       },
     },
@@ -89,7 +80,7 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
     gasPrice: 70,
-    coinmarketcap: COINMARKETCAP
+    coinmarketcap: COINMARKETCAP,
   },
   abiExporter: {
     path: './abi',
@@ -102,8 +93,11 @@ module.exports = {
     // Obtain one at https://etherscan.io/
     apiKey: ETHERSCAN_KEY,
   },
-  /*defender: {
+  /* defender: {
     apiKey: DEFENDER_KEY,
     apiSecret: DEFENDER_SECRET,
-  },*/
+  }, */
+  mocha: {
+    timeout: 100000,
+  },
 };

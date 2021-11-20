@@ -25,8 +25,6 @@ describe('Lossless Token', () => {
 
     await env.lssController.connect(adr.lssAdmin)
       .executeNewSettlementPeriod(env.lssToken.address);
-
-    await env.lssController.connect(adr.lssAdmin).setTokenEvaluation(env.lssToken.address, true);
   });
 
   describe('when transfering between users', () => {
@@ -35,10 +33,19 @@ describe('Lossless Token', () => {
       await env.lssToken.connect(adr.lssInitialHolder).transfer(adr.regularUser2.address, 100);
     });
 
-    it('should revert if 5 minutes haven\'t passed', async () => {
+    it('should not revert if 5 minutes haven\'t passed if it\'s the first transfer', async () => {
       await expect(
         env.lssToken.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
-      ).to.be.revertedWith('LSS: Amt exceeds settled balance');
+      ).to.not.be.reverted;
+    });
+
+    it('should revert if 5 minutes haven\'t passed if it\'s not the first transfer', async () => {
+      await expect(
+        env.lssToken.connect(adr.regularUser2).transfer(adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+      await expect(
+        env.lssToken.connect(adr.regularUser2).transfer(adr.regularUser3.address, 5),
+      ).to.be.revertedWith('LSS: Transfers limit reached');
     });
 
     it('should not revert', async () => {

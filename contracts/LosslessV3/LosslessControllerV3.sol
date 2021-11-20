@@ -104,10 +104,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     struct EmergencyMode {
         bool emergency;
         uint256 emergencyTimestamp;
-        uint256 emergencyMappingNum;
-        mapping( uint256 => mapping(address => bool)) emergencyTransfer;
-        mapping( uint256 => mapping(address => bool)) emergencyDexTransfer;
     }
+
+    struct PeriodTransfers {
+        mapping (address => uint256) timestampInToken;
+    }
+
+    mapping (address => PeriodTransfers) private tokenTransferInPeriod;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -207,7 +210,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets default values for Contoller V3
     /// @dev Called on startur
     function setControllerV3Defaults() public onlyLosslessAdmin {
-        dexTranferThreshold = 2;
+        dexTranferThreshold = 20;
         erroneousCompensation = 2;
         whitelist[admin] = true;
         whitelist[recoveryAdmin]  = true;
@@ -229,6 +232,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param newTimelock Timelock in seconds
     function setSettlementTimeLock(uint256 newTimelock) public onlyLosslessAdmin {
         settlementTimeLock = newTimelock;
+    }
+
+    /// @notice This function sets the transfer threshold for Dexes
+    /// @dev Only can be called by the Lossless Admin
+    /// @param newThreshold Timelock in seconds
+    function setDexTrasnferThreshold(uint256 newThreshold) public onlyLosslessAdmin {
+        dexTranferThreshold = newThreshold;
     }
 
     /// @notice This function sets the amount of tokens given to the erroneously reported address
@@ -259,15 +269,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         for(uint256 i; i < _addrList.length; i++) {
             whitelist[_addrList[i]] = value;
         }
-    }
-
-    /// @notice This function lets token owners decide wheter or not add transfer evaluations
-    /// @dev Only can be called by the Token Admin
-    /// @param token Token to change
-    /// @param value Flag status
-    function setTokenEvaluation(address token, bool value) public {
-        require(msg.sender == ILERC20(token).admin(), "LSS: Only token admin");
-        tokenTransferEvaluation[token] = value;
     }
 
     /// @notice This function adds an address to the blacklist
@@ -313,6 +314,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _seconds Time frame of the recieved funds will be locked
     function proposeNewSettlementPeriod(address token, uint256 _seconds) public {
         require(ILERC20(token).admin() == msg.sender, "LSS: Must be Token Admin");
+        require(changeSettlementTimelock[token] <= block.timestamp, "LSS: Time lock in progress");
         changeSettlementTimelock[token] = block.timestamp + settlementTimeLock;
         isNewSettlementProposed[token] = true;
         proposedTokenLockTimeframe[token] = _seconds;
@@ -347,7 +349,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function activateEmergency(address token) external onlyLosslessEnv {
         emergencyMode[token].emergency = true;
         emergencyMode[token].emergencyTimestamp = block.timestamp;
-        emergencyMode[token].emergencyMappingNum += 1;
     }
 
     // --- GUARD ---
@@ -409,58 +410,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // LOCKs & QUEUES
 
-    /// @notice This function will remove the locks that have already been lifted
-    /// @param recipient Address to lift the locks
-    function _removeExpiredLocks (address recipient) private {
-        LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
-
-        uint i = queue.first;
-        ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
-
-        while (checkpoint.timestamp <= block.timestamp && i <= queue.last) {
-            delete queue.lockedFunds[i];
-            i += 1;
-            checkpoint = queue.lockedFunds[i];
-        }
-    }
-
-    /// @notice This function will lift the locks after a certain amount
-    /// @dev The condition to lift the locks is that their checkpoint should be greater than the set amount
-    /// @param availableAmount Address to lift the locks
-    /// @param account Address to lift the locks
-    /// @param amount Address to lift the locks
-    function _removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
-        LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[msg.sender].queue[account];
-
-        require(queue.touchedTimestamp + tokenLockTimeframe[msg.sender] <= block.timestamp, "LSS: Transfers limit reached");
-
-        uint256 amountLeft = amount - availableAmount;
-        uint i = 1;
-
-        while (amountLeft > 0 && i <= queue.last) {
-            ReceiveCheckpoint memory checkpoint;
-            checkpoint = queue.lockedFunds[i];
-
-            if ((checkpoint.timestamp - block.timestamp) >= lockCheckpointExpiration)  {
-                if (checkpoint.amount > amountLeft) {
-                    checkpoint.amount -= amountLeft;
-                    delete amountLeft;
-                } else {
-                    amountLeft -= checkpoint.amount;
-                    delete checkpoint.amount;
-                }
-            }
-            i += 1;
-        }
-
-        queue.touchedTimestamp = block.timestamp;
-    }
-
     /// @notice This function add transfers to the lock queues
-    /// @param checkpoint Address to lift the locks
-    /// @param recipient Address to lift the locks
+    /// @param checkpoint Address to add the locks
+    /// @param recipient Address to add the locks
     function _enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
@@ -495,6 +447,53 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         return totalAmount - feesRetrieveAmount - reporterFeeRetrieveAmount;
     }
 
+
+    /// @notice This function will lift the locks after a certain amount
+    /// @dev The condition to lift the locks is that their checkpoint should be greater than the set amount
+    /// @param availableAmount Address to lift the locks
+    /// @param account Address to lift the locks
+    /// @param amount Address to lift the locks
+    function _removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
+        LocksQueue storage queue;
+        queue = tokenScopedLockedFunds[msg.sender].queue[account];
+
+        require(queue.touchedTimestamp + tokenLockTimeframe[msg.sender] <= block.timestamp, "LSS: Transfers limit reached");
+
+        uint256 amountLeft =  amount - availableAmount;
+        uint256 i = 1;
+        
+        while (amountLeft > 0 && i <= queue.last) {
+            ReceiveCheckpoint storage checkpoint = queue.lockedFunds[i];
+                if (checkpoint.amount > amountLeft) {
+                    checkpoint.amount -= amountLeft;
+                    delete amountLeft;
+                } else {
+                    amountLeft -= checkpoint.amount;
+                    delete checkpoint.amount;
+                }
+            i += 1;
+        }
+
+        queue.touchedTimestamp = block.timestamp;
+    }
+
+    /// @notice This function will remove the locks that have already been lifted
+    /// @param recipient Address to lift the locks
+    function _removeExpiredLocks (address recipient) private {
+        LocksQueue storage queue;
+        queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
+
+        uint i = queue.first;
+        ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
+
+        while (checkpoint.timestamp <= block.timestamp && i <= queue.last) {
+            delete queue.lockedFunds[i];
+            i += 1;
+            checkpoint = queue.lockedFunds[i];
+        }
+    }
+
+
     // --- BEFORE HOOKS ---
 
     /// @notice This function evaluates if the transfer can be made
@@ -502,35 +501,25 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param recipient Address recieving the funds
     /// @param amount Amount to be transfered
     function _evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
-
         uint256 settledAmount = getAvailableAmount(msg.sender, sender);
-
-        if ((emergencyMode[msg.sender].emergencyTimestamp + tokenLockTimeframe[msg.sender] > block.timestamp && amount >= settledAmount)) {
-            bool regularTransferInEmergencyStatus;
-            regularTransferInEmergencyStatus = emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender];
-            require(!regularTransferInEmergencyStatus, "LSS: Emergency mode active, one transfer of unsettled tokens per period allowed");
-
-            bool dexTransferInEmergencyStatus;
-            dexTransferInEmergencyStatus = emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender];
-            require(!dexList[recipient] && !dexTransferInEmergencyStatus, "LSS: Emergency mode active, cannot transfer unsettled tokens to DEX");
-
-            if (dexList[recipient] && amount > dexTranferThreshold){
-                emergencyMode[msg.sender].emergencyDexTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
+        if (amount > settledAmount) {
+            require(emergencyMode[msg.sender].emergencyTimestamp + tokenLockTimeframe[msg.sender] < block.timestamp,
+                    "LSS: Emergency mode active, cannot transfer unsettled tokens");
+            if (dexList[recipient]) {
+                require(amount - settledAmount <= dexTranferThreshold,
+                        "LSS: Cannot transfer over the dex threshold");
             } else {
-                emergencyMode[msg.sender].emergencyTransfer[emergencyMode[msg.sender].emergencyMappingNum][sender] = true;
-            }
-        } else {
-            if (dexList[recipient] && amount > dexTranferThreshold) {
-                require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
-            } else if (settledAmount < amount) {
-                //_removeUsedUpLocks(settledAmount, sender, amount);
-                require(settledAmount >= amount, "LSS: Amt exceeds settled balance");
+                _removeUsedUpLocks(settledAmount, sender, amount);
+                require(tokenTransferInPeriod[sender].timestampInToken[msg.sender] < block.timestamp,
+                        "LSS: Amt exceeds settled balance");
             }
         }
 
+        tokenTransferInPeriod[sender].timestampInToken[msg.sender] = block.timestamp + tokenLockTimeframe[msg.sender];
+
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
         _enqueueLockedFunds(newCheckpoint, recipient);
-
+        _removeExpiredLocks(recipient);
         return true;
     }
 
@@ -544,7 +533,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[sender], "LSS: You cannot operate");
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
         
-        if (tokenTransferEvaluation[msg.sender] && !dexList[sender]) {
+        if (tokenLockTimeframe[msg.sender] != 0) {
             require(_evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
         }
     }
@@ -556,11 +545,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
-        require(!blacklist[sender], "LSS: You cannot operate");
+        require(!blacklist[msgSender], "LSS: You cannot operate");
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
-        require(!blacklist[msgSender], "LSS: Recipient is blacklisted");
+        require(!blacklist[sender], "LSS: Sender is blacklisted");
 
-        if (tokenTransferEvaluation[msg.sender]) {
+        if (tokenLockTimeframe[msg.sender] != 0) {
             require(_evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
         }
 
