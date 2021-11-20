@@ -64,7 +64,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     }
 
     mapping(uint256 => Vote) public reportVotes;
-    mapping(address => address) public projectOwners;
     mapping(uint256 => uint256) public amountReported;
     mapping(uint256 => uint256) private retrievalAmount;
 
@@ -203,8 +202,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function addCommitteeMembers(address[] memory members) public onlyLosslessAdmin whenNotPaused {
         committeeMembersCount += members.length;
 
-        //_updateQuorum(committeeMembersCount);
-
         for (uint256 i; i < members.length; ++i) {
             require(!isCommitteeMember(members[i]), "LSS: duplicate members");
             grantRole(COMMITTEE_ROLE, members[i]);
@@ -219,8 +216,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(committeeMembersCount != 0, "LSS: committee has no members");
 
         committeeMembersCount -= members.length;
-
-        //_updateQuorum(committeeMembersCount);
 
         for (uint256 i; i < members.length; ++i) {
             require(isCommitteeMember(members[i]), "LSS: An address is not member");

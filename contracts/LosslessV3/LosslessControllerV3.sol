@@ -9,9 +9,6 @@ import "hardhat/console.sol";
 interface ILERC20 {
     function balanceOf(address account) external view returns (uint256);
     function transfer(address recipient, uint256 amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
-    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function transferOutBlacklistedFunds(address[] calldata from) external;
     function admin() external view returns (address);
@@ -65,8 +62,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(address => uint256) public proposedTokenLockTimeframe;
     mapping(address => uint256) public changeSettlementTimelock;
     mapping(address => bool) public isNewSettlementProposed;
-
-    mapping(address => bool) public tokenTransferEvaluation;
 
     uint256 public erroneousCompensation;
 
@@ -157,12 +152,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                 msg.sender == address(losslessReporting) || 
                 msg.sender == address(losslessGovernance),
                 "LSS: Lss SC only");
-        _;
-    }
-
-    /// @notice Avoids execution from blacklisted addresses
-    modifier notBlacklisted() {
-        require(!blacklist[msg.sender], "LSS: You cannot operate");
         _;
     }
 

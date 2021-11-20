@@ -8,7 +8,6 @@ import "hardhat/console.sol";
 
 interface ILERC20 {
     function transfer(address recipient, uint256 amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function admin() external view returns (address);
 }

@@ -9,7 +9,6 @@ import "hardhat/console.sol";
 
 interface ILERC20 {
     function transfer(address recipient, uint256 amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function admin() external view returns (address);
 }
@@ -29,7 +28,6 @@ interface ILssController {
     function blacklist(address _adr) external view returns (bool);
     function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
     function reportCoefficient(uint256 reportId) external view returns (uint256);
-    function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
 }
@@ -142,14 +140,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakingAmount = _stakingAmount;
     }
 
-    /// @notice This function returns if an address has claimed their reward funds
-    /// @param _address Staker address
-    /// @param reportId Report being staked
-    /// @return True if the address has already claimed
-    function getPayoutStatus(address _address, uint256 reportId) public view returns (bool) {
-        return stakes[_address].stakeInfoOnReport[reportId].payed;
-    }
-
     /// @notice This function returns if an address is already staking on a report
     /// @param reportId Report being staked
     /// @param account Address to consult
@@ -177,7 +167,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Report to stake
     function stake(uint256 reportId) public notBlacklisted whenNotPaused {
         require(!losslessGovernance.isReportSolved(reportId), "LSS: Report already resolved");
-        require(!getIsAccountStaked(reportId, msg.sender), "LSS: already staked");
+        require(!stakes[msg.sender].stakeInfoOnReport[reportId].staked, "LSS: already staked");
         require(losslessReporting.reporter(reportId) != msg.sender, "LSS: reporter can not stake");   
 
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
@@ -227,7 +217,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Staked report
     function stakerClaim(uint256 reportId) public notBlacklisted whenNotPaused {
         require(msg.sender != address(0), "LERC20: Cannot be zero address");
-        require(!getPayoutStatus(msg.sender, reportId), "LSS: You already claimed");
+        require(!stakes[msg.sender].stakeInfoOnReport[reportId].payed, "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
