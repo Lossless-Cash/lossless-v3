@@ -76,8 +76,13 @@ const setupAddresses = async () => {
   };
 };
 
-const setupEnvironment = async (lssAdmin,
-  lssRecoveryAdmin, lssPauseAdmin, lssInitialHolder, lssBackupAdmin) => {
+const setupEnvironment = async (
+  lssAdmin,
+  lssRecoveryAdmin,
+  lssPauseAdmin,
+  lssInitialHolder,
+  lssBackupAdmin,
+) => {
   const lssTeamVoteIndex = 0;
   const tokenOwnersVoteIndex = 1;
   const committeeVoteIndex = 2;
@@ -102,11 +107,10 @@ const setupEnvironment = async (lssAdmin,
     'LosslessControllerV3',
   );
 
-  const losslessControllerV1 = await upgrades.deployProxy(LosslessControllerV1, [
-    lssAdmin.address,
-    lssRecoveryAdmin.address,
-    lssPauseAdmin.address,
-  ]);
+  const losslessControllerV1 = await upgrades.deployProxy(
+    LosslessControllerV1,
+    [lssAdmin.address, lssRecoveryAdmin.address, lssPauseAdmin.address],
+  );
 
   const losslessControllerV2 = await upgrades.upgradeProxy(
     losslessControllerV1.address,
@@ -130,9 +134,7 @@ const setupEnvironment = async (lssAdmin,
     lssController.address,
   );
 
-  const LosslessStaking = await ethers.getContractFactory(
-    'LosslessStaking',
-  );
+  const LosslessStaking = await ethers.getContractFactory('LosslessStaking');
 
   const LosslessGovernance = await ethers.getContractFactory(
     'LosslessGovernance',
@@ -156,25 +158,42 @@ const setupEnvironment = async (lssAdmin,
 
   lssGovernance = await upgrades.deployProxy(
     LosslessGovernance,
-    [lssReporting.address, lssController.address, lssStaking.address, lssToken.address],
+    [
+      lssReporting.address,
+      lssController.address,
+      lssStaking.address,
+      lssToken.address,
+    ],
     { initializer: 'initialize' },
   );
 
   await lssController.connect(lssAdmin).setLosslessToken(lssToken.address);
-  await lssController.connect(lssAdmin).setStakingContractAddress(lssStaking.address);
-  await lssController.connect(lssAdmin).setReportingContractAddress(lssReporting.address);
-  await lssController.connect(lssAdmin).setGovernanceContractAddress(lssGovernance.address);
+  await lssController
+    .connect(lssAdmin)
+    .setStakingContractAddress(lssStaking.address);
+  await lssController
+    .connect(lssAdmin)
+    .setReportingContractAddress(lssReporting.address);
+  await lssController
+    .connect(lssAdmin)
+    .setGovernanceContractAddress(lssGovernance.address);
   await lssController.connect(lssAdmin).setControllerV3Defaults();
 
   await lssStaking.connect(lssAdmin).setStakingAmount(stakingAmount);
   await lssStaking.connect(lssAdmin).setLosslessToken(lssToken.address);
-  await lssStaking.connect(lssAdmin).setLosslessGovernance(lssGovernance.address);
+  await lssStaking
+    .connect(lssAdmin)
+    .setLosslessGovernance(lssGovernance.address);
 
-  await lssReporting.connect(lssAdmin).setReportLifetime(Number(reportLifetime));
+  await lssReporting
+    .connect(lssAdmin)
+    .setReportLifetime(Number(reportLifetime));
   await lssReporting.connect(lssAdmin).setReportingAmount(reportingAmount);
   await lssReporting.connect(lssAdmin).setLosslessToken(lssToken.address);
-  await lssReporting.connect(lssAdmin).setLosslessStaking(lssStaking.address);
-  await lssReporting.connect(lssAdmin).setLosslessGovernance(lssGovernance.address);
+
+  await lssReporting
+    .connect(lssAdmin)
+    .setLosslessGovernance(lssGovernance.address);
   await lssReporting.connect(lssAdmin).setReporterReward(2);
   await lssReporting.connect(lssAdmin).setLosslessFee(10);
   await lssReporting.connect(lssAdmin).setStakersFee(2);
@@ -195,19 +214,21 @@ const setupEnvironment = async (lssAdmin,
   };
 };
 
-const setupToken = async (supply, name, symbol,
-  initialHolder, admin, backupAdmin, lockPeriod, controller) => {
+const setupToken = async (
+  supply,
+  name,
+  symbol,
+  initialHolder,
+  admin,
+  backupAdmin,
+  lockPeriod,
+  controller,
+) => {
   const token = await ethers.getContractFactory('LERC20');
 
-  const deployedToken = await token.connect(initialHolder).deploy(
-    supply,
-    name,
-    symbol,
-    admin,
-    backupAdmin,
-    lockPeriod,
-    controller,
-  );
+  const deployedToken = await token
+    .connect(initialHolder)
+    .deploy(supply, name, symbol, admin, backupAdmin, lockPeriod, controller);
 
   return deployedToken;
 };
