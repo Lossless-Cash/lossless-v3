@@ -10,7 +10,7 @@ let adr;
 let env;
 let lerc20Token;
 
-describe.only('Lossless Staking', () => {
+describe('Lossless Staking', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(
