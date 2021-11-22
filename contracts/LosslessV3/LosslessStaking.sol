@@ -179,7 +179,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakers[reportId].push(msg.sender);
         stakes[msg.sender].stakeInfoOnReport[reportId].timestamp = block.timestamp;
         stakes[msg.sender].stakeInfoOnReport[reportId].coefficient = stakerCoefficient;
-        stakes[msg.sender].stakeInfoOnReport[reportId].payed = false;
         stakes[msg.sender].stakeInfoOnReport[reportId].staked = true;
 
         losslessController.addToReportCoefficient(reportId, stakerCoefficient);
