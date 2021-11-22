@@ -386,11 +386,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         proposedWalletOnReport[reportId].wallet = wallet;
         proposedWalletOnReport[reportId].timestamp = block.timestamp;
-        proposedWalletOnReport[reportId].status = false;
         proposedWalletOnReport[reportId].losslessVote = true;
-        proposedWalletOnReport[reportId].losslessVoted = false;
         proposedWalletOnReport[reportId].tokenOwnersVote = true;
-        proposedWalletOnReport[reportId].tokenOwnersVoted = false;
 
         emit WalletProposed(reportId, wallet);
     }

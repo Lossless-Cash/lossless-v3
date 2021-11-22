@@ -9,7 +9,7 @@ const { setupAddresses, setupEnvironment, setupToken } = require('./utilsV3');
 let adr;
 let env;
 
-describe('Lossless Governance', () => {
+describe.only('Lossless Governance', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
