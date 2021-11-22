@@ -334,8 +334,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         reportedAddresses.push(reportedAddress);
 
         if (losslessReporting.secondReports(reportId)) {
-            address secondReportedAddress = losslessReporting.secondReportedAddress(reportId);
-            reportedAddresses.push(secondReportedAddress);
+            reportedAddresses.push(losslessReporting.secondReportedAddress(reportId));
         }
 
         if (aggreeCount > (voteCount - aggreeCount)){
@@ -429,16 +428,13 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(block.timestamp >= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
         require(!proposedWalletOnReport[reportId].status, "LSS: Funds already claimed");
 
-        address proposedAddress = proposedWalletOnReport[reportId].wallet;
-        require(proposedAddress == msg.sender, "LSS: Only proposed adr can claim");
+        require(proposedWalletOnReport[reportId].wallet == msg.sender, "LSS: Only proposed adr can claim");
 
         require(_determineProposedWallet(reportId), "LSS: Proposed wallet rejected");
 
-        address token = losslessReporting.reportTokens(reportId);
-
         proposedWalletOnReport[reportId].status = true;
 
-        ILERC20(token).transfer(msg.sender, retrievalAmount[reportId]);
+        ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, retrievalAmount[reportId]);
 
         emit FundsRetrieved(reportId, msg.sender);
     }
