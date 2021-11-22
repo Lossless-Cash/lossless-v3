@@ -217,12 +217,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
-        uint256 amountToClaim = stakerClaimableAmount(reportId);
-        address token = losslessReporting.reportTokens(reportId);
-
         stakes[msg.sender].stakeInfoOnReport[reportId].payed = true;
 
-        ILERC20(token).transfer(msg.sender, amountToClaim);
+        ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, stakerClaimableAmount(reportId));
         losslessToken.transfer( msg.sender, stakingAmount);
     }
 
