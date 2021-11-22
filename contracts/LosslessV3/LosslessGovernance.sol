@@ -176,8 +176,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report number to be checked
     /// @return isMajorityReached result Returns True if the majority has voted and the true if the result is positive
     function _getCommitteeMajorityReachedResult(uint256 reportId) private view returns(bool isMajorityReached, bool result) {        
-        Vote storage reportVote;
-        reportVote = reportVotes[reportId];
+        Vote storage reportVote = reportVotes[reportId];
 
         uint256 agreeCount;
         for(uint256 i; i < reportVote.committeeVotes.length; i++) {
@@ -235,8 +234,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
         
-        Vote storage reportVote;
-        reportVote = reportVotes[reportId];
+        Vote storage reportVote = reportVotes[reportId];
         
         require(!reportVotes[reportId].voted[lssTeamVoteIndex], "LSS: LSS already voted.");
 
@@ -258,8 +256,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         require(ILERC20(losslessReporting.reportTokens(reportId)).admin() == msg.sender, "LSS: must be token owner");
 
-        Vote storage reportVote;
-        reportVote = reportVotes[reportId];
+        Vote storage reportVote = reportVotes[reportId];
 
         require(!reportVote.voted[tokenOwnersVoteIndex], "LSS: owners already voted");
         
@@ -280,8 +277,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
 
-        Vote storage reportVote;
-        reportVote = reportVotes[reportId];
+        Vote storage reportVote = reportVotes[reportId];
 
         require(!reportVote.committeeMemberVoted[msg.sender], "LSS: Member already voted.");
         
@@ -312,8 +308,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         
         address token = losslessReporting.reportTokens(reportId);
 
-        Vote storage reportVote;
-        reportVote = reportVotes[reportId];
+        Vote storage reportVote = reportVotes[reportId];
+
         require(!isReportSolved(reportId), "LSS: Report already resolved");
 
         uint256 aggreeCount;
