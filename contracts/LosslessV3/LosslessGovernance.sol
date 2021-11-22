@@ -188,8 +188,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             return (true, true);
         }
 
-        uint256 disagreeCount = reportVote.committeeVotes.length - agreeCount;
-        if (disagreeCount > (committeeMembersCount / 2)) {
+        if ((reportVote.committeeVotes.length - agreeCount) > (committeeMembersCount / 2)) {
             return (true, false);
         }
 
