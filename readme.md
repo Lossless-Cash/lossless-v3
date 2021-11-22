@@ -1,18 +1,11 @@
-## Start with
+# Lossless V3
 
-```sh
-npm i
-npm run test
-```
+In-depth documentation on Lossless V3 is available at [lossless.cash](https://lossless-cash.gitbook.io/lossless/).
 
-## To get the pair contract address for uniswap pair
+## Install Dependencies
 
-open ./utils/getNextUniAddress.js 
+`npm i`
 
-change tokenA and tokenB address to the addresses of the token pair
+## Run Tests
 
-run 
-
-```sh
-npm run pair-address
-```
+`npm test`
