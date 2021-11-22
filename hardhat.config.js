@@ -60,7 +60,7 @@ module.exports = {
   paths: {
     artifacts: './src/artifacts',
   },
-  networks: {
+/*   networks: {
     hardhat: {
       chainId: 1337,
       forking: {
@@ -92,7 +92,7 @@ module.exports = {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
     apiKey: ETHERSCAN_KEY,
-  },
+  }, */
   /* defender: {
     apiKey: DEFENDER_KEY,
     apiSecret: DEFENDER_SECRET,

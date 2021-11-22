@@ -254,11 +254,9 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
-        uint256 amountToClaim = reporterClaimableAmount(reportId);
-
         reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId] = true;
 
-        ILERC20(reportTokens[reportId]).transfer(msg.sender, amountToClaim);
+        ILERC20(reportTokens[reportId]).transfer(msg.sender, reporterClaimableAmount(reportId));
         losslessToken.transfer(msg.sender, reportingAmount);
     }
 
