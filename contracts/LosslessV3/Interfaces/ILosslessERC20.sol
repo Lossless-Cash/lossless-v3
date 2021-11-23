@@ -16,7 +16,6 @@ interface ILERC20 {
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
     function getAdmin() external view returns (address);
     function transferOutBlacklistedFunds(address[] calldata from) external;
-    //* vvv Admin methods, should this go here? vvvv
     function setLosslessAdmin(address newAdmin) external;
     function transferRecoveryAdminOwnership(address candidate, bytes32 keyHash) external;
     function acceptRecoveryAdminOwnership(bytes memory key) external;

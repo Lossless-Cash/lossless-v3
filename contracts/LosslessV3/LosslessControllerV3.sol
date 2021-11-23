@@ -8,10 +8,7 @@ import "hardhat/console.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessGovernance.sol";
-
-interface ILssStaking {
-    function admin() external view returns (address);
-}
+import "./Interfaces/ILosslessStaking.sol";
 
 interface ILssReporting {
     function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
