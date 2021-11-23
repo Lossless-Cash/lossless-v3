@@ -9,17 +9,7 @@ import "hardhat/console.sol";
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessControllerV3.sol";
 import "./Interfaces/ILosslessGovernance.sol";
-
-interface ILssReporting {
-    function reportTokens(uint256 _reportId) external view returns (address);
-    function reportedAddress(uint256 _reportId) external view returns (address);
-    function reporter(uint256 _reportId) external view returns (address);
-    function reportTimestamps(uint256 _reportId) external view returns (uint256);
-    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
-    function amountReported(uint256 reportId) external view returns (uint256);
-    function losslessFee() external view returns (uint256 losslessFee);
-    function reportLifetime() external view returns (uint256);
-}
+import "./Interfaces/ILosslessReporting.sol";
 
 /// @title Lossless Staking Contract
 /// @notice The Staking contract is in charge of handling the staking done on reports

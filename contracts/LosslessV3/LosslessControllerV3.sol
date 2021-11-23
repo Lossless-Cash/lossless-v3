@@ -9,11 +9,7 @@ import "hardhat/console.sol";
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessGovernance.sol";
 import "./Interfaces/ILosslessStaking.sol";
-
-interface ILssReporting {
-    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
-    function amountReported(uint256 reportId) external view returns (uint256);
-}
+import "./Interfaces/ILosslessReporting.sol";
 
 interface ProtectionStrategy {
     function isTransferAllowed(address token, address sender, address recipient, uint256 amount) external;
