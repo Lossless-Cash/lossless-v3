@@ -22,6 +22,7 @@ interface ILssReporting {
   function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
   function report(address token, address account) external returns (uint256);
   function reporterClaimableAmount(uint256 reportId) external view returns (uint256);
+  
   function pause() external;
   function unpause() external;
   function setLosslessToken(address _losslessToken) external;

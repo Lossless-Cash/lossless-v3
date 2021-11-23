@@ -17,6 +17,7 @@ interface ILssGovernance {
     function isReportSolved(uint256 reportId) external view returns(bool);
     function reportResolution(uint256 reportId) external view returns(bool);
     function amountReported(uint256 reportId) external view returns (uint256);
+    
     function setDisputePeriod(uint256 timeFrame) external;
     function addCommitteeMembers(address[] memory members) external;
     function removeCommitteeMembers(address[] memory members) external;
@@ -40,6 +41,4 @@ interface ILssGovernance {
     event WalletRejected(uint256 indexed reportId, address indexed wallet);
     event FundsRetrieved(uint256 indexed reportId, address indexed wallet);
     event CompensationRetrieved(address indexed wallet);
-    //function reportVotes(uint256 reportID) external returns (Vote memory);
-    //function proposedWalletOnReport(uint256 reportId) returns (ProposedWallet);
 }

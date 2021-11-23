@@ -14,6 +14,7 @@ interface ILssStaking {
   function getIsAccountStaked(uint256 reportId, address account) external view returns(bool);
   function getStakerCoefficient(uint256 reportId, address _address) external view returns (uint256);
   function stakerClaimableAmount(uint256 reportId) external view returns (uint256);
+  
   function pause() external;
   function unpause() external;
   function setLssReporting(address _losslessReporting) external;

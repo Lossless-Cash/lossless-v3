@@ -15,6 +15,7 @@ interface ILERC20 {
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
     function getAdmin() external view returns (address);
+    
     function transferOutBlacklistedFunds(address[] calldata from) external;
     function setLosslessAdmin(address newAdmin) external;
     function transferRecoveryAdminOwnership(address candidate, bytes32 keyHash) external;
