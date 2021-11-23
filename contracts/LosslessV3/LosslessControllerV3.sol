@@ -6,13 +6,7 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
-interface ILERC20 {
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    function transferOutBlacklistedFunds(address[] calldata from) external;
-    function admin() external view returns (address);
-}
+import "./Interfaces/ILosslessERC20.sol";
 
 interface ILssStaking {
     function admin() external view returns (address);

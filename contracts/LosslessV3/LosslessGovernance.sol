@@ -6,6 +6,9 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "hardhat/console.sol";
 
+import "./Interfaces/ILosslessERC20.sol";
+import "./Interfaces/ILosslessControllerV3.sol";
+
 interface ILssReporting {
     function reportTimestamps(uint256 reportId) external view returns (uint256);
     function reportedAddress(uint256 _reportId) external view returns (address);
@@ -16,24 +19,11 @@ interface ILssReporting {
     function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
 }
 
-interface ILssController {
-    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) external returns(uint256);
-    function resolvedNegatively(address _adr) external;
-    function deactivateEmergency(address token) external;
-    function admin() external view returns (address);
-    function erroneousCompensation() external view returns (uint256);
-}
-
 interface ILssStaking {
     function retrieveCompensation(address adr, uint256 amount) external;
     function stakingAmount() external view returns (uint256);
 }
 
-interface ILERC20 {
-    function admin() external view returns (address);
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-} 
 
 /// @title Lossless Governance Contract
 /// @notice The governance contract is in charge of handling the voting process over the reports and their resolution

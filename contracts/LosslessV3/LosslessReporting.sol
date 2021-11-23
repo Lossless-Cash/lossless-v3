@@ -6,26 +6,8 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
-interface ILERC20 {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    function admin() external view returns (address);
-}
-
-interface ILssController {
-    function blacklist(address _adr) external returns (bool);
-    function reportLifetime() external returns (uint256);
-    function stakeAmount() external view returns (uint256);
-    function reportingAmount() external returns (uint256);
-    function addToBlacklist(address _adr) external;
-    function whitelist(address _adr) external view returns (bool);
-    function activateEmergency(address token) external;
-    function admin() external view returns (address);
-    function pauseAdmin() external view returns (address);
-    function dexList(address dexAddress) external returns (bool);
-    function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool);
-    function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
-}
+import "./Interfaces/ILosslessERC20.sol";
+import "./Interfaces/ILosslessControllerV3.sol";
 
 interface ILssGovernance {
     function isReportSolved(uint256 reportId) external returns (bool);
