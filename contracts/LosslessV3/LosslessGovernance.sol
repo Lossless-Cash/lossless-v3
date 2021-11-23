@@ -335,7 +335,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             losslessController.deactivateEmergency(token);
         }else{
             reportVote.resolution = false;
-            compensateAddresses(reportedAddresses);
+            _compensateAddresses(reportedAddresses);
         }
         
         reportVote.resolved = true;
@@ -347,7 +347,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @notice This compensates the addresses wrongly reported
     /// @dev The array of addresses will contain the main reported address and the second reported address
     /// @param addresses Array of addresses to be compensated
-    function compensateAddresses(address[] memory addresses) internal {
+    function _compensateAddresses(address[] memory addresses) private {
         uint256 compensationAmount = losslessController.erroneousCompensation();
         uint256 stakingAmount = losslessStaking.stakingAmount();
         

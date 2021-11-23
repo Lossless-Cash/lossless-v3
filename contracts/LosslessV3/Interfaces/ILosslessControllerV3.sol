@@ -52,7 +52,14 @@ interface ILssController {
     function losslessToken() external view returns (address);
     function losslessStaking() external view returns (address);
     function losslessReporting() external view returns (address);
-    function losslessGovernance() external view returns (address);
+    function lockCheckpointExpiration() external view returns (uint256);
+    function dexTranferThreshold() external view returns (uint256);
+    function settlementTimeLock() external view returns (uint256);
+    function tokenLockTimeframe(address token) external view returns (uint256);
+    function proposedTokenLockTimeframe(address token) external view returns (uint256);
+    function changeSettlementTimelock(address token) external view returns (uint256);
+    function isNewSettlementProposed(address token) external view returns (bool);
+    function reportCoefficient(address token) external view returns (uint256);
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -60,5 +67,4 @@ interface ILssController {
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
-    //function setProtectedAddress(address token, address protectedAddresss, ProtectionStrategy strategy) external;
 }

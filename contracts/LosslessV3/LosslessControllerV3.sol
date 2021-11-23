@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
+import "./Interfaces/ILosslessGovernance.sol";
 
 interface ILssStaking {
     function admin() external view returns (address);
@@ -15,10 +16,6 @@ interface ILssStaking {
 interface ILssReporting {
     function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
     function amountReported(uint256 reportId) external view returns (uint256);
-}
-
-interface ILssGovernance {
-    function amountReported(uint256 reportId) external view returns(uint256);
 }
 
 interface ProtectionStrategy {
@@ -51,7 +48,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     uint256 public dexTranferThreshold;
 
-    uint256 settlementTimeLock;
+    uint256 public settlementTimeLock;
     mapping(address => uint256) public tokenLockTimeframe;
     mapping(address => uint256) public proposedTokenLockTimeframe;
     mapping(address => uint256) public changeSettlementTimelock;

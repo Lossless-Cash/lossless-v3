@@ -8,12 +8,7 @@ import "hardhat/console.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessControllerV3.sol";
-
-interface ILssGovernance {
-    function isReportSolved(uint256 reportId) external returns (bool);
-    function amountReported(uint256 reportId) external view returns(uint256);
-    function reportResolution(uint256 reportId) external view returns(bool);
-}
+import "./Interfaces/ILosslessGovernance.sol";
 
 /// @title Lossless Reporting Contract
 /// @author Lossless.cash

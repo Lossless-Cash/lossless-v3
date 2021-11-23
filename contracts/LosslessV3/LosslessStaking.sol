@@ -8,6 +8,7 @@ import "hardhat/console.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessControllerV3.sol";
+import "./Interfaces/ILosslessGovernance.sol";
 
 interface ILssReporting {
     function reportTokens(uint256 _reportId) external view returns (address);
@@ -18,13 +19,6 @@ interface ILssReporting {
     function amountReported(uint256 reportId) external view returns (uint256);
     function losslessFee() external view returns (uint256 losslessFee);
     function reportLifetime() external view returns (uint256);
-}
-
-
-interface ILssGovernance {
-    function isReportSolved(uint256 reportId) external view returns(bool);
-    function amountReported(uint256 reportId) external view returns(uint256);
-    function reportResolution(uint256 reportId) external view returns(bool);
 }
 
 /// @title Lossless Staking Contract
