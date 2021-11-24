@@ -4,12 +4,15 @@
 /* eslint-disable prefer-destructuring */
 const { time, constants } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
-const { setupAddresses, setupEnvironment, setupToken } = require('./utilsV3');
+const path = require('path');
+const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
 
 let adr;
 let env;
 
-describe('1. Report', () => {
+const scriptName = path.basename(__filename, '.js');
+
+describe.only(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
