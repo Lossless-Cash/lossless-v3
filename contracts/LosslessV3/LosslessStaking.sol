@@ -41,6 +41,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     mapping(uint256 => bool) public losslessPayed;
 
     event Staked(address indexed token, address indexed account, uint256 reportId);
+    event StakerClaimed(address indexed staker, address indexed token, uint256 indexed reportID);
+    event LosslessClaimed(address indexed token, uint256 indexed reportID);
+    event StakingAmountChanged(uint256 indexed newAmount);
 
     function initialize(address _losslessReporting, address _losslessController) public initializer {
        losslessReporting = ILssReporting(_losslessReporting);
@@ -111,6 +114,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param _stakingAmount Amount to be staked
     function setStakingAmount(uint256 _stakingAmount) public onlyLosslessAdmin {
         stakingAmount = _stakingAmount;
+        emit StakingAmountChanged(_stakingAmount);
     }
 
     /// @notice This function returns if an address is already staking on a report
@@ -194,6 +198,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, stakerClaimableAmount(reportId));
         losslessToken.transfer( msg.sender, stakingAmount);
+
+        emit StakerClaimed(msg.sender, losslessReporting.reportTokens(reportId), reportId);
     }
 
         /// @notice This function is for the stakers to claim their rewards
@@ -205,6 +211,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 amountToClaim = losslessGovernance.amountReported(reportId) * losslessReporting.losslessFee() / 10**2;
         losslessPayed[reportId] = true;
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(losslessController.admin(), amountToClaim);
+
+        emit LosslessClaimed(losslessReporting.reportTokens(reportId), reportId);
     }
 
     /// @notice This function allows the governance token to retribute an erroneous report
