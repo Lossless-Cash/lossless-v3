@@ -9,7 +9,7 @@ const { setupAddresses, setupEnvironment, setupToken } = require('./utilsV3');
 let adr;
 let env;
 
-describe('Settlement Period', () => {
+describe('26. Settlement Period', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
