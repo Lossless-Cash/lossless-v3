@@ -6,37 +6,10 @@ import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "hardhat/console.sol";
 
-
-interface ILERC20 {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    function admin() external view returns (address);
-}
-
-interface ILssReporting {
-    function reportTokens(uint256 _reportId) external view returns (address);
-    function reportedAddress(uint256 _reportId) external view returns (address);
-    function reporter(uint256 _reportId) external view returns (address);
-    function reportTimestamps(uint256 _reportId) external view returns (uint256);
-    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
-    function amountReported(uint256 reportId) external view returns (uint256);
-    function losslessFee() external view returns (uint256 losslessFee);
-    function reportLifetime() external view returns (uint256);
-}
-
-interface ILssController {
-    function blacklist(address _adr) external view returns (bool);
-    function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
-    function reportCoefficient(uint256 reportId) external view returns (uint256);
-    function admin() external view returns (address);
-    function pauseAdmin() external view returns (address);
-}
-
-interface ILssGovernance {
-    function isReportSolved(uint256 reportId) external view returns(bool);
-    function amountReported(uint256 reportId) external view returns(uint256);
-    function reportResolution(uint256 reportId) external view returns(bool);
-}
+import "./Interfaces/ILosslessERC20.sol";
+import "./Interfaces/ILosslessControllerV3.sol";
+import "./Interfaces/ILosslessGovernance.sol";
+import "./Interfaces/ILosslessReporting.sol";
 
 /// @title Lossless Staking Contract
 /// @notice The Staking contract is in charge of handling the staking done on reports

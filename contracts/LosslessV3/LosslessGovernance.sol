@@ -6,34 +6,11 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "hardhat/console.sol";
 
-interface ILssReporting {
-    function reportTimestamps(uint256 reportId) external view returns (uint256);
-    function reportedAddress(uint256 _reportId) external view returns (address);
-    function reportTokens(uint256 reportId) external view returns(address);
-    function secondReportedAddress(uint256 reportId) external view returns (address);
-    function secondReports(uint256 reportId) external view returns (bool);
-    function reportLifetime() external view returns(uint256);
-    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
-}
+import "./Interfaces/ILosslessERC20.sol";
+import "./Interfaces/ILosslessControllerV3.sol";
+import "./Interfaces/ILosslessStaking.sol";
+import "./Interfaces/ILosslessReporting.sol";
 
-interface ILssController {
-    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) external returns(uint256);
-    function resolvedNegatively(address _adr) external;
-    function deactivateEmergency(address token) external;
-    function admin() external view returns (address);
-    function erroneousCompensation() external view returns (uint256);
-}
-
-interface ILssStaking {
-    function retrieveCompensation(address adr, uint256 amount) external;
-    function stakingAmount() external view returns (uint256);
-}
-
-interface ILERC20 {
-    function admin() external view returns (address);
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-} 
 
 /// @title Lossless Governance Contract
 /// @notice The governance contract is in charge of handling the voting process over the reports and their resolution
@@ -345,7 +322,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             losslessController.deactivateEmergency(token);
         }else{
             reportVote.resolution = false;
-            compensateAddresses(reportedAddresses);
+            _compensateAddresses(reportedAddresses);
         }
         
         reportVote.resolved = true;
@@ -357,7 +334,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @notice This compensates the addresses wrongly reported
     /// @dev The array of addresses will contain the main reported address and the second reported address
     /// @param addresses Array of addresses to be compensated
-    function compensateAddresses(address[] memory addresses) internal {
+    function _compensateAddresses(address[] memory addresses) private {
         uint256 compensationAmount = losslessController.erroneousCompensation();
         uint256 stakingAmount = losslessStaking.stakingAmount();
         

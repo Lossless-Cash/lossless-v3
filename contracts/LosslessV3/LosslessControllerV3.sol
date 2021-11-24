@@ -6,26 +6,10 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "hardhat/console.sol";
 
-interface ILERC20 {
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    function transferOutBlacklistedFunds(address[] calldata from) external;
-    function admin() external view returns (address);
-}
-
-interface ILssStaking {
-    function admin() external view returns (address);
-}
-
-interface ILssReporting {
-    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
-    function amountReported(uint256 reportId) external view returns (uint256);
-}
-
-interface ILssGovernance {
-    function amountReported(uint256 reportId) external view returns(uint256);
-}
+import "./Interfaces/ILosslessERC20.sol";
+import "./Interfaces/ILosslessGovernance.sol";
+import "./Interfaces/ILosslessStaking.sol";
+import "./Interfaces/ILosslessReporting.sol";
 
 interface ProtectionStrategy {
     function isTransferAllowed(address token, address sender, address recipient, uint256 amount) external;
@@ -57,7 +41,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     uint256 public dexTranferThreshold;
 
-    uint256 settlementTimeLock;
+    uint256 public settlementTimeLock;
     mapping(address => uint256) public tokenLockTimeframe;
     mapping(address => uint256) public proposedTokenLockTimeframe;
     mapping(address => uint256) public changeSettlementTimelock;
