@@ -54,6 +54,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         bool losslessVoted;
         bool tokenOwnersVote;
         bool tokenOwnersVoted;
+        bool walletAccepted;
         uint16 committeeDisagree;
         mapping (address => bool) memberVoted;
     }
@@ -361,6 +362,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         proposedWalletOnReport[reportId].timestamp = block.timestamp;
         proposedWalletOnReport[reportId].losslessVote = true;
         proposedWalletOnReport[reportId].tokenOwnersVote = true;
+        proposedWalletOnReport[reportId].walletAccepted = true;
 
         emit WalletProposed(reportId, wallet);
     }
@@ -392,6 +394,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             proposedWalletOnReport[reportId].tokenOwnersVoted = true;
         }
 
+        _determineProposedWallet(reportId);
+
         emit WalletRejected(reportId, proposedWalletOnReport[reportId].wallet);
     }
 
@@ -401,10 +405,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(msg.sender != address(0), "LERC20: Cannot be zero address");
         require(block.timestamp >= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
         require(!proposedWalletOnReport[reportId].status, "LSS: Funds already claimed");
-
+        require(proposedWalletOnReport[reportId].walletAccepted, "LSS: Wallet rejected");
         require(proposedWalletOnReport[reportId].wallet == msg.sender, "LSS: Only proposed adr can claim");
-
-        require(_determineProposedWallet(reportId), "LSS: Proposed wallet rejected");
 
         proposedWalletOnReport[reportId].status = true;
 
@@ -442,6 +444,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         proposedWalletOnReport[reportId].losslessVoted = false;
         proposedWalletOnReport[reportId].tokenOwnersVote = true;
         proposedWalletOnReport[reportId].tokenOwnersVoted = false;
+        proposedWalletOnReport[reportId].walletAccepted = false;
 
         return false;
     }

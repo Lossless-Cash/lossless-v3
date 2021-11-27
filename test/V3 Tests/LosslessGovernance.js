@@ -349,7 +349,7 @@ describe('Lossless Governance', () => {
           it('should revert needing committee member to vote', async () => {
             await expect(
               env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
-            ).to.be.revertedWith('LSS: Need anothe vote to untie');
+            ).to.be.revertedWith('LSS: Need another vote to untie');
           });
         });
       });
@@ -524,7 +524,7 @@ describe('Lossless Governance', () => {
           it('should revert needing Lossless Team to vote', async () => {
             await expect(
               env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
-            ).to.be.revertedWith('LSS: Need anothe vote to untie');
+            ).to.be.revertedWith('LSS: Need another vote to untie');
           });
         });
       });
@@ -613,7 +613,7 @@ describe('Lossless Governance', () => {
           it('should revert needing Lossless Team to vote', async () => {
             await expect(
               env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
-            ).to.be.revertedWith('LSS: Need anothe vote to untie');
+            ).to.be.revertedWith('LSS: Need another vote to untie');
           });
         });
       });
@@ -824,7 +824,7 @@ describe('Lossless Governance', () => {
           ).to.be.revertedWith('LSS: Role cannot propose.');
         });
 
-        it('should revert when trying to propose another', async () => {
+        it('should revert when trying to propose anotherr', async () => {
           await expect(
             env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
           ).to.not.be.reverted;
