@@ -376,7 +376,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         bool isLosslessTeam = msg.sender == losslessController.admin();
         bool isTokenOwner = msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin();
 
-        require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot resolve.");
+        require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot reject.");
 
         if (isMember) {
             require(!proposedWalletOnReport[reportId].memberVoted[msg.sender], "LSS: Already Voted.");
