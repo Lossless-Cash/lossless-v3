@@ -301,7 +301,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         if (committeeResolution) {aggreeCount += 1;}}
 
         require(voteCount >= 2, "LSS: Not enough votes");
-        require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need anothe vote to untie");
+        require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need another vote to untie");
         
         address reportedAddress = losslessReporting.reportedAddress(reportId);
 
