@@ -175,13 +175,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Staked report
     function stakerClaimableAmount(uint256 reportId) public view returns (uint256) {
         (,,, uint256 stakersFee) = losslessReporting.getFees();
-        uint256 amountStakedOnReport = losslessGovernance.amountReported(reportId);
-        amountStakedOnReport = amountStakedOnReport * stakersFee / 10**2;
+        uint256 amountReported = losslessGovernance.amountReported(reportId);
+        amountReported = amountReported * stakersFee / 10**2;
         uint256 stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
         uint256 reportCoefficient = losslessController.reportCoefficient(reportId);
         uint256 secondsCoefficient = 10**4/reportCoefficient;
         uint256 stakerPercentage = (secondsCoefficient * stakerCoefficient);
-        uint256 stakerAmountToClaim = (amountStakedOnReport * stakerPercentage) / 10**4;
+        uint256 stakerAmountToClaim = (amountReported * stakerPercentage) / 10**4;
         return stakerAmountToClaim;
     }
 
