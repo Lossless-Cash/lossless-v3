@@ -12,7 +12,7 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
-describe.only(scriptName, () => {
+describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
