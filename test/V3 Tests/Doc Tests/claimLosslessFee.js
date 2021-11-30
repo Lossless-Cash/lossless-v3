@@ -12,6 +12,9 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
+const reportedAmount = 1000000;
+const losslessReward = 0.1;
+
 describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -34,7 +37,7 @@ describe(scriptName, () => {
 
     await env.lssToken.connect(adr.lssInitialHolder)
       .transfer(adr.reporter1.address, env.stakingAmount);
-    await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 1000);
+    await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, reportedAmount);
 
     await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
 
@@ -66,48 +69,36 @@ describe(scriptName, () => {
     ]);
   });
 
-  describe('when proposing a refund wallet on report close', () => {
-    it('should accept a proposed wallet by Lossless Team', async () => {
-      await expect(
-        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-      ).to.not.be.reverted;
+  describe('when lossless team claims', () => {
+    it('should not revert', async () => {
+      let balance;
+      expect(
+        (balance = await lerc20Token.balanceOf(adr.lssAdmin.address)),
+      ).to.be.equal(0);
+
+      await env.lssStaking.connect(adr.lssAdmin).losslessClaim(1);
+
+      expect(await lerc20Token.balanceOf(adr.lssAdmin.address)).to.be.equal(
+        reportedAmount * losslessReward,
+      );
     });
+  });
 
-    it('should accept a proposed wallet by Token Owner', async () => {
+  describe('when lossless team claims two times', () => {
+    it('should revert', async () => {
+      await env.lssStaking.connect(adr.lssAdmin).losslessClaim(1);
+
       await expect(
-        env.lssGovernance.connect(adr.lerc20Admin).proposeWallet(1, adr.regularUser5.address),
-      ).to.not.be.reverted;
+        env.lssStaking.connect(adr.lssAdmin).losslessClaim(1),
+      ).to.be.revertedWith('LSS: Already claimed');
     });
+  });
 
-    it('should revert if proposed by other than LssTeam or TokenOwner', async () => {
+  describe('when lossless claim is called by not lossless admin two times', () => {
+    it('should revert', async () => {
       await expect(
-        env.lssGovernance.connect(adr.regularUser5).proposeWallet(1, adr.regularUser5.address),
-      ).to.be.revertedWith('LSS: Role cannot propose.');
-    });
-
-    it('should revert when trying to propose another', async () => {
-      await expect(
-        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-      ).to.not.be.reverted;
-
-      await expect(
-        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-      ).to.be.revertedWith('LSS: Wallet already proposed.');
-    });
-
-    describe('when retrieving funds to proposed wallet', () => {
-      it('should transfer funds', async () => {
-        await env.lssGovernance.connect(adr.lssAdmin)
-          .proposeWallet(1, adr.regularUser5.address);
-
-        await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.days(8)),
-        ]);
-
-        await expect(
-          env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
-        ).to.not.be.reverted;
-      });
+        env.lssStaking.connect(adr.reporter1).losslessClaim(1),
+      ).to.be.revertedWith('LSS: Must be admin');
     });
   });
 });

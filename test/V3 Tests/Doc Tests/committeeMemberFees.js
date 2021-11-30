@@ -12,6 +12,14 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
+const reportedAmount = 1000000;
+const committeeReward = 0.02;
+const losslessReward = 0.1;
+const reporterReward = 0.02;
+const stakersReward = 0.02;
+
+const assignedTofees = reportedAmount * (losslessReward + reporterReward + stakersReward);
+
 describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -34,7 +42,7 @@ describe(scriptName, () => {
 
     await env.lssToken.connect(adr.lssInitialHolder)
       .transfer(adr.reporter1.address, env.stakingAmount);
-    await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 1000);
+    await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, reportedAmount);
 
     await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
 
@@ -66,48 +74,54 @@ describe(scriptName, () => {
     ]);
   });
 
-  describe('when proposing a refund wallet on report close', () => {
-    it('should accept a proposed wallet by Lossless Team', async () => {
+  describe('when members claim their rewards', () => {
+    it('should revert if member didnt vote', async () => {
       await expect(
-        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-      ).to.not.be.reverted;
+        env.lssGovernance.connect(adr.member5).claimCommitteeReward(1),
+      ).to.be.revertedWith('LSS: Did not vote on report');
     });
 
-    it('should accept a proposed wallet by Token Owner', async () => {
+    it('should revert if its not a committee member', async () => {
       await expect(
-        env.lssGovernance.connect(adr.lerc20Admin).proposeWallet(1, adr.regularUser5.address),
-      ).to.not.be.reverted;
+        env.lssGovernance.connect(adr.regularUser1).claimCommitteeReward(1),
+      ).to.be.revertedWith('LSS: Must be committee member');
     });
 
-    it('should revert if proposed by other than LssTeam or TokenOwner', async () => {
+    it('should not revert when member 1 claims', async () => {
       await expect(
-        env.lssGovernance.connect(adr.regularUser5).proposeWallet(1, adr.regularUser5.address),
-      ).to.be.revertedWith('LSS: Role cannot propose.');
-    });
-
-    it('should revert when trying to propose another', async () => {
-      await expect(
-        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
+        env.lssGovernance.connect(adr.member1).claimCommitteeReward(1),
       ).to.not.be.reverted;
 
-      await expect(
-        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-      ).to.be.revertedWith('LSS: Wallet already proposed.');
+      expect(
+        await lerc20Token.balanceOf(adr.member1.address),
+      ).to.be.equal(((reportedAmount - assignedTofees) * committeeReward) / 4);
     });
+    it('should not revert when member 2 claims', async () => {
+      await expect(
+        env.lssGovernance.connect(adr.member2).claimCommitteeReward(1),
+      ).to.not.be.reverted;
 
-    describe('when retrieving funds to proposed wallet', () => {
-      it('should transfer funds', async () => {
-        await env.lssGovernance.connect(adr.lssAdmin)
-          .proposeWallet(1, adr.regularUser5.address);
+      expect(
+        await lerc20Token.balanceOf(adr.member2.address),
+      ).to.be.equal(((reportedAmount - assignedTofees) * committeeReward) / 4);
+    });
+    it('should not revert when member 3 claims', async () => {
+      await expect(
+        env.lssGovernance.connect(adr.member3).claimCommitteeReward(1),
+      ).to.not.be.reverted;
 
-        await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.days(8)),
-        ]);
+      expect(
+        await lerc20Token.balanceOf(adr.member3.address),
+      ).to.be.equal(((reportedAmount - assignedTofees) * committeeReward) / 4);
+    });
+    it('should not revert when member 4 claims', async () => {
+      await expect(
+        env.lssGovernance.connect(adr.member4).claimCommitteeReward(1),
+      ).to.not.be.reverted;
 
-        await expect(
-          env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
-        ).to.not.be.reverted;
-      });
+      expect(
+        await lerc20Token.balanceOf(adr.member4.address),
+      ).to.be.equal(((reportedAmount - assignedTofees) * committeeReward) / 4);
     });
   });
 });

@@ -95,18 +95,26 @@ describe(scriptName, () => {
       ).to.be.revertedWith('LSS: Wallet already proposed.');
     });
 
-    describe('when retrieving funds to proposed wallet', () => {
-      it('should transfer funds', async () => {
-        await env.lssGovernance.connect(adr.lssAdmin)
-          .proposeWallet(1, adr.regularUser5.address);
+    describe('when rejecting a wallet', () => {
+      beforeEach(async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
+        ).to.not.be.reverted;
+
+        await env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1);
+        await env.lssGovernance.connect(adr.member1).rejectWallet(1);
+        await env.lssGovernance.connect(adr.member2).rejectWallet(1);
+        await env.lssGovernance.connect(adr.member3).rejectWallet(1);
 
         await ethers.provider.send('evm_increaseTime', [
           Number(time.duration.days(8)),
         ]);
+      });
 
+      it('should revert when trying to retrieve', async () => {
         await expect(
           env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
-        ).to.not.be.reverted;
+        ).to.be.revertedWith('LSS: Proposed wallet rejected');
       });
     });
   });

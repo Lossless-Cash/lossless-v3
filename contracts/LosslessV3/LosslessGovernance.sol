@@ -471,6 +471,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
         (,,uint256 committeeFee,) = losslessReporting.getFees();
+
         uint256 compensationPerMember = (retrievalAmount[reportId] * committeeFee /  10**2) / numberOfMembersVote;
 
         address token = losslessReporting.reportTokens(reportId);
