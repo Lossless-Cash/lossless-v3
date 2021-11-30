@@ -54,6 +54,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         bool losslessVoted;
         bool tokenOwnersVote;
         bool tokenOwnersVoted;
+        bool walletAccepted;
         uint16 committeeDisagree;
         mapping (address => bool) memberVoted;
     }
@@ -296,14 +297,12 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         if (getIsVoted(reportId, tokenOwnersVoteIndex)){voteCount += 1;
         if (getVote(reportId, tokenOwnersVoteIndex)){ aggreeCount += 1;}}
 
-        if (voteCount == 1 || (voteCount + aggreeCount) % 2 != 0) {
-            (bool committeeResoluted, bool committeeResolution) = _getCommitteeMajorityReachedResult(reportId);
-            if (committeeResoluted) {voteCount += 1;
-            if (committeeResolution) {aggreeCount += 1;}}
-        }
+        (bool committeeResoluted, bool committeeResolution) = _getCommitteeMajorityReachedResult(reportId);
+        if (committeeResoluted) {voteCount += 1;
+        if (committeeResolution) {aggreeCount += 1;}}
 
         require(voteCount >= 2, "LSS: Not enough votes");
-        require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need anothe vote to untie");
+        require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need another vote to untie");
         
         address reportedAddress = losslessReporting.reportedAddress(reportId);
 
@@ -363,6 +362,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         proposedWalletOnReport[reportId].timestamp = block.timestamp;
         proposedWalletOnReport[reportId].losslessVote = true;
         proposedWalletOnReport[reportId].tokenOwnersVote = true;
+        proposedWalletOnReport[reportId].walletAccepted = true;
 
         emit WalletProposed(reportId, wallet);
     }
@@ -378,7 +378,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         bool isLosslessTeam = msg.sender == losslessController.admin();
         bool isTokenOwner = msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin();
 
-        require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot resolve.");
+        require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot reject.");
 
         if (isMember) {
             require(!proposedWalletOnReport[reportId].memberVoted[msg.sender], "LSS: Already Voted.");
@@ -394,6 +394,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             proposedWalletOnReport[reportId].tokenOwnersVoted = true;
         }
 
+        _determineProposedWallet(reportId);
+
         emit WalletRejected(reportId, proposedWalletOnReport[reportId].wallet);
     }
 
@@ -403,10 +405,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(msg.sender != address(0), "LERC20: Cannot be zero address");
         require(block.timestamp >= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
         require(!proposedWalletOnReport[reportId].status, "LSS: Funds already claimed");
-
+        require(proposedWalletOnReport[reportId].walletAccepted, "LSS: Wallet rejected");
         require(proposedWalletOnReport[reportId].wallet == msg.sender, "LSS: Only proposed adr can claim");
-
-        require(_determineProposedWallet(reportId), "LSS: Proposed wallet rejected");
 
         proposedWalletOnReport[reportId].status = true;
 
@@ -444,6 +444,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         proposedWalletOnReport[reportId].losslessVoted = false;
         proposedWalletOnReport[reportId].tokenOwnersVote = true;
         proposedWalletOnReport[reportId].tokenOwnersVoted = false;
+        proposedWalletOnReport[reportId].walletAccepted = false;
 
         return false;
     }
