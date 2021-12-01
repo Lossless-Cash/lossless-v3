@@ -14,11 +14,6 @@ const scriptName = path.basename(__filename, '.js');
 
 const reportedAmount = 1000000;
 const committeeReward = 0.02;
-const losslessReward = 0.1;
-const reporterReward = 0.02;
-const stakersReward = 0.02;
-
-const assignedTofees = reportedAmount * (losslessReward + reporterReward + stakersReward);
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -94,7 +89,7 @@ describe(scriptName, () => {
 
       expect(
         await lerc20Token.balanceOf(adr.member1.address),
-      ).to.be.equal(((reportedAmount - assignedTofees) * committeeReward) / 4);
+      ).to.be.equal((reportedAmount * committeeReward) / 4);
     });
     it('should not revert when member 2 claims', async () => {
       await expect(
@@ -103,7 +98,7 @@ describe(scriptName, () => {
 
       expect(
         await lerc20Token.balanceOf(adr.member2.address),
-      ).to.be.equal(((reportedAmount - assignedTofees) * committeeReward) / 4);
+      ).to.be.equal((reportedAmount * committeeReward) / 4);
     });
     it('should not revert when member 3 claims', async () => {
       await expect(
@@ -112,7 +107,7 @@ describe(scriptName, () => {
 
       expect(
         await lerc20Token.balanceOf(adr.member3.address),
-      ).to.be.equal(((reportedAmount - assignedTofees) * committeeReward) / 4);
+      ).to.be.equal((reportedAmount * committeeReward) / 4);
     });
     it('should not revert when member 4 claims', async () => {
       await expect(
@@ -121,7 +116,7 @@ describe(scriptName, () => {
 
       expect(
         await lerc20Token.balanceOf(adr.member4.address),
-      ).to.be.equal(((reportedAmount - assignedTofees) * committeeReward) / 4);
+      ).to.be.equal((reportedAmount * committeeReward) / 4);
     });
   });
 });
