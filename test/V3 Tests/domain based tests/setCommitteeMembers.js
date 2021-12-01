@@ -1,0 +1,89 @@
+/* eslint-disable max-len */
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
+/* eslint-disable prefer-destructuring */
+const { time, constants } = require('@openzeppelin/test-helpers');
+const { expect } = require('chai');
+const path = require('path');
+const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
+
+let adr;
+let env;
+
+const scriptName = path.basename(__filename, '.js');
+
+describe(scriptName, () => {
+  beforeEach(async () => {
+    adr = await setupAddresses();
+    env = await setupEnvironment(adr.lssAdmin,
+      adr.lssRecoveryAdmin,
+      adr.lssPauseAdmin,
+      adr.lssInitialHolder,
+      adr.lssBackupAdmin);
+  });
+
+  describe('when setting up the Committee', () => {
+    describe('when adding Committe members', () => {
+      it('should revert when not admin', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.regularUser1).addCommitteeMembers([
+            adr.member1.address,
+            adr.member2.address,
+            adr.member3.address]),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
+      it('should add members', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address]);
+
+        expect(
+          await env.lssGovernance.isCommitteeMember(adr.member1.address),
+        ).to.be.equal(true);
+
+        expect(
+          await env.lssGovernance.isCommitteeMember(adr.member2.address),
+        ).to.be.equal(true);
+
+        expect(
+          await env.lssGovernance.isCommitteeMember(adr.member3.address),
+        ).to.be.equal(true);
+      });
+    });
+
+    describe('when removing Committee members', () => {
+      it('should revert when not admin', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.regularUser1).addCommitteeMembers([
+            adr.member1.address,
+            adr.member2.address,
+            adr.member3.address,
+            adr.member4.address,
+            adr.member5.address]),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
+      it('should remove members', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address,
+          adr.member4.address,
+          adr.member5.address]);
+
+        await env.lssGovernance.connect(adr.lssAdmin)
+          .removeCommitteeMembers([adr.member2.address, adr.member4.address]);
+
+        expect(
+          await env.lssGovernance.isCommitteeMember(adr.member2.address),
+        ).to.be.equal(false);
+
+        expect(
+          await env.lssGovernance.isCommitteeMember(adr.member4.address),
+        ).to.be.equal(false);
+      });
+    });
+  });
+});

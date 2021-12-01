@@ -4,7 +4,7 @@
 /* eslint-disable prefer-destructuring */
 const { time, constants } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
-const { setupAddresses, setupEnvironment, setupToken } = require('./utilsV3');
+const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
 
 let adr;
 let env;
@@ -243,7 +243,7 @@ describe('Lossless Governance', () => {
       it('should revert', async () => {
         await expect(
           env.lssGovernance.connect(adr.maliciousActor1).losslessVote(1, true),
-        ).to.be.revertedWith('LSS: must be admin');
+        ).to.be.revertedWith('LSS: Must be admin');
       });
     });
     describe('when impersonating the Token Owners', () => {

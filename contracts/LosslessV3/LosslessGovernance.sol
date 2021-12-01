@@ -92,7 +92,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     }
 
     modifier onlyLosslessAdmin() {
-        require(losslessController.admin() == msg.sender, "LSS: must be admin");
+        require(losslessController.admin() == msg.sender, "LSS: Must be admin");
         _;
     }
 
@@ -142,6 +142,14 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @return True if it has been resolved positively
     function reportResolution(uint256 reportId) public view returns(bool){
         return reportVotes[reportId].resolution;
+    }
+
+    /// @notice This function sets the address of the Lossless Governance Token
+    /// @dev Only can be called by the Lossless Admin
+    /// @param _losslessToken Address corresponding to the Lossless Governance Token
+    function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
+        require(_losslessToken != address(0), "LERC20: Cannot be zero address");
+        losslessToken = ILERC20(_losslessToken);
     }
 
     /// @notice This function sets the wallet dispute period
@@ -231,7 +239,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
 
-        require(ILERC20(losslessReporting.reportTokens(reportId)).admin() == msg.sender, "LSS: must be token owner");
+        require(ILERC20(losslessReporting.reportTokens(reportId)).admin() == msg.sender, "LSS: Must be token owner");
 
         Vote storage reportVote = reportVotes[reportId];
 
@@ -249,7 +257,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param vote Resolution
     function committeeMemberVote(uint256 reportId, bool vote) public whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved.");
-        require(isCommitteeMember(msg.sender), "LSS: must be a committee member");
+        require(isCommitteeMember(msg.sender), "LSS: Must be a committee member");
 
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
@@ -471,8 +479,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
 
         uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
-        (,,uint256 committeeFee,) = losslessReporting.getFees();
-        uint256 compensationPerMember = (retrievalAmount[reportId] * committeeFee /  10**2) / numberOfMembersVote;
+        (,,uint256 committeeReward,) = losslessReporting.getFees();
+
+        uint256 compensationPerMember = (amountReported[reportId] * committeeReward /  10**2) / numberOfMembersVote;
 
         address token = losslessReporting.reportTokens(reportId);
 
