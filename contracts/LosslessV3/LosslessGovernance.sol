@@ -479,9 +479,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
 
         uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
-        (,,uint256 committeeFee,) = losslessReporting.getFees();
+        (,,uint256 committeeReward,) = losslessReporting.getFees();
 
-        uint256 compensationPerMember = (amountReported[reportId] * committeeFee /  10**2) / numberOfMembersVote;
+        uint256 compensationPerMember = (amountReported[reportId] * committeeReward /  10**2) / numberOfMembersVote;
 
         address token = losslessReporting.reportTokens(reportId);
 
