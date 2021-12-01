@@ -20,16 +20,23 @@ describe(scriptName, () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-    lerc20Token = await setupToken(2000000,
-      'Random Token',
-      'RAND',
-      adr.lerc20InitialHolder,
-      adr.lerc20Admin.address,
-      adr.lerc20BackupAdmin.address,
-      Number(time.duration.days(1)),
-      env.lssController.address);
+  });
 
-    await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
-    await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
+  describe('when setting the settlement timelock', () => {
+    it('should revert when not admin', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).setSettlementTimeLock(500),
+      ).to.be.revertedWith('LSS: Must be admin');
+    });
+
+    it('should not revert when admin', async () => {
+      await expect(
+        env.lssController.connect(adr.lssAdmin).setSettlementTimeLock(500),
+      ).to.not.be.reverted;
+
+      expect(
+        await env.lssController.settlementTimeLock(),
+      ).to.be.equal(500);
+    });
   });
 });

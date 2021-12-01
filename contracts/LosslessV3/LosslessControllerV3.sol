@@ -217,6 +217,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the amount of tokens given to the erroneously reported address
     /// @param amount Percentage to return
     function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
+        require(0 <= amount && amount <= 100, "LSS: Invalid amount");
         erroneousCompensation = amount;
     }
 

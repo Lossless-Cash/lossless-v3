@@ -14,9 +14,8 @@ let env;
 const scriptName = path.basename(__filename, '.js');
 
 const reportedAmount = 1000000;
-const reporterReward = 0.02;
 
-describe(scriptName, () => {
+describe.only(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -178,13 +177,38 @@ describe(scriptName, () => {
     });
 
     describe('when all stakers claims', () => {
+      // Calculations based on Test Case 2
+      // https://docs.google.com/spreadsheets/d/1-ufuOixhv2pYbUu-dQozqBcZJv2Yg69Wi_yRwnulC00/edit?usp=sharing
       it('should not revert', async () => {
         await expect(
+          // Should get around 7095.2
           env.lssStaking.connect(adr.staker1).stakerClaim(1),
+
+          // Should get around 6872.7
           env.lssStaking.connect(adr.staker2).stakerClaim(1),
+
+          // Should get around 4499.4
           env.lssStaking.connect(adr.staker3).stakerClaim(1),
+
+          // Should get around 1532.8
           env.lssStaking.connect(adr.staker4).stakerClaim(1),
         ).to.not.be.reverted;
+
+        expect(
+          await lerc20Token.balanceOf(adr.staker1.address),
+        ).to.be.equal(7095);
+
+        expect(
+          await lerc20Token.balanceOf(adr.staker2.address),
+        ).to.be.equal(6872);
+
+        expect(
+          await lerc20Token.balanceOf(adr.staker3.address),
+        ).to.be.equal(4499);
+
+        expect(
+          await lerc20Token.balanceOf(adr.staker4.address),
+        ).to.be.equal(1532);
       });
     });
   });

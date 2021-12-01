@@ -112,27 +112,32 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the default reporter reward
     /// @param reward Percentage rewarded to the reporter when a report gets resolved positively
     function setReporterReward(uint256 reward) public onlyLosslessAdmin {
+        require(0 <= reward && reward <= 100, "LSS: Invalid amount");
+        require(reward + losslessFee + committeeFee + stakersFee <= 100, "LSS: Total exceed 100");
         reporterReward = reward;
     }
 
     /// @notice This function sets the default Lossless Fee
     /// @param fee Percentage attributed to Lossless when a report gets resolved positively
     function setLosslessFee(uint256 fee) public onlyLosslessAdmin {
-        require(0 < fee && fee < 100, "LSS: Invalid amount");
+        require(0 <= fee && fee <= 100, "LSS: Invalid amount");
+        require(reporterReward + fee + committeeFee + stakersFee <= 100, "LSS: Total exceed 100");
         losslessFee = fee;
     }
 
     /// @notice This function sets the default Stakers Fee
     /// @param fee Percentage attributed to Stakers when a report gets resolved positively
     function setStakersFee(uint256 fee) public onlyLosslessAdmin {
-        require(0 < fee && fee < 100, "LSS: Invalid amount");
+        require(0 <= fee && fee <= 100, "LSS: Invalid amount");
+        require(reporterReward + losslessFee + committeeFee + fee <= 100, "LSS: Total exceed 100");
         stakersFee = fee;
     }
 
     /// @notice This function sets the default Committee Fee
     /// @param fee Percentage attributed to Stakers when a report gets resolved positively
     function setCommitteeFee(uint256 fee) public onlyLosslessAdmin {
-        require(0 < fee && fee < 100, "LSS: Invalid amount");
+        require(0 <= fee && fee <= 100, "LSS: Invalid amount");
+        require(reporterReward + losslessFee + fee + stakersFee <= 100, "LSS: Total exceed 100");
         committeeFee = fee;
     }
 

@@ -91,7 +91,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     }
 
     modifier onlyLosslessAdmin() {
-        require(losslessController.admin() == msg.sender, "LSS: must be admin");
+        require(losslessController.admin() == msg.sender, "LSS: Must be admin");
         _;
     }
 

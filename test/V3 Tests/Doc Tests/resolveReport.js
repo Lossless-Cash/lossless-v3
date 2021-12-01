@@ -64,16 +64,6 @@ describe(scriptName, () => {
             await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
           });
 
-          it('should save vote as positive', async () => {
-            expect(
-              await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
-            ).to.be.equal(true);
-
-            expect(
-              await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
-            ).to.be.equal(true);
-          });
-
           it('should resolve positvely', async () => {
             await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -91,16 +81,6 @@ describe(scriptName, () => {
           beforeEach(async () => {
             await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
             await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
-          });
-
-          it('should save vote as negative', async () => {
-            expect(
-              await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
-            ).to.be.equal(false);
-
-            expect(
-              await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
-            ).to.be.equal(false);
           });
 
           it('should resolve negatively', async () => {
@@ -122,16 +102,6 @@ describe(scriptName, () => {
             await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
           });
 
-          it('should save each individual vote', async () => {
-            expect(
-              await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
-            ).to.be.equal(false);
-
-            expect(
-              await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
-            ).to.be.equal(true);
-          });
-
           it('should revert needing committee member to vote', async () => {
             await expect(
               env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
@@ -147,16 +117,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
               await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
-            });
-
-            it('should save vote as positive', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
-              ).to.be.equal(true);
-
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(true);
             });
 
             it('should resolve positvely', async () => {
@@ -181,16 +141,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
             });
 
-            it('should save vote as negative', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
-              ).to.be.equal(false);
-
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(false);
-            });
-
             it('should resolve negatively', async () => {
               await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -213,16 +163,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
             });
 
-            it('should save each individual vote', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
-              ).to.be.equal(false);
-
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(true);
-            });
-
             it('should revert needing Lossless Team to vote', async () => {
               await expect(
                 env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
@@ -238,16 +178,6 @@ describe(scriptName, () => {
                 await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
                 await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
                 await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
-              });
-
-              it('should save vote as positive', async () => {
-                expect(
-                  await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
-                ).to.be.equal(true);
-
-                expect(
-                  await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-                ).to.be.equal(true);
               });
 
               it('should resolve positvely', async () => {
@@ -273,16 +203,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
             });
 
-            it('should save vote as negative', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
-              ).to.be.equal(false);
-
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(false);
-            });
-
             it('should resolve negatively', async () => {
               await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -305,16 +225,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
             });
 
-            it('should save each individual vote', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
-              ).to.be.equal(false);
-
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(true);
-            });
-
             it('should revert needing Lossless Team to vote', async () => {
               await expect(
                 env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
@@ -330,12 +240,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
               await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
-            });
-
-            it('should save vote as positive', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
-              ).to.be.equal(true);
             });
 
             it('should resolve negatively', async () => {
@@ -361,12 +265,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
             });
 
-            it('should save vote as positive', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
-              ).to.be.equal(true);
-            });
-
             it('should resolve negatively', async () => {
               await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -388,12 +286,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
               await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
-            });
-
-            it('should save vote as positive', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(true);
             });
 
             it('should resolve negatively', async () => {
@@ -419,11 +311,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
             });
 
-            it('should save committee resolution as positive', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(true);
-            });
             it('should resolve negatively', async () => {
               await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -446,11 +333,7 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
             });
-            it('should save committee resolution as negative', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(false);
-            });
+
             it('should resolve negatively', async () => {
               await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -474,20 +357,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
             });
 
-            it('should save all vote as positive', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(true);
-
-              expect(
-                await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
-              ).to.be.equal(true);
-
-              expect(
-                await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
-              ).to.be.equal(true);
-            });
-
             it('should resolve positively', async () => {
               await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -509,20 +378,6 @@ describe(scriptName, () => {
               await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
               await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
               await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
-            });
-
-            it('should save vote as negative', async () => {
-              expect(
-                await env.lssGovernance.getVote(1, env.committeeVoteIndex),
-              ).to.be.equal(false);
-
-              expect(
-                await env.lssGovernance.getVote(1, env.tokenOwnersVoteIndex),
-              ).to.be.equal(false);
-
-              expect(
-                await env.lssGovernance.getVote(1, env.lssTeamVoteIndex),
-              ).to.be.equal(false);
             });
 
             it('should resolve negatively', async () => {
