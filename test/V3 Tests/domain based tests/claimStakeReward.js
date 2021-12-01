@@ -15,7 +15,7 @@ const scriptName = path.basename(__filename, '.js');
 
 const reportedAmount = 1000000;
 
-describe.only(scriptName, () => {
+describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
