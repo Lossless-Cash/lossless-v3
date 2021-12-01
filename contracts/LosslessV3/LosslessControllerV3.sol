@@ -418,16 +418,17 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         
         ILERC20(token).transferOutBlacklistedFunds(_addresses);
                 
-        (uint256 reporterReward, uint256 losslessFee,, uint256 stakersFee) = losslessReporting.getFees();
+        (uint256 reporterReward, uint256 losslessFee, uint256 committeeFee, uint256 stakersFee) = losslessReporting.getFees();
 
-        uint256 feesRetrieveAmount = totalAmount * (stakersFee + losslessFee) / 10**2;
-        uint256 reporterFeeRetrieveAmount = totalAmount * (reporterReward) / 10**2;
+        uint256 toLssStaking = totalAmount * (stakersFee + losslessFee) / 10**2;
+        uint256 toLssReporting = totalAmount * reporterReward / 10**2;
+        uint256 toLssGovernance = totalAmount - toLssStaking - toLssReporting;
 
-        ILERC20(token).transfer(address(losslessStaking), feesRetrieveAmount);
-        ILERC20(token).transfer(address(losslessReporting), reporterFeeRetrieveAmount);
-        ILERC20(token).transfer(address(losslessGovernance), totalAmount - feesRetrieveAmount - reporterFeeRetrieveAmount);
+        ILERC20(token).transfer(address(losslessStaking), toLssStaking);
+        ILERC20(token).transfer(address(losslessReporting), toLssReporting);
+        ILERC20(token).transfer(address(losslessGovernance), toLssGovernance);
 
-        return totalAmount - feesRetrieveAmount - reporterFeeRetrieveAmount;
+        return totalAmount - toLssStaking - toLssReporting - (totalAmount * committeeFee / 10**2);
     }
 
 

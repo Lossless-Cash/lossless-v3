@@ -12,6 +12,14 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
+const reportedAmount = 1000000;
+const losslessReward = 0.1;
+const committeeReward = 0.02;
+const reporterReward = 0.02;
+const stakerReward = 0.02;
+
+const toRetrieve = reportedAmount * (1 - (losslessReward + committeeReward + reporterReward + stakerReward));
+
 describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -31,5 +39,53 @@ describe(scriptName, () => {
 
     await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
     await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
+
+    await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+      adr.member1.address,
+      adr.member2.address,
+      adr.member3.address,
+      adr.member4.address,
+      adr.member5.address]);
+
+    await env.lssToken.connect(adr.lssInitialHolder)
+      .transfer(adr.reporter1.address, env.stakingAmount);
+    await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, reportedAmount);
+
+    await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
+
+    await ethers.provider.send('evm_increaseTime', [
+      Number(time.duration.minutes(5)),
+    ]);
+
+    await env.lssReporting.connect(adr.reporter1)
+      .report(lerc20Token.address, adr.maliciousActor1.address);
+
+    await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+    await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+    await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+    await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+    await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+    await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
+
+    await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+  });
+
+  describe('when retrieving funds to proposed wallet', () => {
+    it('should transfer funds', async () => {
+      await env.lssGovernance.connect(adr.lssAdmin)
+        .proposeWallet(1, adr.regularUser5.address);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.days(8)),
+      ]);
+
+      await expect(
+        env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
+      ).to.not.be.reverted;
+
+      expect(
+        await lerc20Token.balanceOf(adr.regularUser5.address),
+      ).to.be.equal(toRetrieve);
+    });
   });
 });
