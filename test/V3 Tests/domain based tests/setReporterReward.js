@@ -22,7 +22,7 @@ describe(scriptName, () => {
       adr.lssBackupAdmin);
   });
 
-  describe('when setting the Reporter Fee', () => {
+  describe('when setting the Reporter Reward', () => {
     it('should revert when not admin', async () => {
       await expect(
         env.lssReporting.connect(adr.regularUser1).setReporterReward(1),
