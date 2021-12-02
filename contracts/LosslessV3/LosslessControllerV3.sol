@@ -100,6 +100,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
+    event NewSettlementPeriodProposed(address token, uint256 _seconds);
+    event SettlementPeriodChanged(address token, uint256 proposedTokenLockTimeframe);
 
     // --- MODIFIERS ---
 
@@ -292,7 +294,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         changeSettlementTimelock[token] = block.timestamp + settlementTimeLock;
         isNewSettlementProposed[token] = true;
         proposedTokenLockTimeframe[token] = _seconds;
-        //Add event
+        emit NewSettlementPeriodProposed(token, _seconds);
     }
 
     /// @notice This function executes the new settlement period after the timelock
@@ -303,7 +305,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(changeSettlementTimelock[token] <= block.timestamp, "LSS: Time lock in progress");
         tokenLockTimeframe[token] = proposedTokenLockTimeframe[token];
         isNewSettlementProposed[token] = false;
-        //Add event 
+        emit SettlementPeriodChanged(token, proposedTokenLockTimeframe[token]);
     }
 
     /// @notice This function adds to the total coefficient per report

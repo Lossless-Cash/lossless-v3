@@ -68,4 +68,6 @@ interface ILssController {
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
+    event NewSettlementPeriodProposed(address token, uint256 _seconds);
+    event SettlementPeriodChanged(address token, uint256 proposedTokenLockTimeframe);
 }
