@@ -110,7 +110,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         losslessGovernance = ILssGovernance(_losslessGovernance);
     }
 
-    /// @notice This function sets the amount of tokens to be staked when reporting or staking
+    /// @notice This function sets the amount of tokens to be staked when staking
     /// @param _stakingAmount Amount to be staked
     function setStakingAmount(uint256 _stakingAmount) public onlyLosslessAdmin {
         stakingAmount = _stakingAmount;

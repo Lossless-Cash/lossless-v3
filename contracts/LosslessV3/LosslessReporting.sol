@@ -103,8 +103,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         losslessGovernance = ILssGovernance(_losslessGovernance);
     }
 
-    /// @notice This function sets the amount of tokens to be staked when reporting or staking
-    /// @param _reportingAmount Amount to be staked
+    /// @notice This function sets the amount of tokens to be staked when reporting
+    /// @param _reportingAmount Amount to generate a report
     function setReportingAmount(uint256 _reportingAmount) public onlyLosslessAdmin {
         reportingAmount = _reportingAmount;
     }
