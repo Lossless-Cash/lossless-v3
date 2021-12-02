@@ -79,7 +79,7 @@ describe(scriptName, () => {
     it('should revert if its not a committee member', async () => {
       await expect(
         env.lssGovernance.connect(adr.regularUser1).claimCommitteeReward(1),
-      ).to.be.revertedWith('LSS: Must be committee member');
+      ).to.be.revertedWith('LSS: Did not vote on report');
     });
 
     it('should not revert when member 1 claims', async () => {
