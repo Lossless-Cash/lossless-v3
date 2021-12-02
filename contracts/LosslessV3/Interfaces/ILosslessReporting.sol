@@ -38,4 +38,5 @@ interface ILssReporting {
 
   event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
   event SecondReportsubmitted(address indexed token, address indexed account, uint256 reportId);
+  event ReportingAmountChanged(uint256 indexed newAmount);
 }

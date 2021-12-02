@@ -50,6 +50,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
     event SecondReportsubmitted(address indexed token, address indexed account, uint256 reportId);
+    event ReportingAmountChanged(uint256 indexed newAmount);
 
     // --- MODIFIERS ---
 
@@ -107,6 +108,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param _reportingAmount Amount to generate a report
     function setReportingAmount(uint256 _reportingAmount) public onlyLosslessAdmin {
         reportingAmount = _reportingAmount;
+        emit ReportingAmountChanged(_reportingAmount);
     }
 
     /// @notice This function sets the default reporter reward
