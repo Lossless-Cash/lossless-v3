@@ -24,7 +24,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     uint256 public reportCount;
 
-    ILERC20 public losslessToken;
+    ILERC20 public stakingToken;
     ILssController public losslessController;
     ILssGovernance public losslessGovernance;
 
@@ -89,10 +89,10 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
-    /// @param _losslessToken Address corresponding to the Lossless Governance Token
-    function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
-        require(_losslessToken != address(0), "LERC20: Cannot be zero address");
-        losslessToken = ILERC20(_losslessToken);
+    /// @param _stakingToken Address corresponding to the Lossless Governance Token
+    function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
+        require(_stakingToken != address(0), "LERC20: Cannot be zero address");
+        stakingToken = ILERC20(_stakingToken);
     }
 
     /// @notice This function sets the address of the Lossless Governance smart contract
@@ -188,7 +188,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportTimestamps[reportId] = block.timestamp;
         reportTokens[reportId] = token;
 
-        losslessToken.transferFrom(msg.sender, address(this), reportingAmount);
+        stakingToken.transferFrom(msg.sender, address(this), reportingAmount);
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
@@ -239,7 +239,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId] = true;
 
         ILERC20(reportTokens[reportId]).transfer(msg.sender, reporterClaimableAmount(reportId));
-        losslessToken.transfer(msg.sender, reportingAmount);
+        stakingToken.transfer(msg.sender, reportingAmount);
     }
 
     // --- CLAIM ---

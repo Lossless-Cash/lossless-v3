@@ -122,9 +122,9 @@ const setupEnvironment = async (
     LosslessControllerV3,
   );
 
-  const LosslessToken = await ethers.getContractFactory('LERC20');
+  const StakingToken = await ethers.getContractFactory('LERC20');
 
-  lssToken = await LosslessToken.connect(lssInitialHolder).deploy(
+  lssToken = await StakingToken.connect(lssInitialHolder).deploy(
     lssInitialSupply,
     lssName,
     lssSymbol,
@@ -167,7 +167,7 @@ const setupEnvironment = async (
     { initializer: 'initialize' },
   );
 
-  await lssController.connect(lssAdmin).setLosslessToken(lssToken.address);
+  await lssController.connect(lssAdmin).setStakingToken(lssToken.address);
   await lssController
     .connect(lssAdmin)
     .setStakingContractAddress(lssStaking.address);
@@ -180,7 +180,7 @@ const setupEnvironment = async (
   await lssController.connect(lssAdmin).setControllerV3Defaults();
 
   await lssStaking.connect(lssAdmin).setStakingAmount(stakingAmount);
-  await lssStaking.connect(lssAdmin).setLosslessToken(lssToken.address);
+  await lssStaking.connect(lssAdmin).setStakingToken(lssToken.address);
   await lssStaking
     .connect(lssAdmin)
     .setLosslessGovernance(lssGovernance.address);
@@ -189,7 +189,7 @@ const setupEnvironment = async (
     .connect(lssAdmin)
     .setReportLifetime(Number(reportLifetime));
   await lssReporting.connect(lssAdmin).setReportingAmount(reportingAmount);
-  await lssReporting.connect(lssAdmin).setLosslessToken(lssToken.address);
+  await lssReporting.connect(lssAdmin).setStakingToken(lssToken.address);
 
   await lssReporting
     .connect(lssAdmin)

@@ -2,7 +2,7 @@
 pragma solidity 0.8.0;
 
 interface ILssStaking {
-  function losslessToken() external returns(address);
+  function stakingToken() external returns(address);
   function losslessReporting() external returns(address);
   function losslessController() external returns(address);
   function losslessGovernance() external returns(address);
@@ -18,7 +18,7 @@ interface ILssStaking {
   function pause() external;
   function unpause() external;
   function setLssReporting(address _losslessReporting) external;
-  function setLosslessToken(address _losslessToken) external;
+  function setStakingToken(address _stakingToken) external;
   function setLosslessGovernance(address _losslessGovernance) external;
   function setStakingAmount(uint256 _stakingAmount) external;
   function stake(uint256 reportId) external;

@@ -49,7 +49,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     uint256 public erroneousCompensation;
 
-    ILERC20 public losslessToken;
+    ILERC20 public stakingToken;
     ILssStaking public losslessStaking;
     ILssReporting public losslessReporting;
     ILssGovernance public losslessGovernance;
@@ -194,10 +194,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
-    /// @param _losslessToken Address corresponding to the Lossless Governance Token
-    function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
-        require(_losslessToken != address(0), "LERC20: Cannot be zero address");
-        losslessToken = ILERC20(_losslessToken);
+    /// @param _stakingToken Address corresponding to the Lossless Governance Token
+    function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
+        require(_stakingToken != address(0), "LERC20: Cannot be zero address");
+        stakingToken = ILERC20(_stakingToken);
     }
 
     /// @notice This function sets the timelock for tokens to change the settlement period

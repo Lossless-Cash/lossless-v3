@@ -9,7 +9,7 @@ interface ILssReporting {
   function reportLifetime() external returns(uint256);
   function reportingAmount() external returns(uint256);
   function reportCount() external returns(uint256);
-  function losslessToken() external returns(address);
+  function stakingToken() external returns(address);
   function losslessController() external returns(address);
   function losslessGovernance() external returns(address);
   function reporter(uint256 reportId) external returns(address);
@@ -25,7 +25,7 @@ interface ILssReporting {
   
   function pause() external;
   function unpause() external;
-  function setLosslessToken(address _losslessToken) external;
+  function setStakingToken(address _stakingToken) external;
   function setLosslessGovernance(address _losslessGovernance) external;
   function setReportingAmount(uint256 _reportingAmount) external;
   function setReporterReward(uint256 reward) external;
