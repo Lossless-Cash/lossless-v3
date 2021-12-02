@@ -152,11 +152,11 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
     /// @notice This function will return the Reporter reward and Lossless fee percentage
-    /// @return reporter Returns the reporter reward
-    /// @return lossless Returns the Lossless Fee
-    /// @return committee Returns the committee Fee
-    /// @return stakers Returns the stakers Fee
-    function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers) {
+    /// @return _reporter Returns the reporter reward
+    /// @return _lossless Returns the Lossless Fee
+    /// @return _committee Returns the committee Fee
+    /// @return _stakers Returns the stakers Fee
+    function getFees() external view returns (uint256 _reporter, uint256 _lossless, uint256 _committee, uint256 _stakers) {
         return (reporterReward, losslessFee, committeeReward, stakersFee);
     }
 
