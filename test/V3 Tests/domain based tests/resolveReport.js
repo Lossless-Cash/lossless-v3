@@ -105,7 +105,7 @@ describe(scriptName, () => {
           it('should revert needing committee member to vote', async () => {
             await expect(
               env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
-            ).to.be.revertedWith('LSS: Need anothe vote to untie');
+            ).to.be.revertedWith('LSS: Need another vote to untie');
           });
         });
 
@@ -166,7 +166,7 @@ describe(scriptName, () => {
             it('should revert needing Lossless Team to vote', async () => {
               await expect(
                 env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
-              ).to.be.revertedWith('LSS: Need anothe vote to untie');
+              ).to.be.revertedWith('LSS: Need another vote to untie');
             });
           });
 
@@ -228,7 +228,7 @@ describe(scriptName, () => {
             it('should revert needing Lossless Team to vote', async () => {
               await expect(
                 env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
-              ).to.be.revertedWith('LSS: Need anothe vote to untie');
+              ).to.be.revertedWith('LSS: Need another vote to untie');
             });
           });
 

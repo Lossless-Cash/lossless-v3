@@ -250,14 +250,14 @@ describe('Lossless Governance', () => {
       it('should revert', async () => {
         await expect(
           env.lssGovernance.connect(adr.maliciousActor1).tokenOwnersVote(1, true),
-        ).to.be.revertedWith('LSS: must be token owner');
+        ).to.be.revertedWith('LSS: Must be token owner');
       });
     });
     describe('when impersonating a committee member', () => {
       it('should revert', async () => {
         await expect(
           env.lssGovernance.connect(adr.maliciousActor1).committeeMemberVote(1, true),
-        ).to.be.revertedWith('LSS: must be a committee member');
+        ).to.be.revertedWith('LSS: Must be a committee member');
       });
     });
   });
