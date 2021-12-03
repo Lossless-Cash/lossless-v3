@@ -46,6 +46,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     mapping(uint256 => ProposedWallet) public proposedWalletOnReport;
 
+    mapping(uint256 => bool) public losslessPayed;
+
     struct ProposedWallet {
         address wallet;
         uint256 timestamp;
@@ -78,7 +80,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event WalletRejected(uint256 indexed reportId, address indexed wallet);
     event FundsRetrieved(uint256 indexed reportId, address indexed wallet);
     event CompensationRetrieved(address indexed wallet);
-
+    event LosslessClaimed(address indexed token, uint256 indexed reportID);
 
     function initialize(address _losslessReporting, address _losslessController, address _losslessStaking, address _losslessToken) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
@@ -474,9 +476,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     ///@notice This function is for committee members to claim their rewards
     ///@param reportId report ID to claim reward from
     function claimCommitteeReward(uint256 reportId) public {
-        require(isReportSolved(reportId), "LSS: Report is not solved.");
-        require(isCommitteeMember(msg.sender), "LSS: Must be committee member");
         require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
+        require(isReportSolved(reportId), "LSS: Report is not solved.");
+        require(reportResolution(reportId), "LSS: Report solved negatively.");
 
         uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
         (,,uint256 committeeReward,) = losslessReporting.getFees();
@@ -487,4 +489,20 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         ILERC20(token).transfer(msg.sender, compensationPerMember);
     }
+
+    
+    /// @notice This function is for the Lossless to claim the rewards
+    /// @param reportId Staked report
+    function losslessClaim(uint256 reportId) public whenNotPaused onlyLosslessAdmin {
+        require(isReportSolved(reportId), "LSS: Report still open");
+        require(reportResolution(reportId), "LSS: Report solved negatively.");
+        require(!losslessPayed[reportId], "LSS: Already claimed");
+
+        uint256 amountToClaim = amountReported[reportId] * losslessReporting.losslessFee() / 10**2;
+        losslessPayed[reportId] = true;
+        ILERC20(losslessReporting.reportTokens(reportId)).transfer(losslessController.admin(), amountToClaim);
+
+        emit LosslessClaimed(losslessReporting.reportTokens(reportId), reportId);
+    }
+
 }
