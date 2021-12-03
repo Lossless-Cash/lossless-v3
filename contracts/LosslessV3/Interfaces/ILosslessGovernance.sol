@@ -42,4 +42,5 @@ interface ILssGovernance {
     event WalletRejected(uint256 indexed reportId, address indexed wallet);
     event FundsRetrieved(uint256 indexed reportId, address indexed wallet);
     event CompensationRetrieved(address indexed wallet);
+    event LosslessClaimed(address indexed token, uint256 indexed reportID);
 }

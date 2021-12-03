@@ -76,7 +76,7 @@ describe(scriptName, () => {
         (balance = await lerc20Token.balanceOf(adr.lssAdmin.address)),
       ).to.be.equal(0);
 
-      await env.lssStaking.connect(adr.lssAdmin).losslessClaim(1);
+      await env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1);
 
       expect(await lerc20Token.balanceOf(adr.lssAdmin.address)).to.be.equal(
         reportedAmount * losslessReward,
@@ -86,10 +86,10 @@ describe(scriptName, () => {
 
   describe('when lossless team claims two times', () => {
     it('should revert', async () => {
-      await env.lssStaking.connect(adr.lssAdmin).losslessClaim(1);
+      await env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1);
 
       await expect(
-        env.lssStaking.connect(adr.lssAdmin).losslessClaim(1),
+        env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
       ).to.be.revertedWith('LSS: Already claimed');
     });
   });
@@ -97,7 +97,7 @@ describe(scriptName, () => {
   describe('when lossless claim is called by not lossless admin two times', () => {
     it('should revert', async () => {
       await expect(
-        env.lssStaking.connect(adr.reporter1).losslessClaim(1),
+        env.lssGovernance.connect(adr.reporter1).losslessClaim(1),
       ).to.be.revertedWith('LSS: Must be admin');
     });
   });

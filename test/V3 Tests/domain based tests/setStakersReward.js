@@ -15,11 +15,13 @@ const scriptName = path.basename(__filename, '.js');
 describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
-    env = await setupEnvironment(adr.lssAdmin,
+    env = await setupEnvironment(
+      adr.lssAdmin,
       adr.lssRecoveryAdmin,
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
-      adr.lssBackupAdmin);
+      adr.lssBackupAdmin,
+    );
   });
 
   describe('when setting the Stakers Reward', () => {
@@ -31,8 +33,8 @@ describe(scriptName, () => {
 
     it('should revert when more than 100 percent', async () => {
       await expect(
-        env.lssReporting.connect(adr.lssAdmin).setStakersReward(103),
-      ).to.be.revertedWith('LSS: Invalid amount');
+        env.lssReporting.connect(adr.lssAdmin).setLosslessFee(103),
+      ).to.be.revertedWith('LSS: Total exceed 100');
     });
 
     it('should revert when if total fees exceed 100 percent', async () => {
@@ -42,13 +44,10 @@ describe(scriptName, () => {
     });
 
     it('should not revert when sent by admin', async () => {
-      await expect(
-        env.lssReporting.connect(adr.lssAdmin).setStakersReward(3),
-      ).to.not.be.reverted;
+      await expect(env.lssReporting.connect(adr.lssAdmin).setStakersReward(3))
+        .to.not.be.reverted;
 
-      expect(
-        await env.lssReporting.stakersReward(),
-      ).to.be.equal(3);
+      expect(await env.lssReporting.stakersReward()).to.be.equal(3);
     });
   });
 });

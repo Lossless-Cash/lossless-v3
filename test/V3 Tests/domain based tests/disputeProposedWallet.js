@@ -114,7 +114,7 @@ describe(scriptName, () => {
       it('should revert when trying to retrieve', async () => {
         await expect(
           env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
-        ).to.be.revertedWith('LSS: Proposed wallet rejected');
+        ).to.be.revertedWith('LSS: Wallet rejected');
       });
     });
   });

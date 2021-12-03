@@ -32,7 +32,7 @@ describe(scriptName, () => {
     it('should revert when more than 100 percent', async () => {
       await expect(
         env.lssReporting.connect(adr.lssAdmin).setReporterReward(103),
-      ).to.be.revertedWith('LSS: Invalid amount');
+      ).to.be.revertedWith('LSS: Total exceed 100');
     });
 
     it('should revert when if total fees exceed 100 percent', async () => {
