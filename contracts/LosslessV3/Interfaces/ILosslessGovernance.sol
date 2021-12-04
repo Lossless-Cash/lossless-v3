@@ -7,7 +7,8 @@ interface ILssGovernance {
     function committeeVoteIndex() external view returns(address);
     function committeeMembersCount() external view returns(address);
     function walletDisputePeriod() external view returns(address);
-    function losslessToken() external view returns (address);
+    function setStakingToken() external view returns (address);
+    function stakingToken() external view returns (address);
     function losslessStaking() external view returns (address);
     function losslessReporting() external view returns (address);
     function losslessController() external view returns (address);

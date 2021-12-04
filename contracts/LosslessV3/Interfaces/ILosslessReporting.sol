@@ -9,7 +9,7 @@ interface ILssReporting {
   function reportLifetime() external returns(uint256);
   function reportingAmount() external returns(uint256);
   function reportCount() external returns(uint256);
-  function losslessToken() external returns(address);
+  function stakingToken() external returns(address);
   function losslessController() external returns(address);
   function losslessGovernance() external returns(address);
   function reporter(uint256 reportId) external returns(address);
@@ -25,12 +25,12 @@ interface ILssReporting {
   
   function pause() external;
   function unpause() external;
-  function setLosslessToken(address _losslessToken) external;
+  function setStakingToken(address _stakingToken) external;
   function setLosslessGovernance(address _losslessGovernance) external;
   function setReportingAmount(uint256 _reportingAmount) external;
   function setReporterReward(uint256 reward) external;
-  function setLosslessFee(uint256 fee) external;
-  function setStakersFee(uint256 fee) external;
+  function setLosslessReward(uint256 fee) external;
+  function setStakersReward(uint256 fee) external;
   function setCommitteeFee(uint256 fee) external;
   function setReportLifetime(uint256 _lifetime) external;
   function secondReport(uint256 reportId, address account) external;
@@ -38,4 +38,5 @@ interface ILssReporting {
 
   event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
   event SecondReportsubmitted(address indexed token, address indexed account, uint256 reportId);
+  event ReportingAmountChanged(uint256 indexed newAmount);
 }

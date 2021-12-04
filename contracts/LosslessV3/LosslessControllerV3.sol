@@ -49,7 +49,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     uint256 public erroneousCompensation;
 
-    ILERC20 public losslessToken;
+    ILERC20 public stakingToken;
     ILssStaking public losslessStaking;
     ILssReporting public losslessReporting;
     ILssGovernance public losslessGovernance;
@@ -100,6 +100,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
+    event NewSettlementPeriodProposed(address token, uint256 _seconds);
+    event SettlementPeriodChanged(address token, uint256 proposedTokenLockTimeframe);
 
     // --- MODIFIERS ---
 
@@ -194,10 +196,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
-    /// @param _losslessToken Address corresponding to the Lossless Governance Token
-    function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
-        require(_losslessToken != address(0), "LERC20: Cannot be zero address");
-        losslessToken = ILERC20(_losslessToken);
+    /// @param _stakingToken Address corresponding to the Lossless Governance Token
+    function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
+        require(_stakingToken != address(0), "LERC20: Cannot be zero address");
+        stakingToken = ILERC20(_stakingToken);
     }
 
     /// @notice This function sets the timelock for tokens to change the settlement period
@@ -292,7 +294,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         changeSettlementTimelock[token] = block.timestamp + settlementTimeLock;
         isNewSettlementProposed[token] = true;
         proposedTokenLockTimeframe[token] = _seconds;
-        //Add event
+        emit NewSettlementPeriodProposed(token, _seconds);
     }
 
     /// @notice This function executes the new settlement period after the timelock
@@ -303,7 +305,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(changeSettlementTimelock[token] <= block.timestamp, "LSS: Time lock in progress");
         tokenLockTimeframe[token] = proposedTokenLockTimeframe[token];
         isNewSettlementProposed[token] = false;
-        //Add event 
+        emit SettlementPeriodChanged(token, proposedTokenLockTimeframe[token]);
     }
 
     /// @notice This function adds to the total coefficient per report
@@ -419,9 +421,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         
         ILERC20(token).transferOutBlacklistedFunds(_addresses);
                 
-        (uint256 reporterReward, uint256 losslessFee, uint256 committeeReward, uint256 stakersFee) = losslessReporting.getFees();
+        (uint256 reporterReward, uint256 losslessReward, uint256 committeeReward, uint256 stakersReward) = losslessReporting.getFees();
 
-        uint256 toLssStaking = totalAmount * (stakersFee + losslessFee) / 10**2;
+        uint256 toLssStaking = totalAmount * (stakersReward + losslessReward) / 10**2;
         uint256 toLssReporting = totalAmount * reporterReward / 10**2;
         uint256 toLssGovernance = totalAmount - toLssStaking - toLssReporting;
 

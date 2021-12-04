@@ -26,7 +26,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         bool payed;
     }
 
-    ILERC20 public losslessToken;
+    ILERC20 public stakingToken;
     ILssReporting public losslessReporting;
     ILssController public losslessController;
     ILssGovernance public losslessGovernance;
@@ -93,10 +93,10 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
-    /// @param _losslessToken Address corresponding to the Lossless Governance Token
-    function setLosslessToken(address _losslessToken) public onlyLosslessAdmin {
-        require(_losslessToken != address(0), "LERC20: Cannot be zero address");
-        losslessToken = ILERC20(_losslessToken);
+    /// @param _stakingToken Address corresponding to the Lossless Governance Token
+    function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
+        require(_stakingToken != address(0), "LERC20: Cannot be zero address");
+        stakingToken = ILERC20(_stakingToken);
     }
 
     /// @notice This function sets the address of the Lossless Governance Token
@@ -107,7 +107,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         losslessGovernance = ILssGovernance(_losslessGovernance);
     }
 
-    /// @notice This function sets the amount of tokens to be staked when reporting or staking
+    /// @notice This function sets the amount of tokens to be staked when staking
     /// @param _stakingAmount Amount to be staked
     function setStakingAmount(uint256 _stakingAmount) public onlyLosslessAdmin {
         stakingAmount = _stakingAmount;
@@ -157,7 +157,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         losslessController.addToReportCoefficient(reportId, stakerCoefficient);
         
-        losslessToken.transferFrom(msg.sender, address(this), stakingAmount);
+        stakingToken.transferFrom(msg.sender, address(this), stakingAmount);
 
         totalStakedOnReport[reportId] += stakingAmount;
         
@@ -171,9 +171,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// It takes into consideration the staker coefficient in order to return the percentage rewarded.
     /// @param reportId Staked report
     function stakerClaimableAmount(uint256 reportId) public view returns (uint256) {
-        (,,, uint256 stakersFee) = losslessReporting.getFees();
+        (,,, uint256 stakersReward) = losslessReporting.getFees();
         uint256 amountStakedOnReport = losslessGovernance.amountReported(reportId);
-        uint256 amountDistributedToStakers = amountStakedOnReport * stakersFee / 10**2;
+        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / 10**2;
         uint256 stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
         uint256 reportCoefficient = losslessController.reportCoefficient(reportId);
         uint256 coefficientMultiplier = ((amountDistributedToStakers * 10**6) / reportCoefficient);
@@ -194,7 +194,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakes[msg.sender].stakeInfoOnReport[reportId].payed = true;
 
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, stakerClaimableAmount(reportId));
-        losslessToken.transfer( msg.sender, stakingAmount);
+        stakingToken.transfer( msg.sender, stakingAmount);
 
         emit StakerClaimed(msg.sender, losslessReporting.reportTokens(reportId), reportId);
     }
@@ -203,7 +203,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param adr retribution address
     /// @param amount amount to be retrieved
     function retrieveCompensation(address adr, uint256 amount) public onlyLosslessEnv {
-        losslessToken.transfer(adr, amount);
+        stakingToken.transfer(adr, amount);
     }
 
 
