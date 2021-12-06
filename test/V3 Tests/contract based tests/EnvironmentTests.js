@@ -39,7 +39,7 @@ describe('Lossless Environment', () => {
 
       it('should set the report Lossless Token address correctly', async () => {
         expect(
-          await env.lssController.losslessToken(),
+          await env.lssController.stakingToken(),
         ).to.be.equal(env.lssToken.address);
       });
 
@@ -65,7 +65,7 @@ describe('Lossless Environment', () => {
     describe('when the Lossless Staking Contract has been set up', () => {
       it('should set the report Lossless Token address correctly', async () => {
         expect(
-          await env.lssStaking.losslessToken(),
+          await env.lssStaking.stakingToken(),
         ).to.be.equal(env.lssToken.address);
       });
     });
@@ -73,7 +73,7 @@ describe('Lossless Environment', () => {
     describe('when the Lossless Reporting Contract has been set up', () => {
       it('should set the report Lossless Token address correctly', async () => {
         expect(
-          await env.lssReporting.losslessToken(),
+          await env.lssReporting.stakingToken(),
         ).to.be.equal(env.lssToken.address);
       });
 

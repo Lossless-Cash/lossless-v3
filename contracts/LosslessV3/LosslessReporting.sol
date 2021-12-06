@@ -114,28 +114,28 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the default reporter reward
     /// @param reward Percentage rewarded to the reporter when a report gets resolved positively
     function setReporterReward(uint256 reward) public onlyLosslessAdmin {
-        require(reward + losslessFee + committeeReward + stakersFee <= 100 && 0 <= reward, "LSS: Total exceed 100");
+        require(reward + losslessReward + committeeReward + stakersReward <= 100 && 0 <= reward, "LSS: Total exceed 100");
         reporterReward = reward;
     }
 
-    /// @notice This function sets the default Lossless Fee
+    /// @notice This function sets the default Lossless Reward
     /// @param fee Percentage attributed to Lossless when a report gets resolved positively
-    function setLosslessFee(uint256 fee) public onlyLosslessAdmin {
-        require(reporterReward + fee + committeeReward + stakersFee <= 100 && 0 <= fee, "LSS: Total exceed 100");
-        losslessFee = fee;
+    function setLosslessReward(uint256 fee) public onlyLosslessAdmin {
+        require(reporterReward + fee + committeeReward + stakersReward <= 100 && 0 <= fee, "LSS: Total exceed 100");
+        losslessReward = fee;
     }
 
-    /// @notice This function sets the default Stakers Fee
+    /// @notice This function sets the default Stakers Reward
     /// @param fee Percentage attributed to Stakers when a report gets resolved positively
-    function setStakersFee(uint256 fee) public onlyLosslessAdmin {
-        require(reporterReward + losslessFee + committeeReward + fee <= 100 && 0 <= fee, "LSS: Total exceed 100");
-        stakersFee = fee;
+    function setStakersReward(uint256 fee) public onlyLosslessAdmin {
+        require(reporterReward + losslessReward + committeeReward + fee <= 100 && 0 <= fee, "LSS: Total exceed 100");
+        stakersReward = fee;
     }
 
     /// @notice This function sets the default Committee Reward
     /// @param reward Percentage attributed to Stakers when a report gets resolved positively
     function setCommitteeReward(uint256 reward) public onlyLosslessAdmin {
-        require(reporterReward + losslessFee + reward + stakersFee <= 100 && 0 <= reward, "LSS: Total exceed 100");
+        require(reporterReward + losslessReward + reward + stakersReward <= 100 && 0 <= reward, "LSS: Total exceed 100");
         committeeReward = reward;
     }
 
@@ -155,11 +155,11 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     /// @notice This function will return the Reporter reward and Lossless fee percentage
     /// @return _reporter Returns the reporter reward
-    /// @return _lossless Returns the Lossless Fee
-    /// @return _committee Returns the committee Fee
-    /// @return _stakers Returns the stakers Fee
-    function getFees() external view returns (uint256 _reporter, uint256 _lossless, uint256 _committee, uint256 _stakers) {
-        return (reporterReward, losslessFee, committeeReward, stakersFee);
+    /// @return _lossless Returns the Lossless Reward
+    /// @return _committee Returns the committee Reward
+    /// @return _stakers Returns the stakers Reward
+    function getRewards() external view returns (uint256 _reporter, uint256 _lossless, uint256 _committee, uint256 _stakers) {
+        return (reporterReward, losslessReward, committeeReward, stakersReward);
     }
 
     // --- REPORTS ---

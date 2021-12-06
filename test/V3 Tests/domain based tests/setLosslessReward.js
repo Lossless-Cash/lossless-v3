@@ -33,7 +33,7 @@ describe(scriptName, () => {
 
     it('should revert when more than 100 percent', async () => {
       await expect(
-        env.lssReporting.connect(adr.lssAdmin).setStakersFee(103),
+        env.lssReporting.connect(adr.lssAdmin).setStakersReward(103),
       ).to.be.revertedWith('LSS: Total exceed 100');
     });
 

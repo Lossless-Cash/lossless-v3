@@ -481,7 +481,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(reportResolution(reportId), "LSS: Report solved negatively.");
 
         uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
-        (,,uint256 committeeReward,) = losslessReporting.getFees();
+        (,,uint256 committeeReward,) = losslessReporting.getRewards();
 
         uint256 compensationPerMember = (amountReported[reportId] * committeeReward /  10**2) / numberOfMembersVote;
 
@@ -498,7 +498,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(reportResolution(reportId), "LSS: Report solved negatively.");
         require(!losslessPayed[reportId], "LSS: Already claimed");
 
-        uint256 amountToClaim = amountReported[reportId] * losslessReporting.losslessFee() / 10**2;
+        uint256 amountToClaim = amountReported[reportId] * losslessReporting.losslessReward() / 10**2;
         losslessPayed[reportId] = true;
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(losslessController.admin(), amountToClaim);
 

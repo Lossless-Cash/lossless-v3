@@ -3,7 +3,7 @@ pragma solidity 0.8.0;
 
 interface ILssReporting {
   function reporterReward() external returns(uint256);
-  function losslessFee() external returns(uint256);
+  function losslessReward() external returns(uint256);
   function stakersFee() external returns(uint256);
   function committeeReward() external returns(uint256);
   function reportLifetime() external returns(uint256);
@@ -19,7 +19,7 @@ interface ILssReporting {
   function reportTokens(uint256 reportId) external returns(address);
   function secondReports(uint256 reportId) external returns(bool);
   function getVersion() external pure returns (uint256);
-  function getFees() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
+  function getRewards() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
   function report(address token, address account) external returns (uint256);
   function reporterClaimableAmount(uint256 reportId) external view returns (uint256);
   
