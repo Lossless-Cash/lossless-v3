@@ -18,6 +18,17 @@ describe('Lossless Environment', () => {
   });
 
   describe('On deployment', () => {
+    describe('when setting up Lossless Reporting Contract', () => {
+      it('should set reporting amount correctly and emit the event', async () => {
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReportingAmount(env.reportingAmount),
+        ).to.emit(env.lssReporting, 'ReportingAmountChanged')
+          .withArgs(
+            env.reportingAmount,
+          );
+      });
+    });
+
     describe('when the Lossless Controller contract has been set up', () => {
       it('should set the report Lossless Token address correctly', async () => {
         expect(
