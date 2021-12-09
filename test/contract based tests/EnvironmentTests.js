@@ -19,24 +19,6 @@ describe('Lossless Environment', () => {
 
   describe('On deployment', () => {
     describe('when the Lossless Controller contract has been set up', () => {
-      it('should set the stake amount correctly', async () => {
-        expect(
-          await env.lssStaking.stakingAmount(),
-        ).to.be.equal(env.stakingAmount);
-      });
-
-      it('should set the reporting amount correctly', async () => {
-        expect(
-          await env.lssReporting.reportingAmount(),
-        ).to.be.equal(env.reportingAmount);
-      });
-
-      it('should set the report lifetime correctly', async () => {
-        expect(
-          await env.lssReporting.reportLifetime(),
-        ).to.be.equal(Number(env.reportLifetime));
-      });
-
       it('should set the report Lossless Token address correctly', async () => {
         expect(
           await env.lssController.stakingToken(),
@@ -68,9 +50,33 @@ describe('Lossless Environment', () => {
           await env.lssStaking.stakingToken(),
         ).to.be.equal(env.lssToken.address);
       });
+
+      it('should set the stake amount correctly', async () => {
+        expect(
+          await env.lssStaking.stakingAmount(),
+        ).to.be.equal(env.stakingAmount);
+      });
+
+      it('should set the Governance contract correctly', async () => {
+        expect(
+          await env.lssStaking.losslessGovernance(),
+        ).to.be.equal(env.lssGovernance.address);
+      });
     });
 
     describe('when the Lossless Reporting Contract has been set up', () => {
+      it('should set the reporting amount correctly', async () => {
+        expect(
+          await env.lssReporting.reportingAmount(),
+        ).to.be.equal(env.reportingAmount);
+      });
+
+      it('should set the report lifetime correctly', async () => {
+        expect(
+          await env.lssReporting.reportLifetime(),
+        ).to.be.equal(Number(env.reportLifetime));
+      });
+
       it('should set the report Lossless Token address correctly', async () => {
         expect(
           await env.lssReporting.stakingToken(),
@@ -93,6 +99,62 @@ describe('Lossless Environment', () => {
         expect(
           await env.lssReporting.losslessReward(),
         ).to.be.equal(10);
+      });
+
+      it('should set the Governance contract correctly', async () => {
+        expect(
+          await env.lssReporting.losslessGovernance(),
+        ).to.be.equal(env.lssGovernance.address);
+      });
+
+      it('should set reporter reward correctly', async () => {
+        expect(
+          await env.lssReporting.reporterReward(),
+        ).to.be.equal(2);
+      });
+
+      it('should set lossless reward correctly', async () => {
+        expect(
+          await env.lssReporting.losslessReward(),
+        ).to.be.equal(10);
+      });
+
+      it('should set staker reward correctly', async () => {
+        expect(
+          await env.lssReporting.stakersReward(),
+        ).to.be.equal(2);
+      });
+
+      it('should set committee reward correctly', async () => {
+        expect(
+          await env.lssReporting.committeeReward(),
+        ).to.be.equal(2);
+      });
+    });
+
+    describe('when the Lossless Governance Contract has been set up', () => {
+      it('should set the Reporting address correctly', async () => {
+        expect(
+          await env.lssGovernance.losslessReporting(),
+        ).to.be.equal(env.lssReporting.address);
+      });
+
+      it('should set the Controller address correctly', async () => {
+        expect(
+          await env.lssGovernance.losslessController(),
+        ).to.be.equal(env.lssController.address);
+      });
+
+      it('should set the Staking address correctly', async () => {
+        expect(
+          await env.lssGovernance.losslessStaking(),
+        ).to.be.equal(env.lssStaking.address);
+      });
+
+      it('should set the staking token address correctly', async () => {
+        expect(
+          await env.lssGovernance.stakingToken(),
+        ).to.be.equal(env.lssToken.address);
       });
     });
   });
