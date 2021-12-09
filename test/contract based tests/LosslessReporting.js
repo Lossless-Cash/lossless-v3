@@ -38,23 +38,72 @@ describe('Lossless Reporting', () => {
       .executeNewSettlementPeriod(lerc20Token.address);
   });
 
-  describe('when paused', () => {
+  describe('when pausing', () => {
+    describe('when not pause admin', () => {
+      it('should rever', async () => {
+        await expect(
+          env.lssReporting.connect(adr.regularUser1).pause(),
+        ).to.be.revertedWith('LSS: Must be pauseAdmin');
+      });
+    });
+    describe('when pause admin', () => {
+      beforeEach(async () => {
+        await env.lssReporting.connect(adr.lssPauseAdmin).pause();
+      });
+
+      it('should prevent reporting', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, adr.maliciousActor1.address),
+        ).to.be.revertedWith('Pausable: paused');
+      });
+
+      it('should prevent staker claiming', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.maliciousActor2.address),
+        ).to.be.revertedWith('Pausable: paused');
+      });
+    });
+  });
+
+  describe('when unpausing', () => {
     beforeEach(async () => {
       await env.lssReporting.connect(adr.lssPauseAdmin).pause();
     });
 
-    it('should prevent reporting', async () => {
-      await expect(
-        env.lssReporting.connect(adr.reporter1)
-          .report(lerc20Token.address, adr.maliciousActor1.address),
-      ).to.be.revertedWith('Pausable: paused');
+    describe('when not pause admin', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.regularUser1).unpause(),
+        ).to.be.revertedWith('LSS: Must be pauseAdmin');
+      });
     });
+    describe('when pause admin', () => {
+      beforeEach(async () => {
+        await env.lssReporting.connect(adr.lssPauseAdmin).unpause();
+      });
 
-    it('should prevent staker claiming', async () => {
-      await expect(
-        env.lssReporting.connect(adr.reporter1)
-          .secondReport(1, adr.maliciousActor2.address),
-      ).to.be.revertedWith('Pausable: paused');
+      it('should not prevent reporting', async () => {
+        await env.lssToken.connect(adr.lssInitialHolder)
+          .transfer(adr.reporter1.address, env.stakingAmount);
+        await env.lssToken.connect(adr.lssInitialHolder)
+          .transfer(adr.reporter2.address, env.stakingAmount);
+
+        await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
+
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, adr.maliciousActor1.address),
+        ).to.not.be.reverted;
+      });
+
+      it('should prevent staker claiming', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.maliciousActor2.address),
+        ).to.be.revertedWith('LSS: report does not exists');
+      });
     });
   });
 
