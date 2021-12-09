@@ -10,6 +10,8 @@ let adr;
 let env;
 let lerc20Token;
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 describe('Lossless Reporting', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -134,6 +136,15 @@ describe('Lossless Reporting', () => {
       });
     });
 
+    describe('when reporting zero address', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Cannot report zero address');
+      });
+    });
+
     describe('when reporting a Dex address', () => {
       beforeEach(async () => {
         await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
@@ -211,6 +222,15 @@ describe('Lossless Reporting', () => {
 
       await env.lssReporting.connect(adr.reporter1)
         .report(lerc20Token.address, adr.maliciousActor1.address);
+    });
+
+    describe('when generating another report on zero address', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Cannot report zero address');
+      });
     });
 
     describe('when generating another report successfully', () => {
