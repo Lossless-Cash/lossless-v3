@@ -45,9 +45,10 @@ describe(scriptName, () => {
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakingAmount);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter2.address, env.stakingAmount);
+        .transfer(adr.maliciousActor1.address, env.stakingAmount);
 
       await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
+      await env.lssToken.connect(adr.maliciousActor1).approve(env.lssReporting.address, env.stakingAmount);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
@@ -128,7 +129,19 @@ describe(scriptName, () => {
       });
     });
 
-    /* CHECK WITH DOMANTAS 
+    describe('when the reporter is blacklisted', () => {
+      it('should revert', async () => {
+        await env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address);
+
+        await expect(
+          env.lssReporting.connect(adr.maliciousActor1)
+            .report(lerc20Token.address, adr.reporter1.address),
+        ).to.be.revertedWith('LSS: You cannot operate');
+      });
+    });
+
+    /* CHECK WITH DOMANTAS
    describe.only('when lifeTime of a report passes', () => {
       beforeEach(async () => {
         await env.lssReporting.connect(adr.reporter1)
