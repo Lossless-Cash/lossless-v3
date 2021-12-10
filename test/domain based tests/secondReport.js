@@ -106,10 +106,13 @@ describe(scriptName, () => {
 
     describe('when reporting another multiple times', () => {
       it('should revert', async () => {
+        await env.lssReporting.connect(adr.reporter1)
+          .secondReport(1, adr.maliciousActor2.address);
+
         await expect(
-          env.lssReporting.connect(adr.reporter2)
-            .secondReport(1, adr.maliciousActor1.address),
-        ).to.be.revertedWith('LSS: invalid reporter');
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.maliciousActor2.address),
+        ).to.be.revertedWith('LSS: Another already submitted');
       });
     });
 
