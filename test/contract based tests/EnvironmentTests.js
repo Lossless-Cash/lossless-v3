@@ -106,7 +106,7 @@ describe('Lossless Environment', () => {
         ).to.be.equal(2);
       });
 
-      it('should set the Lossless fee correctly', async () => {
+      it('should set the Lossless reward correctly', async () => {
         expect(
           await env.lssReporting.losslessReward(),
         ).to.be.equal(10);

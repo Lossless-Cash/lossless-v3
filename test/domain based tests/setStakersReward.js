@@ -43,7 +43,7 @@ describe(scriptName, () => {
       ).to.be.revertedWith('LSS: Total exceed 100');
     });
 
-    it('should revert when if total fees exceed 100 percent', async () => {
+    it('should revert when if total rewards exceed 100 percent', async () => {
       await expect(
         env.lssReporting.connect(adr.lssAdmin).setStakersReward(100),
       ).to.be.revertedWith('LSS: Total exceed 100');
@@ -64,13 +64,13 @@ describe(scriptName, () => {
       await env.lssReporting.connect(adr.lssAdmin).setCommitteeReward(1);
     });
 
-    it('should revert when going over 100 percent fees', async () => {
+    it('should revert when going over 100 percent rewards', async () => {
       await expect(
         env.lssReporting.connect(adr.lssAdmin).setStakersReward(5),
       ).to.be.revertedWith('LSS: Total exceed 100');
     });
 
-    it('should not revert when staying under 100 percent fees', async () => {
+    it('should not revert when staying under 100 percent rewards', async () => {
       await expect(
         env.lssReporting.connect(adr.lssAdmin).setStakersReward(4),
       ).to.not.be.reverted;
