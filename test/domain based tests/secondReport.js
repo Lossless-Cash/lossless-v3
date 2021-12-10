@@ -112,5 +112,26 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LSS: invalid reporter');
       });
     });
+
+    describe('when reporting another and the original report was solved', () => {
+      it('should revert', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address,
+          adr.member4.address,
+          adr.member5.address]);
+
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        await expect(
+          env.lssReporting.connect(adr.reporter2)
+            .secondReport(1, adr.maliciousActor1.address),
+        ).to.be.revertedWith('LSS: Report already solved');
+      });
+    });
   });
 });
