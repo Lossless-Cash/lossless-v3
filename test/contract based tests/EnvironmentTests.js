@@ -30,6 +30,12 @@ describe('Lossless Environment', () => {
     });
 
     describe('when the Lossless Controller contract has been set up', () => {
+      it('should get version', async () => {
+        expect(
+          await env.lssController.getVersion(),
+        ).to.be.equal(3);
+      });
+
       it('should set the report Lossless Token address correctly', async () => {
         expect(
           await env.lssController.stakingToken(),
@@ -56,6 +62,12 @@ describe('Lossless Environment', () => {
     });
 
     describe('when the Lossless Staking Contract has been set up', () => {
+      it('should get version', async () => {
+        expect(
+          await env.lssStaking.getVersion(),
+        ).to.be.equal(1);
+      });
+
       it('should set the report Lossless Token address correctly', async () => {
         expect(
           await env.lssStaking.stakingToken(),
@@ -76,6 +88,12 @@ describe('Lossless Environment', () => {
     });
 
     describe('when the Lossless Reporting Contract has been set up', () => {
+      it('should get version', async () => {
+        expect(
+          await env.lssReporting.getVersion(),
+        ).to.be.equal(1);
+      });
+
       it('should set the reporting amount correctly', async () => {
         expect(
           await env.lssReporting.reportingAmount(),
@@ -144,6 +162,12 @@ describe('Lossless Environment', () => {
     });
 
     describe('when the Lossless Governance Contract has been set up', () => {
+      it('should get version', async () => {
+        expect(
+          await env.lssGovernance.getVersion(),
+        ).to.be.equal(1);
+      });
+
       it('should set the Reporting address correctly', async () => {
         expect(
           await env.lssGovernance.losslessReporting(),

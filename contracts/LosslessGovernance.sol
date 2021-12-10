@@ -108,7 +108,13 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         _unpause();
     }
 
-
+    
+    /// @notice This function gets the contract version
+    /// @return Version of the contract
+    function getVersion() external pure returns (uint256) {
+        return 1;
+    }
+    
     /// @notice This function determines if an address belongs to the Committee
     /// @param account Address to be verified
     /// @return True if the address is a committee member
