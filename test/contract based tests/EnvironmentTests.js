@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-expressions */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prefer-destructuring */
 const { time, constants } = require('@openzeppelin/test-helpers');
@@ -26,6 +27,40 @@ describe('Lossless Environment', () => {
           .withArgs(
             env.reportingAmount,
           );
+      });
+
+      it('should not revert when setting the rewards', async () => {
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setLosslessReward(50),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setStakersReward(45),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setCommitteeReward(1),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReporterReward(4),
+        ).to.not.be.reverted;
+      });
+
+      it('should get the rewards correctly', async () => {
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setLosslessReward(50),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setStakersReward(45),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setCommitteeReward(1),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReporterReward(4),
+        ).to.not.be.reverted;
+
+        expect(
+          await env.lssReporting.getRewards(),
+        ).to.not.be.empty;
       });
     });
 
