@@ -31,6 +31,12 @@ describe(scriptName, () => {
       ).to.be.revertedWith('LSS: Must be admin');
     });
 
+    it('should not revert when equal 0 percent', async () => {
+      await expect(
+        env.lssReporting.connect(adr.lssAdmin).setStakersReward(0),
+      ).to.not.be.reverted;
+    });
+
     it('should revert when more than 100 percent', async () => {
       await expect(
         env.lssReporting.connect(adr.lssAdmin).setLosslessReward(103),
@@ -48,6 +54,26 @@ describe(scriptName, () => {
         .to.not.be.reverted;
 
       expect(await env.lssReporting.stakersReward()).to.be.equal(3);
+    });
+  });
+
+  describe('when other rewards are set', () => {
+    beforeEach(async () => {
+      await env.lssReporting.connect(adr.lssAdmin).setLosslessReward(50);
+      await env.lssReporting.connect(adr.lssAdmin).setReporterReward(45);
+      await env.lssReporting.connect(adr.lssAdmin).setCommitteeReward(1);
+    });
+
+    it('should revert when going over 100 percent fees', async () => {
+      await expect(
+        env.lssReporting.connect(adr.lssAdmin).setStakersReward(5),
+      ).to.be.revertedWith('LSS: Total exceed 100');
+    });
+
+    it('should not revert when staying under 100 percent fees', async () => {
+      await expect(
+        env.lssReporting.connect(adr.lssAdmin).setStakersReward(4),
+      ).to.not.be.reverted;
     });
   });
 });
