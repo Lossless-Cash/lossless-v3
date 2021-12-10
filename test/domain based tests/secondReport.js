@@ -39,6 +39,10 @@ describe(scriptName, () => {
         [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
       );
 
+      await env.lssController.connect(adr.lssAdmin).setDexList(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      );
+
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakingAmount * 2);
       await env.lssToken.connect(adr.lssInitialHolder)
@@ -70,6 +74,15 @@ describe(scriptName, () => {
           env.lssReporting.connect(adr.reporter1)
             .secondReport(1, env.lssReporting.address),
         ).to.be.revertedWith('LSS: Cannot report LSS protocol');
+      });
+    });
+
+    describe('when reporting another on a dex address', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.dexAddress.address),
+        ).to.be.revertedWith('LSS: Cannot report Dex');
       });
     });
 
