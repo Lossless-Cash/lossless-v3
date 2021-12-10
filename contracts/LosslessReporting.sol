@@ -153,7 +153,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         return 1;
     }
 
-    /// @notice This function will return the Reporter reward and Lossless fee percentage
+    /// @notice This function will return the reward amount for all parties
     /// @return _reporter Returns the reporter reward
     /// @return _lossless Returns the Lossless Reward
     /// @return _committee Returns the committee Reward
