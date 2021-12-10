@@ -95,6 +95,17 @@ describe(scriptName, () => {
         ).to.not.be.empty;
       });
 
+      it('should emit event', async () => {
+        expect(
+          await env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, adr.maliciousActor1.address),
+        ).to.emit(env.lssReporting, 'ReportSubmitted').withArgs(
+          lerc20Token.address,
+          adr.maliciousActor1.address,
+          1,
+        );
+      });
+
       it('should blacklist address', async () => {
         await env.lssReporting.connect(adr.reporter1)
           .report(lerc20Token.address, adr.maliciousActor1.address);
