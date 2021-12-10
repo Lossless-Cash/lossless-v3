@@ -165,9 +165,9 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     // --- REPORTS ---
 
     /// @notice This function will generate a report
-    /// @dev This funtion must be called by a non blacklisted/reported address. 
-    /// It will generate a report for and address linked to a token.
-    /// Lossless Contracts and Admin addresses cannot be reported.
+    /// @dev This function must be called by a non blacklisted/reported address. 
+    /// It will generate a report for an address linked to a token.
+    /// Lossless Contracts, Admin addresses and Dexes cannot be reported.
     /// @param token Token address of the stolen funds
     /// @param account Potential malicious address
     function report(address token, address account) public notBlacklisted whenNotPaused returns (uint256){
