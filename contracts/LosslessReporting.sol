@@ -140,9 +140,9 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
     /// @notice This function sets the default lifetime of the reports
-    /// @param _lifetime Time frame of which a report is active
-    function setReportLifetime(uint256 _lifetime) public onlyLosslessAdmin {
-        reportLifetime = _lifetime;
+    /// @param lifetime Time frame of which a report is active
+    function setReportLifetime(uint256 lifetime) public onlyLosslessAdmin {
+        reportLifetime = lifetime;
     }
 
     // --- GETTERS ---
