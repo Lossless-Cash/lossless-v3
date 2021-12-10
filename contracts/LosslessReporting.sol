@@ -133,7 +133,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
     /// @notice This function sets the default Committee Reward
-    /// @param reward Percentage attributed to Stakers when a report gets resolved positively
+    /// @param reward Percentage attributed to committee when a report gets resolved positively
     function setCommitteeReward(uint256 reward) public onlyLosslessAdmin {
         require(reporterReward + losslessReward + reward + stakersReward <= 100 && 0 <= reward, "LSS: Total exceed 100");
         committeeReward = reward;
