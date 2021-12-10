@@ -200,7 +200,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
 
-    /// @notice This function will generate a second report
+    /// @notice This function will add a second address to a given report.
     /// @dev This funtion must be called by a non blacklisted/reported address. 
     /// It will generate a second report linked to the first one created. 
     /// This can be used in the event that the malicious actor is able to frontrun the first report by swapping the tokens or transfering.
