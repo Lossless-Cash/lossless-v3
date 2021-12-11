@@ -95,6 +95,19 @@ describe(scriptName, () => {
       });
     });
 
+    describe('when reporting another on a expired report', () => {
+      it('should revert', async () => {
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.seconds(env.reportLifetime + 1)),
+        ]);
+
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(5, adr.maliciousActor1.address),
+        ).to.be.revertedWith('LSS: report does not exists');
+      });
+    });
+
     describe('when reporting another by other than the original reporter', () => {
       it('should revert', async () => {
         await expect(
