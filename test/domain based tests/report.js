@@ -152,22 +152,30 @@ describe(scriptName, () => {
       });
     });
 
-    /* CHECK WITH DOMANTAS
-   describe.only('when lifeTime of a report passes', () => {
+    describe('when lifeTime of a report passes', () => {
       beforeEach(async () => {
         await env.lssReporting.connect(adr.reporter1)
           .report(lerc20Token.address, adr.maliciousActor1.address);
-      });
 
-      it('should not revert when generating the same report', async () => {
         await ethers.provider.send('evm_increaseTime', [
           Number(time.duration.minutes(env.reportLifetime + 1)),
         ]);
+      });
+
+      it('should not revert when anyone tries to resolve', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.reporter1).resolveReport(1),
+        ).to.not.be.reverted;
+      });
+
+      it('should not revert when generating the same report', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.reporter1).resolveReport(1),
+        ).to.not.be.reverted;
 
         await expect(env.lssReporting.connect(adr.reporter1)
-          .report(lerc20Token.address, adr.maliciousActor1.address),
-          ).to.be.revertedWith('asd');
+          .report(lerc20Token.address, adr.maliciousActor1.address)).to.not.be.reverted;
       });
-    }); */
+    });
   });
 });
