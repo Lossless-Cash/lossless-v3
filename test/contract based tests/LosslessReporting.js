@@ -60,10 +60,17 @@ describe('Lossless Reporting', () => {
         ).to.be.revertedWith('Pausable: paused');
       });
 
-      it('should prevent staker claiming', async () => {
+      it('should prevent second report', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
             .secondReport(1, adr.maliciousActor2.address),
+        ).to.be.revertedWith('Pausable: paused');
+      });
+
+      it('should prevent reporter claiming', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .reporterClaim(1),
         ).to.be.revertedWith('Pausable: paused');
       });
     });
