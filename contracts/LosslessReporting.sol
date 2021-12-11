@@ -34,11 +34,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     mapping(address => TokenReports) private tokenReports;
 
-    struct ReporterClaimStatus {
-        mapping(uint256 => bool) reportIdClaimStatus;
-    }
-
-    mapping(address => ReporterClaimStatus)  private reporterClaimStatus;
+    mapping(uint256 => bool)  private reporterClaimStatus;
 
     mapping(uint256 => address) public reporter;
     mapping(uint256 => address) public reportedAddress;
@@ -235,11 +231,11 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param reportId Staked report
     function reporterClaim(uint256 reportId) public whenNotPaused {
         require(reporter[reportId] == msg.sender, "LSS: Only reporter");
-        require(!reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId], "LSS: You already claimed");
+        require(!reporterClaimStatus[reportId], "LSS: You already claimed");
         require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
-        reporterClaimStatus[msg.sender].reportIdClaimStatus[reportId] = true;
+        reporterClaimStatus[reportId] = true;
 
         ILERC20(reportTokens[reportId]).transfer(msg.sender, reporterClaimableAmount(reportId));
         stakingToken.transfer(msg.sender, reportingAmount);
