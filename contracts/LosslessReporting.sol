@@ -244,8 +244,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     // --- CLAIM ---
 
     /// @notice This function returns the claimable amount by the reporter
-    /// @dev Only can be used by the reporter.
-    /// The reporter has a fixed percentage as reward.
+    /// @dev The reporter has a fixed percentage as reward.
     /// @param reportId Staked report    
     function reporterClaimableAmount(uint256 reportId) public view returns (uint256) {
         uint256 reportedAmount = losslessGovernance.amountReported(reportId);
