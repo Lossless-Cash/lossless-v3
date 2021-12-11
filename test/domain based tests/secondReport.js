@@ -66,6 +66,17 @@ describe(scriptName, () => {
             .secondReport(1, adr.maliciousActor2.address),
         ).to.not.be.reverted;
       });
+
+      it('should emit event', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.maliciousActor2.address),
+        ).to.emit(env.lssReporting, 'SecondReportsubmitted').withArgs(
+          lerc20Token.address,
+          adr.maliciousActor2.address,
+          1,
+        );
+      });
     });
 
     describe('when reporting another on a whitelisted account', () => {
