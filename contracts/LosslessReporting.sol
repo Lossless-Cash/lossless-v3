@@ -209,7 +209,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// This can be used in the event that the malicious actor is able to frontrun the first report by swapping the tokens or transfering.
     /// @param reportId Report that was previously generated.
     /// @param account Potential malicious address
-    function secondReport(uint256 reportId, address account) public notBlacklisted whenNotPaused {
+    function secondReport(uint256 reportId, address account) public whenNotPaused {
         require(account != address(0), "LSS: Cannot report zero address");
         require(!losslessGovernance.isReportSolved(reportId) && !losslessGovernance.reportResolution(reportId), "LSS: Report already solved.");
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
