@@ -233,7 +233,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     function reporterClaim(uint256 reportId) public whenNotPaused {
         require(reporter[reportId] == msg.sender, "LSS: Only reporter");
         require(!reporterClaimStatus[reportId], "LSS: You already claimed");
-        require(losslessGovernance.isReportSolved(reportId), "LSS: Report still open");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
         reporterClaimStatus[reportId] = true;
