@@ -115,17 +115,17 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
     /// @notice This function sets the default Lossless Reward
-    /// @param fee Percentage attributed to Lossless when a report gets resolved positively
-    function setLosslessReward(uint256 fee) public onlyLosslessAdmin {
-        require(reporterReward + fee + committeeReward + stakersReward <= 100 && 0 <= fee, "LSS: Total exceed 100");
-        losslessReward = fee;
+    /// @param reward Percentage attributed to Lossless when a report gets resolved positively
+    function setLosslessReward(uint256 reward) public onlyLosslessAdmin {
+        require(reporterReward + reward + committeeReward + stakersReward <= 100 && 0 <= reward, "LSS: Total exceed 100");
+        losslessReward = reward;
     }
 
     /// @notice This function sets the default Stakers Reward
-    /// @param fee Percentage attributed to Stakers when a report gets resolved positively
-    function setStakersReward(uint256 fee) public onlyLosslessAdmin {
-        require(reporterReward + losslessReward + committeeReward + fee <= 100 && 0 <= fee, "LSS: Total exceed 100");
-        stakersReward = fee;
+    /// @param reward Percentage attributed to Stakers when a report gets resolved positively
+    function setStakersReward(uint256 reward) public onlyLosslessAdmin {
+        require(reporterReward + losslessReward + committeeReward + reward <= 100 && 0 <= reward, "LSS: Total exceed 100");
+        stakersReward = reward;
     }
 
     /// @notice This function sets the default Committee Reward
