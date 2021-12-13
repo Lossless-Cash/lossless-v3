@@ -45,6 +45,8 @@ describe('Lossless Environment', () => {
       });
 
       it('should get the rewards correctly', async () => {
+        let rewards = [50, 45, 1, 4];
+
         await expect(
           env.lssReporting.connect(adr.lssAdmin).setLosslessReward(50),
         ).to.not.be.reverted;
@@ -57,10 +59,9 @@ describe('Lossless Environment', () => {
         await expect(
           env.lssReporting.connect(adr.lssAdmin).setReporterReward(4),
         ).to.not.be.reverted;
-
-        expect(
-          await env.lssReporting.getRewards(),
-        ).to.not.be.empty;
+        await expect(
+          rewards = env.lssReporting.getRewards(),
+        ).to.be.equal(rewards);
       });
     });
 
