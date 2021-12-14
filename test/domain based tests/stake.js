@@ -109,6 +109,20 @@ describe(scriptName, () => {
           await env.lssStaking.getIsAccountStaked(1, adr.staker1.address),
         ).to.be.equal(true);
       });
+
+      it('should emit stake event', async () => {
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(10)),
+        ]);
+
+        await expect(
+          env.lssStaking.connect(adr.staker1).stake(1),
+        ).to.emit(env.lssStaking, 'Staked').withArgs(
+          lerc20Token.address,
+          adr.staker1.address,
+          1,
+        );
+      });
     });
 
     describe('when staking successfully with multiple addresses', () => {
