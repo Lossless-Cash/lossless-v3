@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-expressions */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prefer-destructuring */
 const { time, constants } = require('@openzeppelin/test-helpers');
@@ -18,23 +19,57 @@ describe('Lossless Environment', () => {
   });
 
   describe('On deployment', () => {
+    describe('when setting up Lossless Reporting Contract', () => {
+      it('should set reporting amount correctly and emit the event', async () => {
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReportingAmount(env.reportingAmount),
+        ).to.emit(env.lssReporting, 'ReportingAmountChanged')
+          .withArgs(
+            env.reportingAmount,
+          );
+      });
+
+      it('should not revert when setting the rewards', async () => {
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setLosslessReward(50),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setStakersReward(45),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setCommitteeReward(1),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReporterReward(4),
+        ).to.not.be.reverted;
+      });
+
+      it('should get the rewards correctly', async () => {
+        let rewards = [50, 45, 1, 4];
+
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setLosslessReward(50),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setStakersReward(45),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setCommitteeReward(1),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReporterReward(4),
+        ).to.not.be.reverted;
+        await expect(
+          rewards = env.lssReporting.getRewards(),
+        ).to.be.equal(rewards);
+      });
+    });
+
     describe('when the Lossless Controller contract has been set up', () => {
-      it('should set the stake amount correctly', async () => {
+      it('should get version', async () => {
         expect(
-          await env.lssStaking.stakingAmount(),
-        ).to.be.equal(env.stakingAmount);
-      });
-
-      it('should set the reporting amount correctly', async () => {
-        expect(
-          await env.lssReporting.reportingAmount(),
-        ).to.be.equal(env.reportingAmount);
-      });
-
-      it('should set the report lifetime correctly', async () => {
-        expect(
-          await env.lssReporting.reportLifetime(),
-        ).to.be.equal(Number(env.reportLifetime));
+          await env.lssController.getVersion(),
+        ).to.be.equal(3);
       });
 
       it('should set the report Lossless Token address correctly', async () => {
@@ -63,14 +98,50 @@ describe('Lossless Environment', () => {
     });
 
     describe('when the Lossless Staking Contract has been set up', () => {
+      it('should get version', async () => {
+        expect(
+          await env.lssStaking.getVersion(),
+        ).to.be.equal(1);
+      });
+
       it('should set the report Lossless Token address correctly', async () => {
         expect(
           await env.lssStaking.stakingToken(),
         ).to.be.equal(env.lssToken.address);
       });
+
+      it('should set the stake amount correctly', async () => {
+        expect(
+          await env.lssStaking.stakingAmount(),
+        ).to.be.equal(env.stakingAmount);
+      });
+
+      it('should set the Governance contract correctly', async () => {
+        expect(
+          await env.lssStaking.losslessGovernance(),
+        ).to.be.equal(env.lssGovernance.address);
+      });
     });
 
     describe('when the Lossless Reporting Contract has been set up', () => {
+      it('should get version', async () => {
+        expect(
+          await env.lssReporting.getVersion(),
+        ).to.be.equal(1);
+      });
+
+      it('should set the reporting amount correctly', async () => {
+        expect(
+          await env.lssReporting.reportingAmount(),
+        ).to.be.equal(env.reportingAmount);
+      });
+
+      it('should set the report lifetime correctly', async () => {
+        expect(
+          await env.lssReporting.reportLifetime(),
+        ).to.be.equal(Number(env.reportLifetime));
+      });
+
       it('should set the report Lossless Token address correctly', async () => {
         expect(
           await env.lssReporting.stakingToken(),
@@ -89,10 +160,72 @@ describe('Lossless Environment', () => {
         ).to.be.equal(2);
       });
 
-      it('should set the Lossless fee correctly', async () => {
+      it('should set the Lossless reward correctly', async () => {
         expect(
           await env.lssReporting.losslessReward(),
         ).to.be.equal(10);
+      });
+
+      it('should set the Governance contract correctly', async () => {
+        expect(
+          await env.lssReporting.losslessGovernance(),
+        ).to.be.equal(env.lssGovernance.address);
+      });
+
+      it('should set reporter reward correctly', async () => {
+        expect(
+          await env.lssReporting.reporterReward(),
+        ).to.be.equal(2);
+      });
+
+      it('should set lossless reward correctly', async () => {
+        expect(
+          await env.lssReporting.losslessReward(),
+        ).to.be.equal(10);
+      });
+
+      it('should set staker reward correctly', async () => {
+        expect(
+          await env.lssReporting.stakersReward(),
+        ).to.be.equal(2);
+      });
+
+      it('should set committee reward correctly', async () => {
+        expect(
+          await env.lssReporting.committeeReward(),
+        ).to.be.equal(2);
+      });
+    });
+
+    describe('when the Lossless Governance Contract has been set up', () => {
+      it('should get version', async () => {
+        expect(
+          await env.lssGovernance.getVersion(),
+        ).to.be.equal(1);
+      });
+
+      it('should set the Reporting address correctly', async () => {
+        expect(
+          await env.lssGovernance.losslessReporting(),
+        ).to.be.equal(env.lssReporting.address);
+      });
+
+      it('should set the Controller address correctly', async () => {
+        expect(
+          await env.lssGovernance.losslessController(),
+        ).to.be.equal(env.lssController.address);
+      });
+
+      it('should set the Staking address correctly', async () => {
+        expect(
+          await env.lssGovernance.losslessStaking(),
+        ).to.be.equal(env.lssStaking.address);
+      });
+
+      it('should set the staking token address correctly', async () => {
+        expect(
+          await env.lssGovernance.stakingToken(),
+        ).to.be.equal(env.lssToken.address);
       });
     });
   });

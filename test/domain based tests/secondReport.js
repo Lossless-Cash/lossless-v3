@@ -39,6 +39,10 @@ describe(scriptName, () => {
         [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
       );
 
+      await env.lssController.connect(adr.lssAdmin).setDexList(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      );
+
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakingAmount * 2);
       await env.lssToken.connect(adr.lssInitialHolder)
@@ -62,6 +66,17 @@ describe(scriptName, () => {
             .secondReport(1, adr.maliciousActor2.address),
         ).to.not.be.reverted;
       });
+
+      it('should emit event', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.maliciousActor2.address),
+        ).to.emit(env.lssReporting, 'SecondReportsubmitted').withArgs(
+          lerc20Token.address,
+          adr.maliciousActor2.address,
+          1,
+        );
+      });
     });
 
     describe('when reporting another on a whitelisted account', () => {
@@ -73,8 +88,30 @@ describe(scriptName, () => {
       });
     });
 
+    describe('when reporting another on a dex address', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.dexAddress.address),
+        ).to.be.revertedWith('LSS: Cannot report Dex');
+      });
+    });
+
     describe('when reporting another on a non existant report', () => {
       it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(5, adr.maliciousActor1.address),
+        ).to.be.revertedWith('LSS: report does not exists');
+      });
+    });
+
+    describe('when reporting another on a expired report', () => {
+      it('should revert', async () => {
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.seconds(env.reportLifetime + 1)),
+        ]);
+
         await expect(
           env.lssReporting.connect(adr.reporter1)
             .secondReport(5, adr.maliciousActor1.address),
@@ -93,10 +130,34 @@ describe(scriptName, () => {
 
     describe('when reporting another multiple times', () => {
       it('should revert', async () => {
+        await env.lssReporting.connect(adr.reporter1)
+          .secondReport(1, adr.maliciousActor2.address);
+
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.maliciousActor2.address),
+        ).to.be.revertedWith('LSS: Another already submitted');
+      });
+    });
+
+    describe('when reporting another and the original report was solved', () => {
+      it('should revert', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address,
+          adr.member4.address,
+          adr.member5.address]);
+
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
         await expect(
           env.lssReporting.connect(adr.reporter2)
             .secondReport(1, adr.maliciousActor1.address),
-        ).to.be.revertedWith('LSS: invalid reporter');
+        ).to.be.revertedWith('LSS: Report already solved');
       });
     });
   });

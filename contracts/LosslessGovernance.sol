@@ -108,7 +108,13 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         _unpause();
     }
 
-
+    
+    /// @notice This function gets the contract version
+    /// @return Version of the contract
+    function getVersion() external pure returns (uint256) {
+        return 1;
+    }
+    
     /// @notice This function determines if an address belongs to the Committee
     /// @param account Address to be verified
     /// @return True if the address is a committee member
@@ -287,11 +293,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// If the report is solved positively, the funds of the reported account get retrieved in order to be distributed among stakers and the reporter.
     /// @param reportId Report to be resolved
     function resolveReport(uint256 reportId) public whenNotPaused {
-
+/* 
         require(hasRole(COMMITTEE_ROLE, msg.sender) 
                 || msg.sender == losslessController.admin() 
                 || msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
-                "LSS: Role cannot resolve.");
+                "LSS: Role cannot resolve."); */
         
         address token = losslessReporting.reportTokens(reportId);
 
@@ -311,8 +317,14 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         if (committeeResoluted) {voteCount += 1;
         if (committeeResolution) {aggreeCount += 1;}}
 
-        require(voteCount >= 2, "LSS: Not enough votes");
-        require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need another vote to untie");
+        bool expired;
+
+        if (losslessReporting.reportTimestamps(reportId) + losslessReporting.reportLifetime() > block.timestamp) {
+            require(voteCount >= 2, "LSS: Not enough votes");
+            require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need another vote to untie");
+        } else {
+            expired = true;
+        }
         
         address reportedAddress = losslessReporting.reportedAddress(reportId);
 
@@ -322,7 +334,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             reportedAddresses.push(losslessReporting.secondReportedAddress(reportId));
         }
 
-        if (aggreeCount > (voteCount - aggreeCount)){
+        if (aggreeCount > (voteCount - aggreeCount) && !expired){
             reportVote.resolution = true;
             for(uint256 i; i < reportedAddresses.length; i++) {
                 amountReported[reportId] += ILERC20(token).balanceOf(reportedAddresses[i]);

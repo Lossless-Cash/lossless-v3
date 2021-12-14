@@ -10,6 +10,8 @@ let adr;
 let env;
 let lerc20Token;
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 describe('Lossless Reporting', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -38,106 +40,78 @@ describe('Lossless Reporting', () => {
       .executeNewSettlementPeriod(lerc20Token.address);
   });
 
-  describe('when paused', () => {
+  describe('when pausing', () => {
+    describe('when not pause admin', () => {
+      it('should rever', async () => {
+        await expect(
+          env.lssReporting.connect(adr.regularUser1).pause(),
+        ).to.be.revertedWith('LSS: Must be pauseAdmin');
+      });
+    });
+    describe('when pause admin', () => {
+      beforeEach(async () => {
+        await env.lssReporting.connect(adr.lssPauseAdmin).pause();
+      });
+
+      it('should prevent reporting', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, adr.maliciousActor1.address),
+        ).to.be.revertedWith('Pausable: paused');
+      });
+
+      it('should prevent second report', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.maliciousActor2.address),
+        ).to.be.revertedWith('Pausable: paused');
+      });
+
+      it('should prevent reporter claiming', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .reporterClaim(1),
+        ).to.be.revertedWith('Pausable: paused');
+      });
+    });
+  });
+
+  describe('when unpausing', () => {
     beforeEach(async () => {
       await env.lssReporting.connect(adr.lssPauseAdmin).pause();
     });
 
-    it('should prevent reporting', async () => {
-      await expect(
-        env.lssReporting.connect(adr.reporter1)
-          .report(lerc20Token.address, adr.maliciousActor1.address),
-      ).to.be.revertedWith('Pausable: paused');
-    });
-
-    it('should prevent staker claiming', async () => {
-      await expect(
-        env.lssReporting.connect(adr.reporter1)
-          .secondReport(1, adr.maliciousActor2.address),
-      ).to.be.revertedWith('Pausable: paused');
-    });
-  });
-
-  describe('when generating a report', () => {
-    beforeEach(async () => {
-      await env.lssController.connect(adr.lssAdmin).setWhitelist(
-        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
-      );
-
-      await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter1.address, env.stakingAmount);
-      await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter2.address, env.stakingAmount);
-
-      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
-
-      await ethers.provider.send('evm_increaseTime', [
-        Number(time.duration.minutes(5)),
-      ]);
-    });
-
-    describe('when reporting a whitelisted account', () => {
+    describe('when not pause admin', () => {
       it('should revert', async () => {
         await expect(
-          env.lssReporting.connect(adr.reporter1)
-            .report(lerc20Token.address, env.lssReporting.address),
-        ).to.be.revertedWith('LSS: Cannot report LSS protocol');
+          env.lssReporting.connect(adr.regularUser1).unpause(),
+        ).to.be.revertedWith('LSS: Must be pauseAdmin');
       });
     });
-
-    describe('when reporting a Dex address', () => {
+    describe('when pause admin', () => {
       beforeEach(async () => {
-        await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
-      });
-      it('should revert', async () => {
-        await expect(
-          env.lssReporting.connect(adr.reporter1)
-            .report(lerc20Token.address, adr.dexAddress.address),
-        ).to.be.revertedWith('LSS: Cannot report Dex');
-      });
-    });
-
-    describe('when succesfully generating a report', () => {
-      it('should not revert', async () => {
-        await env.lssReporting.connect(adr.reporter1)
-          .report(lerc20Token.address, adr.maliciousActor1.address);
-
-        expect(
-          await env.lssReporting.reportTimestamps(1),
-        ).to.not.be.empty;
+        await env.lssReporting.connect(adr.lssPauseAdmin).unpause();
       });
 
-      it('should blacklist address', async () => {
-        await env.lssReporting.connect(adr.reporter1)
-          .report(lerc20Token.address, adr.maliciousActor1.address);
-      });
+      it('should not prevent reporting', async () => {
+        await env.lssToken.connect(adr.lssInitialHolder)
+          .transfer(adr.reporter1.address, env.stakingAmount);
+        await env.lssToken.connect(adr.lssInitialHolder)
+          .transfer(adr.reporter2.address, env.stakingAmount);
 
-      it('should prevent blacklisted account to transfer tokens', async () => {
-        await lerc20Token.connect(adr.lerc20InitialHolder)
-          .transfer(adr.maliciousActor1.address, 200);
-
-        await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.minutes(5)),
-        ]);
-
-        await env.lssReporting.connect(adr.reporter1)
-          .report(lerc20Token.address, adr.maliciousActor1.address);
-
-        await expect(
-          lerc20Token.connect(adr.maliciousActor1).transfer(adr.regularUser1.address, 10),
-        ).to.be.revertedWith('LSS: You cannot operate');
-      });
-    });
-
-    describe('when reporting the same token and address twice', () => {
-      it('should revert', async () => {
-        await env.lssReporting.connect(adr.reporter1)
-          .report(lerc20Token.address, adr.maliciousActor1.address);
+        await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
 
         await expect(
           env.lssReporting.connect(adr.reporter1)
             .report(lerc20Token.address, adr.maliciousActor1.address),
-        ).to.be.revertedWith('LSS: Report already exists');
+        ).to.not.be.reverted;
+      });
+
+      it('should prevent staker claiming', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.maliciousActor2.address),
+        ).to.be.revertedWith('LSS: report does not exists');
       });
     });
   });
@@ -162,6 +136,15 @@ describe('Lossless Reporting', () => {
 
       await env.lssReporting.connect(adr.reporter1)
         .report(lerc20Token.address, adr.maliciousActor1.address);
+    });
+
+    describe('when generating another report on zero address', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Cannot report zero address');
+      });
     });
 
     describe('when generating another report successfully', () => {

@@ -11,6 +11,7 @@ let adr;
 let env;
 
 const scriptName = path.basename(__filename, '.js');
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -56,6 +57,12 @@ describe(scriptName, () => {
         expect(
           await env.lssController.stakingToken(),
         ).to.be.equal(otherLerc20Token.address);
+      });
+
+      it('should revert when setting as zero address', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setStakingToken(ZERO_ADDRESS),
+        ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
     });
     describe('on Lossless Staking', () => {

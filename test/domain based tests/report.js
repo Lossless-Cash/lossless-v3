@@ -13,6 +13,8 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -43,13 +45,23 @@ describe(scriptName, () => {
       await env.lssToken.connect(adr.lssInitialHolder)
         .transfer(adr.reporter1.address, env.stakingAmount);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter2.address, env.stakingAmount);
+        .transfer(adr.maliciousActor1.address, env.stakingAmount);
 
       await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
+      await env.lssToken.connect(adr.maliciousActor1).approve(env.lssReporting.address, env.stakingAmount);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
       ]);
+    });
+
+    describe('when reporting zero address', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Cannot report zero address');
+      });
     });
 
     describe('when reporting a whitelisted account', () => {
@@ -83,6 +95,17 @@ describe(scriptName, () => {
         ).to.not.be.empty;
       });
 
+      it('should emit event', async () => {
+        expect(
+          await env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, adr.maliciousActor1.address),
+        ).to.emit(env.lssReporting, 'ReportSubmitted').withArgs(
+          lerc20Token.address,
+          adr.maliciousActor1.address,
+          1,
+        );
+      });
+
       it('should blacklist address', async () => {
         await env.lssReporting.connect(adr.reporter1)
           .report(lerc20Token.address, adr.maliciousActor1.address);
@@ -113,7 +136,45 @@ describe(scriptName, () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
             .report(lerc20Token.address, adr.maliciousActor1.address),
-        ).to.be.revertedWith('LSS: Report already exists');
+        ).to.be.revertedWith('LSS: Already blacklisted');
+      });
+    });
+
+    describe('when the reporter is blacklisted', () => {
+      it('should revert', async () => {
+        await env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address);
+
+        await expect(
+          env.lssReporting.connect(adr.maliciousActor1)
+            .report(lerc20Token.address, adr.reporter1.address),
+        ).to.be.revertedWith('LSS: You cannot operate');
+      });
+    });
+
+    describe('when lifeTime of a report passes', () => {
+      beforeEach(async () => {
+        await env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(env.reportLifetime + 1)),
+        ]);
+      });
+
+      it('should not revert when anyone tries to resolve', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.reporter1).resolveReport(1),
+        ).to.not.be.reverted;
+      });
+
+      it('should not revert when generating the same report', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.reporter1).resolveReport(1),
+        ).to.not.be.reverted;
+
+        await expect(env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address)).to.not.be.reverted;
       });
     });
   });
