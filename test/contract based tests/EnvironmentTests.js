@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prefer-destructuring */
@@ -84,6 +85,26 @@ describe('Lossless Environment', () => {
         it('should not revert when not admin', async () => {
           await expect(
             env.lssStaking.connect(adr.lssAdmin).setLssReporting(env.lssReporting.address),
+          ).to.not.be.reverted;
+        });
+      });
+
+      describe('when setting up the Lossless Governance address', () => {
+        it('should revert when not admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.regularUser1).setLosslessGovernance(env.lssGovernance.address),
+          ).to.be.revertedWith('LSS: Must be admin');
+        });
+
+        it('should revert when setting up as zero address', async () => {
+          await expect(
+            env.lssStaking.connect(adr.lssAdmin).setLosslessGovernance(ZERO_ADDRESS),
+          ).to.be.revertedWith('LERC20: Cannot be zero address');
+        });
+
+        it('should not revert when not admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.lssAdmin).setLosslessGovernance(env.lssGovernance.address),
           ).to.not.be.reverted;
         });
       });
