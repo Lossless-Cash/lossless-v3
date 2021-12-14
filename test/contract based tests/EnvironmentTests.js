@@ -8,6 +8,8 @@ const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
 let adr;
 let env;
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 describe('Lossless Environment', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -62,6 +64,28 @@ describe('Lossless Environment', () => {
         await expect(
           rewards = env.lssReporting.getRewards(),
         ).to.be.equal(rewards);
+      });
+    });
+
+    describe('when setting up Lossless Staking Contract', () => {
+      describe('when setting up the Lossless Reporting address', () => {
+        it('should revert when not admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.regularUser1).setLssReporting(env.lssReporting.address),
+          ).to.be.revertedWith('LSS: Must be admin');
+        });
+
+        it('should revert when setting up as zero address', async () => {
+          await expect(
+            env.lssStaking.connect(adr.lssAdmin).setLssReporting(ZERO_ADDRESS),
+          ).to.be.revertedWith('LERC20: Cannot be zero address');
+        });
+
+        it('should not revert when not admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.lssAdmin).setLssReporting(env.lssReporting.address),
+          ).to.not.be.reverted;
+        });
       });
     });
 
