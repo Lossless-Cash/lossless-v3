@@ -125,6 +125,14 @@ describe(scriptName, () => {
       });
     });
 
+    describe.only('when blacklisted address tries to stake', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssStaking.connect(adr.maliciousActor1).stake(1),
+        ).to.be.revertedWith('LSS: You cannot operate');
+      });
+    });
+
     describe('when staking successfully with multiple addresses', () => {
       it('should not revert', async () => {
         await ethers.provider.send('evm_increaseTime', [
