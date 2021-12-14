@@ -125,7 +125,7 @@ describe(scriptName, () => {
       });
     });
 
-    describe.only('when blacklisted address tries to stake', () => {
+    describe('when blacklisted address tries to stake', () => {
       it('should revert', async () => {
         await expect(
           env.lssStaking.connect(adr.maliciousActor1).stake(1),
