@@ -119,7 +119,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function generates a stake on a report
     /// @dev The earlier the stake is placed on the report, the higher the reward is.
-    /// One minute must pass between the report and the stake. 
     /// The reporter cannot stake as it'll have a fixed percentage reward.
     /// A reported address cannot stake.
     /// @param reportId Report to stake
