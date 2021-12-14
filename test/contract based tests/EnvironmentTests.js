@@ -87,6 +87,26 @@ describe('Lossless Environment', () => {
           ).to.not.be.reverted;
         });
       });
+
+      describe('when setting up the Staking token', () => {
+        it('should revert when not admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.regularUser1).setStakingToken(env.lssToken.address),
+          ).to.be.revertedWith('LSS: Must be admin');
+        });
+
+        it('should revert when setting up as zero address', async () => {
+          await expect(
+            env.lssStaking.connect(adr.lssAdmin).setStakingToken(ZERO_ADDRESS),
+          ).to.be.revertedWith('LERC20: Cannot be zero address');
+        });
+
+        it('should not revert when not admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.lssAdmin).setStakingToken(env.lssToken.address),
+          ).to.not.be.reverted;
+        });
+      });
     });
 
     describe('when the Lossless Controller contract has been set up', () => {
