@@ -84,6 +84,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     /// @notice This function sets the address of the Lossless Reporting contract
+    /// @dev Only can be called by the Lossless Admin
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
     function setLssReporting(address _losslessReporting) public onlyLosslessAdmin {
         require(_losslessReporting != address(0), "LERC20: Cannot be zero address");
