@@ -71,9 +71,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     mapping(address => TokenLockedFunds) private tokenScopedLockedFunds;
-
-    mapping(uint256 => uint256) public reportCoefficient;
-    
+  
     mapping(address => bool) public dexList;
     mapping(address => bool) public whitelist;
     mapping(address => bool) public blacklist;
@@ -306,14 +304,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         tokenLockTimeframe[token] = proposedTokenLockTimeframe[token];
         isNewSettlementProposed[token] = false;
         emit SettlementPeriodChanged(token, proposedTokenLockTimeframe[token]);
-    }
-
-    /// @notice This function adds to the total coefficient per report
-    /// @dev It takes part on the claimableAmount calculation of the Lossless Staking contract
-    /// @param reportId Report to be added the coefficient
-    /// @param _amt Coefficient amount
-    function addToReportCoefficient(uint256 reportId, uint256 _amt) external onlyLosslessEnv {
-        reportCoefficient[reportId] += _amt;
     }
 
     /// @notice This function activates the emergency mode

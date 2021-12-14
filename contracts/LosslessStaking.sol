@@ -38,6 +38,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     mapping(uint256 => uint256) public totalStakedOnReport;
 
+    mapping(uint256 => uint256) public reportCoefficient;
+
     event Staked(address indexed token, address indexed account, uint256 reportId);
     event StakerClaimed(address indexed staker, address indexed token, uint256 indexed reportID);
     event StakingAmountChanged(uint256 indexed newAmount);
@@ -138,7 +140,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakes[msg.sender].stakeInfoOnReport[reportId].coefficient = stakerCoefficient;
         stakes[msg.sender].stakeInfoOnReport[reportId].staked = true;
 
-        losslessController.addToReportCoefficient(reportId, stakerCoefficient);
+        reportCoefficient[reportId] += stakerCoefficient;
         
         stakingToken.transferFrom(msg.sender, address(this), stakingAmount);
 
@@ -158,8 +160,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 amountStakedOnReport = losslessGovernance.amountReported(reportId);
         uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / 10**2;
         uint256 stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
-        uint256 reportCoefficient = losslessController.reportCoefficient(reportId);
-        uint256 coefficientMultiplier = ((amountDistributedToStakers * 10**6) / reportCoefficient);
+        uint256 coefficientMultiplier = ((amountDistributedToStakers * 10**6) / reportCoefficient[reportId]);
         uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / 10**6;
 
         return stakerAmountToClaim;
