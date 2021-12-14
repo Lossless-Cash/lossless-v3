@@ -99,9 +99,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakingToken = ILERC20(_stakingToken);
     }
 
-    /// @notice This function sets the address of the Lossless Governance Token
+    /// @notice This function sets the address of the Lossless Governance contract
     /// @dev Only can be called by the Lossless Admin
-    /// @param _losslessGovernance Address corresponding to the Lossless Governance Token
+    /// @param _losslessGovernance Address corresponding to the Lossless Governance contract
     function setLosslessGovernance(address _losslessGovernance) public onlyLosslessAdmin {
         require(_losslessGovernance != address(0), "LERC20: Cannot be zero address");
         losslessGovernance = ILssGovernance(_losslessGovernance);
