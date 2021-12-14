@@ -108,6 +108,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     /// @notice This function sets the amount of tokens to be staked when staking
+    /// @dev Only can be called by the Lossless Admin
     /// @param _stakingAmount Amount to be staked
     function setStakingAmount(uint256 _stakingAmount) public onlyLosslessAdmin {
         stakingAmount = _stakingAmount;
