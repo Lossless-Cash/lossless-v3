@@ -108,7 +108,7 @@ describe('Lossless Staking', () => {
       it('should prevent staker claiming on normal conditions', async () => {
         await expect(
           env.lssStaking.connect(adr.staker1).stakerClaim(1),
-        ).to.be.revertedWith('LSS: Report still open');
+        ).to.be.revertedWith('LSS: Report solved negatively');
       });
     });
   });
