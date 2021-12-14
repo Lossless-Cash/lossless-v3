@@ -152,8 +152,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     // --- CLAIM ---
     
     /// @notice This function returns the claimable amount by the stakers
-    /// @dev Only can be used by the stakers.
-    /// It takes into consideration the staker coefficient in order to return the percentage rewarded.
+    /// @dev It takes into consideration the staker coefficient in order to return the percentage rewarded.
     /// @param reportId Staked report
     function stakerClaimableAmount(uint256 reportId) public view returns (uint256) {
         (,,, uint256 stakersReward) = losslessReporting.getRewards();
