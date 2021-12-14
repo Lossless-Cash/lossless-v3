@@ -115,24 +115,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         emit StakingAmountChanged(_stakingAmount);
     }
 
-    /// @notice This function returns if an address is already staking on a report
-    /// @param reportId Report being staked
-    /// @param account Address to consult
-    /// @return True if the account is already staking
-    function getIsAccountStaked(uint256 reportId, address account) public view returns(bool) {
-        return stakes[account].stakeInfoOnReport[reportId].staked;
-    }
-
-
     // STAKING
-
-    /// @notice This function returns the coefficient of a staker in a report
-    /// @param reportId Report where the address staked
-    /// @param _address Staking address
-    /// @return The coefficient calculated for the staker
-    function getStakerCoefficient(uint256 reportId, address _address) public view returns (uint256) {
-        return stakes[_address].stakeInfoOnReport[reportId].coefficient;
-    }
 
     /// @notice This function generates a stake on a report
     /// @dev The earlier the stake is placed on the report, the higher the reward is.
@@ -215,5 +198,23 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function getVersion() public pure returns (uint256) {
         return 1;
     }
+
+    
+    /// @notice This function returns if an address is already staking on a report
+    /// @param reportId Report being staked
+    /// @param account Address to consult
+    /// @return True if the account is already staking
+    function getIsAccountStaked(uint256 reportId, address account) public view returns(bool) {
+        return stakes[account].stakeInfoOnReport[reportId].staked;
+    }
+
+    /// @notice This function returns the coefficient of a staker in a report
+    /// @param reportId Report where the address staked
+    /// @param _address Staking address
+    /// @return The coefficient calculated for the staker
+    function getStakerCoefficient(uint256 reportId, address _address) public view returns (uint256) {
+        return stakes[_address].stakeInfoOnReport[reportId].coefficient;
+    }
+
 
 }
