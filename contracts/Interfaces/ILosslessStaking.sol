@@ -24,7 +24,6 @@ interface ILssStaking {
   function stake(uint256 reportId) external;
   function stakerClaim(uint256 reportId) external;
   function losslessClaim(uint256 reportId) external;
-  function retrieveCompensation(address adr, uint256 amount) external;
 
   event Staked(address indexed token, address indexed account, uint256 reportId);
 }

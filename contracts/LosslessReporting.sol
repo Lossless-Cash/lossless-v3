@@ -68,6 +68,13 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         _;
     }
 
+    /// @notice Avoids execution from other than the Lossless Governance
+    modifier onlyLosslessGov {
+        require(msg.sender == address(losslessGovernance),
+                "LSS: Lss SC only");
+        _;
+    }
+
     function initialize(address _losslessController) public initializer {
         losslessController = ILssController(_losslessController);
     }
@@ -250,4 +257,12 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         uint256 reportedAmount = losslessGovernance.amountReported(reportId);
         return reportedAmount * reporterReward / 10**2;
     }
+    
+    /// @notice This function allows the governance token to retribute an erroneous report
+    /// @param adr retribution address
+    /// @param amount amount to be retrieved
+    function retrieveCompensation(address adr, uint256 amount) public onlyLosslessGov {
+        stakingToken.transfer(adr, amount);
+    }
+
 }

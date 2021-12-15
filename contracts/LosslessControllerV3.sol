@@ -181,7 +181,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V3 SETTERS ---
 
     /// @notice This function sets default values for Contoller V3
-    /// @dev Called on startur
+    /// @dev Called on start
     function setControllerV3Defaults() public onlyLosslessAdmin {
         dexTranferThreshold = 20;
         erroneousCompensation = 2;

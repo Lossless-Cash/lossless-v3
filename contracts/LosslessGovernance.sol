@@ -357,11 +357,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param addresses Array of addresses to be compensated
     function _compensateAddresses(address[] memory addresses) private {
         uint256 compensationAmount = losslessController.erroneousCompensation();
-        uint256 stakingAmount = losslessStaking.stakingAmount();
+        uint256 reportingAmount = losslessReporting.reportingAmount();
         
         for(uint256 i; i < addresses.length; i++) {
             losslessController.resolvedNegatively(addresses[i]);      
-            compensation[addresses[i]].amount +=  (stakingAmount * compensationAmount) / 10**2;
+            compensation[addresses[i]].amount +=  (reportingAmount * compensationAmount) / 10**2;
             compensation[addresses[i]].payed =  false;
         }
     }
@@ -478,7 +478,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         
         compensation[msg.sender].payed = true;
 
-        losslessStaking.retrieveCompensation(msg.sender, compensation[msg.sender].amount);
+        losslessReporting.retrieveCompensation(msg.sender, compensation[msg.sender].amount);
 
         compensation[msg.sender].amount = 0;
 

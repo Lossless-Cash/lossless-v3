@@ -35,6 +35,7 @@ interface ILssReporting {
   function setReportLifetime(uint256 _lifetime) external;
   function secondReport(uint256 reportId, address account) external;
   function reporterClaim(uint256 reportId) external;
+  function retrieveCompensation(address adr, uint256 amount) external;
 
   event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
   event SecondReportsubmitted(address indexed token, address indexed account, uint256 reportId);

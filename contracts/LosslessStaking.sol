@@ -66,13 +66,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         _;
     }
 
-    /// @notice Avoids execution from other than the Lossless Governance
-    modifier onlyLosslessGov {
-        require(msg.sender == address(losslessGovernance),
-                "LSS: Lss SC only");
-        _;
-    }
-
     // --- SETTERS ---
 
     /// @notice This function pauses the contract
@@ -180,14 +173,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         emit StakerClaimed(msg.sender, losslessReporting.reportTokens(reportId), reportId);
     }
-
-    /// @notice This function allows the governance token to retribute an erroneous report
-    /// @param adr retribution address
-    /// @param amount amount to be retrieved
-    function retrieveCompensation(address adr, uint256 amount) public onlyLosslessGov {
-        stakingToken.transfer(adr, amount);
-    }
-
 
     // --- GETTERS ---
 
