@@ -82,7 +82,7 @@ describe('Lossless Environment', () => {
           ).to.be.revertedWith('LERC20: Cannot be zero address');
         });
 
-        it('should not revert when not admin', async () => {
+        it('should not revert when admin', async () => {
           await expect(
             env.lssStaking.connect(adr.lssAdmin).setLssReporting(env.lssReporting.address),
           ).to.not.be.reverted;
@@ -102,7 +102,7 @@ describe('Lossless Environment', () => {
           ).to.be.revertedWith('LERC20: Cannot be zero address');
         });
 
-        it('should not revert when not admin', async () => {
+        it('should not revert when admin', async () => {
           await expect(
             env.lssStaking.connect(adr.lssAdmin).setLosslessGovernance(env.lssGovernance.address),
           ).to.not.be.reverted;
