@@ -164,6 +164,16 @@ describe(scriptName, () => {
           (balance = await env.lssToken.balanceOf(adr.staker1.address)),
         ).to.be.equal(env.stakingAmount * 2);
       });
+
+      it('should emit event', async () => {
+        expect(
+          await env.lssStaking.connect(adr.staker1).stakerClaim(1),
+        ).to.be.emit(env.lssStaking, 'StakerClaimed').withArgs(
+          adr.staker1.address,
+          lerc20Token.address,
+          1,
+        );
+      });
     });
 
     describe('when stakers claims two times', () => {
