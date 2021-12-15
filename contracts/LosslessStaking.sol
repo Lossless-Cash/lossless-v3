@@ -154,7 +154,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
         uint256 coefficientMultiplier = ((amountDistributedToStakers * 10**6) / reportCoefficient[reportId]);
         uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / 10**6;
-
         return stakerAmountToClaim;
     }
 
