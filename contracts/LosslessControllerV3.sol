@@ -180,18 +180,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V3 SETTERS ---
 
-    /// @notice This function sets default values for Contoller V3
-    /// @dev Called on start
-    function setControllerV3Defaults() public onlyLosslessAdmin {
-        dexTranferThreshold = 20;
-        erroneousCompensation = 2;
-        whitelist[admin] = true;
-        whitelist[recoveryAdmin]  = true;
-        whitelist[pauseAdmin]  = true;
-        settlementTimeLock = 12 hours;
-        lockCheckpointExpiration = 300 seconds;
-    }
-    
+   
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingToken Address corresponding to the Lossless Governance Token

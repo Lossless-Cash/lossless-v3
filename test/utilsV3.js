@@ -177,7 +177,15 @@ const setupEnvironment = async (
   await lssController
     .connect(lssAdmin)
     .setGovernanceContractAddress(lssGovernance.address);
-  await lssController.connect(lssAdmin).setControllerV3Defaults();
+  await lssController.connect(lssAdmin).setWhitelist([
+    lssPauseAdmin.address,
+    lssRecoveryAdmin.address,
+    lssAdmin.address],
+  true);
+  await lssController.connect(lssAdmin).setDexTrasnferThreshold(20);
+  await lssController.connect(lssAdmin).setCompensationAmount(2);
+  await lssController.connect(lssAdmin).setSettlementTimeLock(12 * 3600);
+  await lssController.connect(lssAdmin).setLocksLiftUpExpiration(300);
 
   await lssStaking.connect(lssAdmin).setStakingAmount(stakingAmount);
   await lssStaking.connect(lssAdmin).setStakingToken(lssToken.address);
