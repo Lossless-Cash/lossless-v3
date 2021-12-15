@@ -161,7 +161,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function is for the stakers to claim their rewards
     /// @param reportId Staked report
     function stakerClaim(uint256 reportId) public whenNotPaused {
-        require(msg.sender != address(0), "LERC20: Cannot be zero address");
         require(!stakes[msg.sender].stakeInfoOnReport[reportId].payed, "LSS: You already claimed");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
 
