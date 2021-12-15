@@ -124,101 +124,128 @@ describe(scriptName, () => {
           adr.member2.address,
           adr.member3.address,
         ]);
-
-      await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-      await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-      await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-      await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
-
-      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
-
-      await ethers.provider.send('evm_increaseTime', [
-        Number(time.duration.minutes(5)),
-      ]);
     });
 
-    describe('when verifying staker claimable amount by a staker', () => {
-      it('should return amount', async () => {
-        expect(
-          await env.lssStaking.connect(adr.staker1).stakerClaimableAmount(1),
-        ).to.not.be.empty;
+    describe('when report is solved negatively', () => {
+      beforeEach(async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+      });
+
+      describe('when stakers claims', () => {
+        it('should revert', async () => {
+          await expect(
+            env.lssStaking.connect(adr.staker1).stakerClaim(1),
+          ).to.be.revertedWith('LSS: Report solved negatively.');
+        });
       });
     });
 
-    describe('when stakers claims', () => {
-      it('should not revert', async () => {
-        let balance;
-        expect((balance = await lerc20Token.balanceOf(adr.staker1.address)))
-          .to.not.be.empty;
+    describe('when report is solved positively', () => {
+      beforeEach(async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
 
-        expect(
-          (balance = await env.lssToken.balanceOf(adr.staker1.address)),
-        ).to.be.equal(2500);
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
-        await env.lssStaking.connect(adr.staker1).stakerClaim(1);
-
-        expect(await lerc20Token.balanceOf(adr.staker1.address)).to.not.be
-          .empty;
-
-        expect(
-          (balance = await env.lssToken.balanceOf(adr.staker1.address)),
-        ).to.be.equal(env.stakingAmount * 2);
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
       });
 
-      it('should emit event', async () => {
-        expect(
-          await env.lssStaking.connect(adr.staker1).stakerClaim(1),
-        ).to.be.emit(env.lssStaking, 'StakerClaimed').withArgs(
-          adr.staker1.address,
-          lerc20Token.address,
-          1,
-        );
+      describe('when verifying staker claimable amount by a staker', () => {
+        it('should return amount', async () => {
+          expect(
+            await env.lssStaking.connect(adr.staker1).stakerClaimableAmount(1),
+          ).to.not.be.empty;
+        });
       });
-    });
 
-    describe('when stakers claims two times', () => {
-      it('should revert', async () => {
-        await env.lssStaking.connect(adr.staker1).stakerClaim(1);
+      describe('when stakers claims', () => {
+        it('should not revert', async () => {
+          let balance;
+          expect((balance = await lerc20Token.balanceOf(adr.staker1.address)))
+            .to.not.be.empty;
 
-        await expect(
-          env.lssStaking.connect(adr.staker1).stakerClaim(1),
-        ).to.be.revertedWith('LSS: You already claimed');
+          expect(
+            (balance = await env.lssToken.balanceOf(adr.staker1.address)),
+          ).to.be.equal(2500);
+
+          await env.lssStaking.connect(adr.staker1).stakerClaim(1);
+
+          expect(await lerc20Token.balanceOf(adr.staker1.address)).to.not.be
+            .empty;
+
+          expect(
+            (balance = await env.lssToken.balanceOf(adr.staker1.address)),
+          ).to.be.equal(env.stakingAmount * 2);
+        });
+
+        it('should emit event', async () => {
+          expect(
+            await env.lssStaking.connect(adr.staker1).stakerClaim(1),
+          ).to.be.emit(env.lssStaking, 'StakerClaimed').withArgs(
+            adr.staker1.address,
+            lerc20Token.address,
+            1,
+          );
+        });
       });
-    });
 
-    describe('when all stakers claims', () => {
-      // Calculations based on Test Case 2
-      // https://docs.google.com/spreadsheets/d/1-ufuOixhv2pYbUu-dQozqBcZJv2Yg69Wi_yRwnulC00/edit?usp=sharing
-      it('should not revert', async () => {
-        await expect(
-          // Should get around 7095.2
-          env.lssStaking.connect(adr.staker1).stakerClaim(1),
+      describe('when stakers claims two times', () => {
+        it('should revert', async () => {
+          await env.lssStaking.connect(adr.staker1).stakerClaim(1);
 
-          // Should get around 6872.7
-          env.lssStaking.connect(adr.staker2).stakerClaim(1),
+          await expect(
+            env.lssStaking.connect(adr.staker1).stakerClaim(1),
+          ).to.be.revertedWith('LSS: You already claimed');
+        });
+      });
 
-          // Should get around 4499.4
-          env.lssStaking.connect(adr.staker3).stakerClaim(1),
+      describe('when all stakers claims', () => {
+        // Calculations based on Test Case 2
+        // https://docs.google.com/spreadsheets/d/1-ufuOixhv2pYbUu-dQozqBcZJv2Yg69Wi_yRwnulC00/edit?usp=sharing
+        it('should not revert', async () => {
+          await expect(
+            // Should get around 7095.2
+            env.lssStaking.connect(adr.staker1).stakerClaim(1),
 
-          // Should get around 1532.8
-          env.lssStaking.connect(adr.staker4).stakerClaim(1),
-        ).to.not.be.reverted;
+            // Should get around 6872.7
+            env.lssStaking.connect(adr.staker2).stakerClaim(1),
 
-        expect(
-          await lerc20Token.balanceOf(adr.staker1.address),
-        ).to.be.equal(7095);
+            // Should get around 4499.4
+            env.lssStaking.connect(adr.staker3).stakerClaim(1),
 
-        expect(
-          await lerc20Token.balanceOf(adr.staker2.address),
-        ).to.be.equal(6872);
+            // Should get around 1532.8
+            env.lssStaking.connect(adr.staker4).stakerClaim(1),
+          ).to.not.be.reverted;
 
-        expect(
-          await lerc20Token.balanceOf(adr.staker3.address),
-        ).to.be.equal(4499);
+          expect(
+            await lerc20Token.balanceOf(adr.staker1.address),
+          ).to.be.equal(7095);
 
-        expect(
-          await lerc20Token.balanceOf(adr.staker4.address),
-        ).to.be.equal(1532);
+          expect(
+            await lerc20Token.balanceOf(adr.staker2.address),
+          ).to.be.equal(6872);
+
+          expect(
+            await lerc20Token.balanceOf(adr.staker3.address),
+          ).to.be.equal(4499);
+
+          expect(
+            await lerc20Token.balanceOf(adr.staker4.address),
+          ).to.be.equal(1532);
+        });
       });
     });
   });
