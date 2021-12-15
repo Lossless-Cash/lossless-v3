@@ -15,7 +15,6 @@ interface ILssController {
     function getReporterPayoutStatus(address _reporter, uint256 reportId) external view returns (bool);
     function setReporterPayoutStatus(address _reporter, bool status, uint256 reportId) external; 
     function blacklist(address _adr) external view returns (bool);
-    function reportCoefficient(uint256 reportId) external view returns (uint256);
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
     function recoveryAdmin() external view returns (address);
@@ -30,7 +29,6 @@ interface ILssController {
     function proposedTokenLockTimeframe(address token) external view returns (uint256);
     function changeSettlementTimelock(address token) external view returns (uint256);
     function isNewSettlementProposed(address token) external view returns (bool);
-    function reportCoefficient(address token) external view returns (uint256);
     
     function pause() external;
     function unpause() external;
@@ -51,7 +49,6 @@ interface ILssController {
     function setGovernanceContractAddress(address _adr) external;
     function proposeNewSettlementPeriod(address token, uint256 _seconds) external;
     function executeNewSettlementPeriod(address token) external;
-    function addToReportCoefficient(uint256 reportId, uint256 _amt) external;
     function activateEmergency(address token) external;
     function deactivateEmergency(address token) external;
     function setGuardian(address newGuardian) external;

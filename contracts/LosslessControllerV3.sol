@@ -71,9 +71,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     mapping(address => TokenLockedFunds) private tokenScopedLockedFunds;
-
-    mapping(uint256 => uint256) public reportCoefficient;
-    
+  
     mapping(address => bool) public dexList;
     mapping(address => bool) public whitelist;
     mapping(address => bool) public blacklist;
@@ -182,18 +180,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V3 SETTERS ---
 
-    /// @notice This function sets default values for Contoller V3
-    /// @dev Called on startur
-    function setControllerV3Defaults() public onlyLosslessAdmin {
-        dexTranferThreshold = 20;
-        erroneousCompensation = 2;
-        whitelist[admin] = true;
-        whitelist[recoveryAdmin]  = true;
-        whitelist[pauseAdmin]  = true;
-        settlementTimeLock = 12 hours;
-        lockCheckpointExpiration = 300 seconds;
-    }
-    
+   
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingToken Address corresponding to the Lossless Governance Token
@@ -306,14 +293,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         tokenLockTimeframe[token] = proposedTokenLockTimeframe[token];
         isNewSettlementProposed[token] = false;
         emit SettlementPeriodChanged(token, proposedTokenLockTimeframe[token]);
-    }
-
-    /// @notice This function adds to the total coefficient per report
-    /// @dev It takes part on the claimableAmount calculation of the Lossless Staking contract
-    /// @param reportId Report to be added the coefficient
-    /// @param _amt Coefficient amount
-    function addToReportCoefficient(uint256 reportId, uint256 _amt) external onlyLosslessEnv {
-        reportCoefficient[reportId] += _amt;
     }
 
     /// @notice This function activates the emergency mode

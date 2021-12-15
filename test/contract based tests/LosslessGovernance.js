@@ -932,7 +932,7 @@ describe('Lossless Governance', () => {
 
         expect(
           await env.lssToken.balanceOf(adr.maliciousActor1.address),
-        ).to.be.equal(env.stakingAmount * compensationPercentage / 100);
+        ).to.be.equal(env.reportingAmount * compensationPercentage / 100);
       });
 
       it('should revert if tries to retrieve twice', async () => {
