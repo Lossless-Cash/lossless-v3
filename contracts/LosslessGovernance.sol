@@ -293,12 +293,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// If the report is solved positively, the funds of the reported account get retrieved in order to be distributed among stakers and the reporter.
     /// @param reportId Report to be resolved
     function resolveReport(uint256 reportId) public whenNotPaused {
-/* 
-        require(hasRole(COMMITTEE_ROLE, msg.sender) 
-                || msg.sender == losslessController.admin() 
-                || msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
-                "LSS: Role cannot resolve."); */
-        
+
         address token = losslessReporting.reportTokens(reportId);
 
         Vote storage reportVote = reportVotes[reportId];
