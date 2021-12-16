@@ -87,5 +87,50 @@ describe(scriptName, () => {
         await lerc20Token.balanceOf(adr.regularUser5.address),
       ).to.be.equal(toRetrieve);
     });
+
+    describe('when trying to retrieve two times', () => {
+      it('should revert', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin)
+          .proposeWallet(1, adr.regularUser5.address);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.days(8)),
+        ]);
+
+        await expect(
+          env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
+        ).to.not.be.reverted;
+
+        await expect(
+          env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
+        ).to.be.revertedWith('LSS: Funds already claimed');
+      });
+    });
+
+    describe('when trying to retrieve by other than the reporter', () => {
+      it('should revert', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin)
+          .proposeWallet(1, adr.regularUser5.address);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.days(8)),
+        ]);
+
+        await expect(
+          env.lssGovernance.connect(adr.regularUser1).retrieveFunds(1),
+        ).to.be.revertedWith('LSS: Only proposed adr can claim');
+      });
+    });
+  });
+
+  describe('when dispute period is not over', () => {
+    it('should revert', async () => {
+      await env.lssGovernance.connect(adr.lssAdmin)
+        .proposeWallet(1, adr.regularUser5.address);
+
+      await expect(
+        env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
+      ).to.be.revertedWith('LSS: Dispute period not closed');
+    });
   });
 });

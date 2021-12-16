@@ -89,22 +89,21 @@ describe(scriptName, () => {
   });
 
   describe('when the report has been solved correctly', () => {
+    beforeEach(async () => {
+      await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+      await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+      await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+      await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+      await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+      await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
+
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(1)),
+      ]);
+    });
     describe('when lossless team claims', () => {
-      beforeEach(async () => {
-        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
-
-        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
-
-        await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.minutes(1)),
-        ]);
-      });
-
       it('should not revert', async () => {
         let balance;
         expect(
@@ -118,23 +117,23 @@ describe(scriptName, () => {
         );
       });
     });
-  });
 
-  describe('when lossless team claims two times', () => {
-    it('should revert', async () => {
-      await env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1);
+    describe('when lossless team claims two times', () => {
+      it('should revert', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1);
 
-      await expect(
-        env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
-      ).to.be.revertedWith('LSS: Already claimed');
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
+        ).to.be.revertedWith('LSS: Already claimed');
+      });
     });
-  });
 
-  describe('when lossless claim is called by not lossless admin two times', () => {
-    it('should revert', async () => {
-      await expect(
-        env.lssGovernance.connect(adr.reporter1).losslessClaim(1),
-      ).to.be.revertedWith('LSS: Must be admin');
+    describe('when lossless claim is called by not lossless admin two times', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.reporter1).losslessClaim(1),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
     });
   });
 });
