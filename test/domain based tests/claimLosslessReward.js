@@ -54,33 +54,69 @@ describe(scriptName, () => {
       adr.member3.address,
       adr.member4.address,
       adr.member5.address]);
-
-    await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-    await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-    await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-    await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
-    await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
-    await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
-
-    await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
-
-    await ethers.provider.send('evm_increaseTime', [
-      Number(time.duration.minutes(1)),
-    ]);
   });
 
-  describe('when lossless team claims', () => {
-    it('should not revert', async () => {
-      let balance;
-      expect(
-        (balance = await lerc20Token.balanceOf(adr.lssAdmin.address)),
-      ).to.be.equal(0);
+  describe('when report has not been solved', () => {
+    it('should revert', async () => {
+      await expect(
+        env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
+      ).to.be.revertedWith('LSS: Report still open');
+    });
+  });
 
-      await env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1);
+  describe('when the report has been solved negatively', () => {
+    beforeEach(async () => {
+      await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+      await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+      await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+      await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+      await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+      await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
 
-      expect(await lerc20Token.balanceOf(adr.lssAdmin.address)).to.be.equal(
-        reportedAmount * losslessReward,
-      );
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(1)),
+      ]);
+    });
+    describe('when lossless team claims', () => {
+      it('should revert', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
+        ).to.be.revertedWith('LSS: Report solved negatively.');
+      });
+    });
+  });
+
+  describe('when the report has been solved correctly', () => {
+    describe('when lossless team claims', () => {
+      beforeEach(async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(1)),
+        ]);
+      });
+
+      it('should not revert', async () => {
+        let balance;
+        expect(
+          (balance = await lerc20Token.balanceOf(adr.lssAdmin.address)),
+        ).to.be.equal(0);
+
+        await env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1);
+
+        expect(await lerc20Token.balanceOf(adr.lssAdmin.address)).to.be.equal(
+          reportedAmount * losslessReward,
+        );
+      });
     });
   });
 
