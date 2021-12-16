@@ -12,7 +12,7 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
-describe(scriptName, () => {
+describe.only(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -133,6 +133,36 @@ describe(scriptName, () => {
         await expect(
           env.lssGovernance.connect(adr.maliciousActor1).committeeMemberVote(1, true),
         ).to.be.revertedWith('LSS: Must be a committee member');
+      });
+    });
+    describe('when the report has alredy been solved', () => {
+      it('should revert if report is already closed', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address,
+          adr.member4.address,
+          adr.member5.address]);
+
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true),
+        ).to.be.revertedWith('LSS: Report already solved.');
+
+        await expect(
+          env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true),
+        ).to.be.revertedWith('LSS: Report already solved.');
+
+        await expect(
+          env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true),
+        ).to.be.revertedWith('LSS: Report already solved.');
       });
     });
   });
