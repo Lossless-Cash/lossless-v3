@@ -65,13 +65,40 @@ describe(scriptName, () => {
     describe('when removing Committee members', () => {
       it('should revert when not admin', async () => {
         await expect(
-          env.lssGovernance.connect(adr.regularUser1).addCommitteeMembers([
+          env.lssGovernance.connect(adr.regularUser1).removeCommitteeMembers([
             adr.member1.address,
             adr.member2.address,
             adr.member3.address,
             adr.member4.address,
             adr.member5.address]),
         ).to.be.revertedWith('LSS: Must be admin');
+      });
+
+      it('should revert if there are no members', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).removeCommitteeMembers([
+            adr.member1.address,
+            adr.member2.address,
+            adr.member3.address,
+            adr.member4.address,
+            adr.member5.address]),
+        ).to.be.revertedWith('LSS: committee has no members');
+      });
+
+      it('should revert if an address is not member', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address,
+          adr.member4.address]);
+
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).removeCommitteeMembers([
+            adr.member1.address,
+            adr.member2.address,
+            adr.member3.address,
+            adr.member5.address]),
+        ).to.be.revertedWith('LSS: An address is not member');
       });
 
       it('should remove members', async () => {
