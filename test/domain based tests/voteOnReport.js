@@ -12,7 +12,7 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
-describe.only(scriptName, () => {
+describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -80,6 +80,12 @@ describe.only(scriptName, () => {
           env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
         ).to.be.revertedWith('LSS: Not enough votes');
       });
+
+      it('should revert if report is not valid', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).losslessVote(10, true),
+        ).to.be.revertedWith('LSS: report is not valid');
+      });
     });
 
     describe('when the Token Owner is voting', () => {
@@ -98,6 +104,12 @@ describe.only(scriptName, () => {
           env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true),
         ).to.be.revertedWith('LSS: owners already voted');
       });
+
+      it('should revert if report is not valid', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(10, true),
+        ).to.be.revertedWith('LSS: report is not valid');
+      });
     });
 
     describe('when the Committee is voting', () => {
@@ -109,6 +121,12 @@ describe.only(scriptName, () => {
         await expect(
           env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true),
         ).to.be.revertedWith('LSS: Member already voted.');
+      });
+
+      it('should revert if report is not valid', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.member1).committeeMemberVote(10, true),
+        ).to.be.revertedWith('LSS: report is not valid');
       });
     });
   });
