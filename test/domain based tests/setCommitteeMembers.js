@@ -33,6 +33,15 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LSS: Must be admin');
       });
 
+      it('should revert when duplicate members', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+            adr.member1.address,
+            adr.member2.address,
+            adr.member2.address]),
+        ).to.be.revertedWith('LSS: duplicate members');
+      });
+
       it('should add members', async () => {
         await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
           adr.member1.address,
