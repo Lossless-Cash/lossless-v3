@@ -437,7 +437,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         emit FundsRetrieved(reportId, msg.sender);
     }
 
-    /// @notice This function determins is the refund wallet was accepted
+    /// @notice This function determins if the refund wallet was accepted
     /// @param reportId Report to propose the wallet
     function _determineProposedWallet(uint256 reportId) private returns(bool){
         
