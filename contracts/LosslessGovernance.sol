@@ -152,9 +152,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         return reportVotes[reportId].resolution;
     }
 
-    /// @notice This function sets the address of the Lossless Governance Token
+    /// @notice This function sets the address of the staking token
     /// @dev Only can be called by the Lossless Admin
-    /// @param _stakingToken Address corresponding to the Lossless Governance Token
+    /// @param _stakingToken Address corresponding to the staking token
     function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
         require(_stakingToken != address(0), "LERC20: Cannot be zero address");
         stakingToken = ILERC20(_stakingToken);
