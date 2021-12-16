@@ -287,7 +287,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         emit CommitteeMemberVoted(reportId, msg.sender, vote);
     }
 
-    /// @notice This function solves a reported based on the voting resolution of the three pilars
+    /// @notice This function solves a report based on the voting resolution of the three pilars
     /// @dev Only can be run by the three pilars.
     /// When the report gets resolved, if it's resolved negatively, the reported address gets removed from the blacklist
     /// If the report is solved positively, the funds of the reported account get retrieved in order to be distributed among stakers and the reporter.
