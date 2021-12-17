@@ -107,7 +107,7 @@ describe(scriptName, () => {
       });
     });
 
-    describe('when trying to retrieve by other than the reporter', () => {
+    describe('when non proposed wallet tries to claim', () => {
       it('should revert', async () => {
         await env.lssGovernance.connect(adr.lssAdmin)
           .proposeWallet(1, adr.regularUser5.address);
