@@ -239,14 +239,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     ///            The address gets blacklisted whenever a report is created on them.
     /// @param _adr Address corresponding to be added to the blacklist mapping
     function addToBlacklist(address _adr) public onlyLosslessEnv {
-        require(!blacklist[_adr], "LSS: Already blacklisted");
         blacklist[_adr] = true;
     }
 
     /// @notice This function calls removeFromBlacklist() and returns a percentage as compensation
     /// @param _adr Address corresponding to be removed from the blacklist mapping
     function resolvedNegatively(address _adr) public onlyLosslessEnv {
-        require(blacklist[_adr], "LSS: Not blacklisted");
         blacklist[_adr] = false;
     }
     

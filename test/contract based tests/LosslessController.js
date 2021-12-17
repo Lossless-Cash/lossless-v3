@@ -180,7 +180,7 @@ describe.only('Lossless Controller', () => {
     });
   });
 
-  describe('when whitelisting an account', () => {
+  describe('when whitelisting an address', () => {
     it('should set governance contract', async () => {
       await env.lssController.connect(adr.lssAdmin).setWhitelist(
         [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
