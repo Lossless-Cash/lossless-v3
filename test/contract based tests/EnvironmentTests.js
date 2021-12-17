@@ -142,6 +142,12 @@ describe('Lossless Environment', () => {
           env.lssController.connect(adr.lssAdmin).setReportingContractAddress(ZERO_ADDRESS),
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
+
+      it('should revert when setting Governance contract as zero address', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setGovernanceContractAddress(ZERO_ADDRESS),
+        ).to.be.revertedWith('LERC20: Cannot be zero address');
+      });
     });
 
     describe('when the Lossless Controller contract has been set up', () => {
