@@ -56,6 +56,19 @@ describe(scriptName, () => {
         adr.member5.address]);
     });
 
+    describe('when solving a report twice', () => {
+      it('should revert', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
+        ).to.be.revertedWith('LSS: Report already resolved');
+      });
+    });
+
     describe('when only 2/3 parts vote', () => {
       describe('when only Lossless Team and Token Owners vote', () => {
         describe('when both vote positively', () => {
