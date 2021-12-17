@@ -169,7 +169,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
-            .secondReport(5, adr.maliciousActor1.address),
+            .secondReport(5, adr.maliciousActor2.address),
         ).to.be.revertedWith('LSS: report does not exists');
       });
     });
@@ -178,7 +178,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter2)
-            .secondReport(1, adr.maliciousActor1.address),
+            .secondReport(1, adr.maliciousActor2.address),
         ).to.be.revertedWith('LSS: invalid reporter');
       });
     });
@@ -187,7 +187,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter2)
-            .secondReport(1, adr.maliciousActor1.address),
+            .secondReport(1, adr.maliciousActor2.address),
         ).to.be.revertedWith('LSS: invalid reporter');
       });
     });

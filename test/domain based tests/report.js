@@ -136,7 +136,7 @@ describe(scriptName, () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
             .report(lerc20Token.address, adr.maliciousActor1.address),
-        ).to.be.revertedWith('LSS: Already blacklisted');
+        ).to.be.revertedWith('LSS: Report already exists');
       });
     });
 

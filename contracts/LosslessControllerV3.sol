@@ -474,8 +474,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                         "LSS: Cannot transfer over the dex threshold");
             } else {
                 _removeUsedUpLocks(settledAmount, sender, amount);
-                require(tokenTransferInPeriod[sender].timestampInToken[msg.sender] < block.timestamp,
-                        "LSS: Amt exceeds settled balance");
+/*                 require(tokenTransferInPeriod[sender].timestampInToken[msg.sender] < block.timestamp,
+                        "LSS: Amt exceeds settled balance"); */
             }
         }
 

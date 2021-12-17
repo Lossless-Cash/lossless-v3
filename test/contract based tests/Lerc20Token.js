@@ -37,30 +37,20 @@ describe('Random LERC20 Token', () => {
       .executeNewSettlementPeriod(lerc20Token.address);
   });
 
-  /* describe('when setting up the settlement period', () => {
-    it('should revert when not token admin', async () => {
-      await expect(
-        env.lssController.connect(adr.regularUser1).setLockTimeframe(lerc20Token.address, 0),
-      ).to.be.revertedWith('LSS: Must be Token Admin');
-    });
-
-    it('should revert when trying to change before the timelock', async () => {
-      await expect(
-        env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 10 * 60),
-      ).to.be.revertedWith('LSS: Must wait to change');
-    });
-
-    it('should not revert when trying to change after the timelock by token admin', async () => {
-      await expect(
-        env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 10 * 60),
-      ).to.be.revertedWith('LSS: Must wait to change');
-    });
-  }); */
-
   describe('when transfering between users', () => {
     beforeEach(async () => {
       await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
       await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
+    });
+
+    it('should revert if 5 minutes haven\'t passed and and it\'s a second transfer', async () => {
+      await expect(
+        lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 5),
+      ).to.not.be.reverted;
+
+      await expect(
+        lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 5),
+      ).to.be.revertedWith('LSS: Transfers limit reached');
     });
 
     it('should not revert if 5 minutes haven\'t passed but its the first transfer', async () => {
@@ -69,7 +59,7 @@ describe('Random LERC20 Token', () => {
       ).to.not.be.reverted;
     });
 
-    it('should not revert', async () => {
+    it('should not revert if 5 minutes have passed', async () => {
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
       ]);
