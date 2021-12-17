@@ -125,13 +125,17 @@ describe(scriptName, () => {
             env.lssGovernance.connect(adr.member1).rejectWallet(1),
           ).to.be.revertedWith('LSS: Already Voted.');
         });
+
+        it('should revert if other than the three pilars tries to reject', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.regularUser1).rejectWallet(1),
+          ).to.be.revertedWith('LSS: Role cannot reject.');
+        });
       });
 
       describe('when dispute period has closed', () => {
         beforeEach(async () => {
-          await expect(
-            env.lssGovernance.connect(adr.regularUser1).rejectWallet(1),
-          ).to.be.revertedWith('LSS: Role cannot reject.');
+          await env.lssGovernance.connect(adr.regularUser1).rejectWallet(1);
 
           await env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1);
           await env.lssGovernance.connect(adr.member1).rejectWallet(1);
