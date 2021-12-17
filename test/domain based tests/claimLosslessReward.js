@@ -128,7 +128,7 @@ describe(scriptName, () => {
       });
     });
 
-    describe('when lossless claim is called by not lossless admin two times', () => {
+    describe('when lossless claim is called other than lossless admin', () => {
       it('should revert', async () => {
         await expect(
           env.lssGovernance.connect(adr.reporter1).losslessClaim(1),
