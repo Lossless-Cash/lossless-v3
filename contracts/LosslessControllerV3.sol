@@ -496,7 +496,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[recipient], "LSS: Recipient is blacklisted");
         
         if (tokenLockTimeframe[msg.sender] != 0) {
-            require(_evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+            _evaluateTransfer(sender, recipient, amount);
         }
     }
 
@@ -512,7 +512,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[sender], "LSS: Sender is blacklisted");
 
         if (tokenLockTimeframe[msg.sender] != 0) {
-            require(_evaluateTransfer(sender, recipient, amount), "LSS: Transfer evaluation failed");
+            _evaluateTransfer(sender, recipient, amount);
         }
 
     }
