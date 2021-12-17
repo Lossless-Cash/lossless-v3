@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-undef */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prefer-destructuring */
@@ -10,7 +11,7 @@ let env;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-describe('Lossless Controller', () => {
+describe.only('Lossless Controller', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -134,6 +135,18 @@ describe('Lossless Controller', () => {
         env.lssController.connect(adr.lssPauseAdmin).pause(),
       ).to.not.be.reverted;
     });
+
+    describe('when paused', () => {
+      beforeEach(async () => {
+        await env.lssController.connect(adr.lssPauseAdmin).pause();
+      });
+
+      it('should prevent from executing setGuardian', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setGuardian(adr.regularUser1.address),
+        ).to.be.revertedWith('Pausable: paused');
+      });
+    });
   });
 
   describe('when unpausing', () => {
@@ -152,6 +165,18 @@ describe('Lossless Controller', () => {
       await expect(
         env.lssController.connect(adr.lssPauseAdmin).unpause(),
       ).to.not.be.reverted;
+    });
+
+    describe('when paused', () => {
+      beforeEach(async () => {
+        await env.lssController.connect(adr.lssPauseAdmin).unpause();
+      });
+
+      it('should not revert with paused message', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setGuardian(adr.regularUser1.address),
+        ).to.not.be.revertedWith('Pausable: paused');
+      });
     });
   });
 
