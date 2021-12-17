@@ -130,6 +130,14 @@ describe('Lossless Environment', () => {
       });
     });
 
+    describe('when setting up Lossless Controller Contract', () => {
+      it('should revert when setting Staking contract as zero address', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setStakingContractAddress(ZERO_ADDRESS),
+        ).to.be.revertedWith('LERC20: Cannot be zero address');
+      });
+    });
+
     describe('when the Lossless Controller contract has been set up', () => {
       it('should get version', async () => {
         expect(
@@ -137,25 +145,25 @@ describe('Lossless Environment', () => {
         ).to.be.equal(3);
       });
 
-      it('should set the report Lossless Token address correctly', async () => {
+      it('should set the Lossless Token address correctly', async () => {
         expect(
           await env.lssController.stakingToken(),
         ).to.be.equal(env.lssToken.address);
       });
 
-      it('should set the report Lossless Staking address correctly', async () => {
+      it('should set the Lossless Staking address correctly', async () => {
         expect(
           await env.lssController.losslessStaking(),
         ).to.be.equal(env.lssStaking.address);
       });
 
-      it('should set the report Lossless Reporting address correctly', async () => {
+      it('should set the Lossless Reporting address correctly', async () => {
         expect(
           await env.lssController.losslessReporting(),
         ).to.be.equal(env.lssReporting.address);
       });
 
-      it('should set the report Lossless Governance address correctly', async () => {
+      it('should set the Lossless Governance address correctly', async () => {
         expect(
           await env.lssController.losslessGovernance(),
         ).to.be.equal(env.lssGovernance.address);

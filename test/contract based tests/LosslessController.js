@@ -11,7 +11,7 @@ let env;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-describe.only('Lossless Controller', () => {
+describe('Lossless Controller', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
