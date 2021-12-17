@@ -200,4 +200,72 @@ describe('Lossless Controller', () => {
       });
     });
   });
+
+  describe('when calling before and after legacy methods', () => {
+    it('should not revert when calling beforeMint', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).beforeMint(adr.regularUser1.address, adr.regularUser2.address),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling beforeBurn', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).beforeBurn(adr.regularUser1.address, 100),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling beforeIncreaseAllowance', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).beforeIncreaseAllowance(adr.regularUser1.address, adr.regularUser2.address, 100),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling beforeDecreaseAllowance', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).beforeDecreaseAllowance(adr.regularUser1.address, adr.regularUser2.address, 100),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling afterMint', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).afterMint(adr.regularUser1.address, adr.regularUser2.address),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling afterApprove', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).afterApprove(adr.regularUser1.address, adr.regularUser2.address, 100),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling afterBurn', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).afterBurn(adr.regularUser1.address, 100),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling afterTransfer', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).afterTransfer(adr.regularUser1.address, adr.regularUser2.address, 100),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling afterTransferFrom', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).afterTransferFrom(adr.regularUser1.address, adr.regularUser2.address, adr.regularUser3.address, 100),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling afterIncreaseAllowance', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).afterIncreaseAllowance(adr.regularUser1.address, adr.regularUser2.address, 100),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert when calling afterDecreaseAllowance', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).afterDecreaseAllowance(adr.regularUser1.address, adr.regularUser2.address, 100),
+      ).to.not.be.reverted;
+    });
+  });
 });
