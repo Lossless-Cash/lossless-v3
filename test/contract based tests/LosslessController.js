@@ -122,6 +122,39 @@ describe('Lossless Controller', () => {
     });
   });
 
+  describe('when pausing', () => {
+    it('should revert when not pause admin', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).pause(),
+      ).to.be.revertedWith('LSS: Must be pauseAdmin');
+    });
+
+    it('should not revert when not pause admin', async () => {
+      await expect(
+        env.lssController.connect(adr.lssPauseAdmin).pause(),
+      ).to.not.be.reverted;
+    });
+  });
+
+  describe('when unpausing', () => {
+    beforeEach(async () => {
+      await expect(
+        env.lssController.connect(adr.lssPauseAdmin).pause(),
+      ).to.not.be.reverted;
+    });
+    it('should revert when not pause admin', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).unpause(),
+      ).to.be.revertedWith('LSS: Must be pauseAdmin');
+    });
+
+    it('should not revert when not pause admin', async () => {
+      await expect(
+        env.lssController.connect(adr.lssPauseAdmin).unpause(),
+      ).to.not.be.reverted;
+    });
+  });
+
   describe('when whitelisting an account', () => {
     it('should set governance contract', async () => {
       await env.lssController.connect(adr.lssAdmin).setWhitelist(
