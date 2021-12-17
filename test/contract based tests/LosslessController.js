@@ -8,6 +8,8 @@ const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
 let adr;
 let env;
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 describe('Lossless Controller', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -34,6 +36,90 @@ describe('Lossless Controller', () => {
 
     await env.lssController.connect(adr.lerc20Admin)
       .executeNewSettlementPeriod(lerc20Token.address);
+  });
+
+  describe('when setting a new admin', () => {
+    it('should revert when not recoveryAdmin', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).setAdmin(adr.regularUser2.address),
+      ).to.be.revertedWith('LSS: Must be recoveryAdmin');
+    });
+
+    it('should revert when setting zero address', async () => {
+      await expect(
+        env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(ZERO_ADDRESS),
+      ).to.be.revertedWith('LERC20: Cannot be zero address');
+    });
+
+    it('should not revert when recoveryAdmin', async () => {
+      await expect(
+        env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(adr.regularUser1.address),
+      ).to.not.be.reverted;
+    });
+
+    it('should emit event', async () => {
+      await expect(
+        env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(adr.regularUser1.address),
+      ).to.emit(env.lssController, 'AdminChanged').withArgs(
+        adr.lssAdmin.address, adr.regularUser1.address,
+      );
+    });
+  });
+
+  describe('when setting a new pause admin', () => {
+    it('should revert when not recoveryAdmin', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).setPauseAdmin(adr.regularUser2.address),
+      ).to.be.revertedWith('LSS: Must be recoveryAdmin');
+    });
+
+    it('should revert when setting zero address', async () => {
+      await expect(
+        env.lssController.connect(adr.lssRecoveryAdmin).setPauseAdmin(ZERO_ADDRESS),
+      ).to.be.revertedWith('LERC20: Cannot be zero address');
+    });
+
+    it('should not revert when recoveryAdmin', async () => {
+      await expect(
+        env.lssController.connect(adr.lssRecoveryAdmin).setPauseAdmin(adr.regularUser1.address),
+      ).to.not.be.reverted;
+    });
+
+    it('should emit event', async () => {
+      await expect(
+        env.lssController.connect(adr.lssRecoveryAdmin).setPauseAdmin(adr.regularUser1.address),
+      ).to.emit(env.lssController, 'PauseAdminChanged').withArgs(
+        adr.lssPauseAdmin.address, adr.regularUser1.address,
+      );
+    });
+  });
+
+  describe('when setting a new recovery admin', () => {
+    it('should revert when not recoveryAdmin', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).setRecoveryAdmin(adr.regularUser2.address),
+      ).to.be.revertedWith('LSS: Must be recoveryAdmin');
+    });
+
+    it('should revert when setting zero address', async () => {
+      await expect(
+        env.lssController.connect(adr.lssRecoveryAdmin).setRecoveryAdmin(ZERO_ADDRESS),
+      ).to.be.revertedWith('LERC20: Cannot be zero address');
+    });
+
+    it('should not revert when recoveryAdmin', async () => {
+      await expect(
+        env.lssController.connect(adr.lssRecoveryAdmin).setRecoveryAdmin(adr.regularUser1.address),
+      ).to.not.be.reverted;
+    });
+
+    it('should emit event', async () => {
+      await expect(
+        env.lssController.connect(adr.lssRecoveryAdmin).setRecoveryAdmin(adr.regularUser1.address),
+      ).to.emit(env.lssController, 'RecoveryAdminChanged').withArgs(
+        adr.lssRecoveryAdmin.address, adr.regularUser1.address,
+      );
+    });
   });
 
   describe('when whitelisting an account', () => {
