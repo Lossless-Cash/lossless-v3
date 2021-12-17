@@ -100,21 +100,64 @@ describe(scriptName, () => {
         await expect(
           env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
         ).to.not.be.reverted;
+      });
+      describe('when dispute period is open', () => {
+        it('should revert when lossless votes two times', async () => {
+          await env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1);
 
-        await env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1);
-        await env.lssGovernance.connect(adr.member1).rejectWallet(1);
-        await env.lssGovernance.connect(adr.member2).rejectWallet(1);
-        await env.lssGovernance.connect(adr.member3).rejectWallet(1);
+          await expect(
+            env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1),
+          ).to.be.revertedWith('LSS: Already Voted.');
+        });
 
-        await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.days(8)),
-        ]);
+        it('should revert when token admin votes two times', async () => {
+          await env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1);
+
+          await expect(
+            env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
+          ).to.be.revertedWith('LSS: Already Voted.');
+        });
+
+        it('should revert when committee member votes two times', async () => {
+          await env.lssGovernance.connect(adr.member1).rejectWallet(1);
+
+          await expect(
+            env.lssGovernance.connect(adr.member1).rejectWallet(1),
+          ).to.be.revertedWith('LSS: Already Voted.');
+        });
+
+        it('should revert if other than the three pilars tries to reject', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.regularUser1).rejectWallet(1),
+          ).to.be.revertedWith('LSS: Role cannot reject.');
+        });
       });
 
-      it('should revert when trying to retrieve', async () => {
-        await expect(
-          env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
-        ).to.be.revertedWith('LSS: Wallet rejected');
+      describe('when dispute period has closed', () => {
+        beforeEach(async () => {
+          await env.lssGovernance.connect(adr.regularUser1).rejectWallet(1);
+
+          await env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1);
+          await env.lssGovernance.connect(adr.member1).rejectWallet(1);
+          await env.lssGovernance.connect(adr.member2).rejectWallet(1);
+          await env.lssGovernance.connect(adr.member3).rejectWallet(1);
+
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.days(8)),
+          ]);
+        });
+
+        it('should revert', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1),
+          ).to.be.revertedWith('LSS: Dispute period closed');
+        });
+
+        it('should revert when trying to retrieve', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
+          ).to.be.revertedWith('LSS: Wallet rejected');
+        });
       });
     });
   });

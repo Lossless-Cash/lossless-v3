@@ -51,62 +51,87 @@ describe(scriptName, () => {
       adr.member3.address,
       adr.member4.address,
       adr.member5.address]);
-
-    await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-    await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-    await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-    await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
-    await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
-    await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
-
-    await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
-
-    await ethers.provider.send('evm_increaseTime', [
-      Number(time.duration.minutes(1)),
-    ]);
   });
 
   describe('when proposing a refund wallet on report close', () => {
-    it('should accept a proposed wallet by Lossless Team', async () => {
-      await expect(
-        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-      ).to.not.be.reverted;
-    });
+    describe('when the report resolved negatively', () => {
+      beforeEach(async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, false);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
+        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
+        await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
 
-    it('should accept a proposed wallet by Token Owner', async () => {
-      await expect(
-        env.lssGovernance.connect(adr.lerc20Admin).proposeWallet(1, adr.regularUser5.address),
-      ).to.not.be.reverted;
-    });
-
-    it('should revert if proposed by other than LssTeam or TokenOwner', async () => {
-      await expect(
-        env.lssGovernance.connect(adr.regularUser5).proposeWallet(1, adr.regularUser5.address),
-      ).to.be.revertedWith('LSS: Role cannot propose.');
-    });
-
-    it('should revert when trying to propose another', async () => {
-      await expect(
-        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-      ).to.not.be.reverted;
-
-      await expect(
-        env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-      ).to.be.revertedWith('LSS: Wallet already proposed.');
-    });
-
-    describe('when retrieving funds to proposed wallet', () => {
-      it('should transfer funds', async () => {
-        await env.lssGovernance.connect(adr.lssAdmin)
-          .proposeWallet(1, adr.regularUser5.address);
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
         await ethers.provider.send('evm_increaseTime', [
-          Number(time.duration.days(8)),
+          Number(time.duration.minutes(1)),
         ]);
+      });
+
+      it('should revert', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
+        ).to.be.revertedWith('LSS: Report solved negatively.');
+      });
+    });
+    describe('when the report resolved positively', () => {
+      beforeEach(async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(1)),
+        ]);
+      });
+      it('should accept a proposed wallet by Lossless Team', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
+        ).to.not.be.reverted;
+      });
+
+      it('should accept a proposed wallet by Token Owner', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lerc20Admin).proposeWallet(1, adr.regularUser5.address),
+        ).to.not.be.reverted;
+      });
+
+      it('should revert if proposed by other than LssTeam or TokenOwner', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.regularUser5).proposeWallet(1, adr.regularUser5.address),
+        ).to.be.revertedWith('LSS: Role cannot propose.');
+      });
+
+      it('should revert when trying to propose another', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
+        ).to.not.be.reverted;
 
         await expect(
-          env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
-        ).to.not.be.reverted;
+          env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
+        ).to.be.revertedWith('LSS: Wallet already proposed.');
+      });
+
+      describe('when retrieving funds to proposed wallet', () => {
+        it('should transfer funds', async () => {
+          await env.lssGovernance.connect(adr.lssAdmin)
+            .proposeWallet(1, adr.regularUser5.address);
+
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.days(8)),
+          ]);
+
+          await expect(
+            env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
+          ).to.not.be.reverted;
+        });
       });
     });
   });

@@ -44,12 +44,12 @@ describe(scriptName, () => {
       );
 
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter1.address, env.stakingAmount * 2);
+        .transfer(adr.reporter1.address, env.reportingAmount * 2);
       await env.lssToken.connect(adr.lssInitialHolder)
-        .transfer(adr.reporter2.address, env.stakingAmount);
+        .transfer(adr.reporter2.address, env.reportingAmount);
 
       await env.lssToken.connect(adr.reporter1)
-        .approve(env.lssReporting.address, env.stakingAmount * 2);
+        .approve(env.lssReporting.address, env.reportingAmount * 2);
 
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
@@ -158,6 +158,31 @@ describe(scriptName, () => {
           env.lssReporting.connect(adr.reporter2)
             .secondReport(1, adr.maliciousActor1.address),
         ).to.be.revertedWith('LSS: Report already solved');
+      });
+    });
+
+    describe('when solving a report with a second report', () => {
+      it('should not revert', async () => {
+        await
+        env.lssReporting.connect(adr.reporter1)
+          .secondReport(1, adr.maliciousActor2.address);
+
+        await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address,
+          adr.member4.address,
+          adr.member5.address]);
+
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
+        ).to.not.be.reverted;
       });
     });
   });

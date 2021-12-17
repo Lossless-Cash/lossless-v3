@@ -152,9 +152,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         return reportVotes[reportId].resolution;
     }
 
-    /// @notice This function sets the address of the Lossless Governance Token
+    /// @notice This function sets the address of the staking token
     /// @dev Only can be called by the Lossless Admin
-    /// @param _stakingToken Address corresponding to the Lossless Governance Token
+    /// @param _stakingToken Address corresponding to the staking token
     function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
         require(_stakingToken != address(0), "LERC20: Cannot be zero address");
         stakingToken = ILERC20(_stakingToken);
@@ -287,18 +287,13 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         emit CommitteeMemberVoted(reportId, msg.sender, vote);
     }
 
-    /// @notice This function solves a reported based on the voting resolution of the three pilars
+    /// @notice This function solves a report based on the voting resolution of the three pilars
     /// @dev Only can be run by the three pilars.
     /// When the report gets resolved, if it's resolved negatively, the reported address gets removed from the blacklist
     /// If the report is solved positively, the funds of the reported account get retrieved in order to be distributed among stakers and the reporter.
     /// @param reportId Report to be resolved
     function resolveReport(uint256 reportId) public whenNotPaused {
-/* 
-        require(hasRole(COMMITTEE_ROLE, msg.sender) 
-                || msg.sender == losslessController.admin() 
-                || msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
-                "LSS: Role cannot resolve."); */
-        
+
         address token = losslessReporting.reportTokens(reportId);
 
         Vote storage reportVote = reportVotes[reportId];
@@ -424,7 +419,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @notice This function retrieves the fund to the accepted proposed wallet
     /// @param reportId Report to propose the wallet
     function retrieveFunds(uint256 reportId) public whenNotPaused {
-        require(msg.sender != address(0), "LERC20: Cannot be zero address");
         require(block.timestamp >= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
         require(!proposedWalletOnReport[reportId].status, "LSS: Funds already claimed");
         require(proposedWalletOnReport[reportId].walletAccepted, "LSS: Wallet rejected");
@@ -437,7 +431,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         emit FundsRetrieved(reportId, msg.sender);
     }
 
-    /// @notice This function determins is the refund wallet was accepted
+    /// @notice This function determins if the refund wallet was accepted
     /// @param reportId Report to propose the wallet
     function _determineProposedWallet(uint256 reportId) private returns(bool){
         
@@ -504,7 +498,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     
     /// @notice This function is for the Lossless to claim the rewards
-    /// @param reportId Staked report
+    /// @param reportId report worked on
     function losslessClaim(uint256 reportId) public whenNotPaused onlyLosslessAdmin {
         require(isReportSolved(reportId), "LSS: Report still open");
         require(reportResolution(reportId), "LSS: Report solved negatively.");

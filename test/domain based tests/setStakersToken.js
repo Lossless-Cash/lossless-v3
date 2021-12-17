@@ -64,6 +64,12 @@ describe(scriptName, () => {
           env.lssController.connect(adr.lssAdmin).setStakingToken(ZERO_ADDRESS),
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
+
+      it('should revert when setting as zero address', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).setStakingToken(ZERO_ADDRESS),
+        ).to.be.revertedWith('LERC20: Cannot be zero address');
+      });
     });
     describe('on Lossless Staking', () => {
       it('should revert when not admin', async () => {
