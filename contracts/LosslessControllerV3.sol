@@ -242,7 +242,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function adds an address to the blacklist
     /// @dev Only can be called by the Lossless Admin, and from other Lossless Contracts
-    ///            The address gets blacklisted whenever a report is created on them.
+    /// The address gets blacklisted whenever a report is created on them.
     /// @param _adr Address corresponding to be added to the blacklist mapping
     function addToBlacklist(address _adr) public onlyLosslessEnv {
         blacklist[_adr] = true;
