@@ -248,7 +248,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         blacklist[_adr] = true;
     }
 
-    /// @notice This function calls removeFromBlacklist() and returns a percentage as compensation
+    /// @notice This function removes an address from the blacklist
+    /// @dev Can only be called from other Lossless Contracts, used mainly in Lossless Governance
     /// @param _adr Address corresponding to be removed from the blacklist mapping
     function resolvedNegatively(address _adr) public onlyLosslessEnv {
         blacklist[_adr] = false;
