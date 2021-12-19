@@ -309,12 +309,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         emergencyMode[token].emergencyTimestamp = block.timestamp;
     }
 
-        /// @notice This function activates the emergency mode
-    /// @dev When a report gets generated for a token, it enters an emergency state globally.
-    /// This means that the transfers get limited to a 15 minutes cooldown and only for half of the locked funds at a time.
-    /// It gets activated by the Lossless Reporting contract .
-    /// It deactivated when a resolution has been reached by the Lossless Governance contract.
-    /// @param token Token on which the emergency mode must get activated
+    /// @notice This function activates the emergency mode
+    /// @param token Token on which the emergency mode will be deactivated
     function deactivateEmergency(address token) external onlyLosslessEnv {
         emergencyMode[token].emergencyTimestamp = 0;
     }
