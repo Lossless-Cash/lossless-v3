@@ -126,6 +126,22 @@ describe(scriptName, () => {
           lerc20Token.connect(adr.maliciousActor1).transfer(adr.regularUser1.address, 10),
         ).to.be.revertedWith('LSS: You cannot operate');
       });
+
+      it('should prevent blacklisted account to receive tokens', async () => {
+        await lerc20Token.connect(adr.lerc20InitialHolder)
+          .transfer(adr.maliciousActor1.address, 200);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+
+        await env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address);
+
+        await expect(
+          lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 10),
+        ).to.be.revertedWith('LSS: Recipient is blacklisted');
+      });
     });
 
     describe('when reporting the same token and address twice', () => {
