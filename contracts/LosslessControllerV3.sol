@@ -301,9 +301,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function activates the emergency mode
     /// @dev When a report gets generated for a token, it enters an emergency state globally.
-    /// This means that the transfers get limited to a 15 minutes cooldown and only for half of the locked funds at a time.
-    /// It gets activated by the Lossless Reporting contract .
-    /// It deactivated when a resolution has been reached by the Lossless Governance contract.
+    /// The emergency period will be active for one settlement period.
+    /// During this time users can only transfer settled tokens
     /// @param token Token on which the emergency mode must get activated
     function activateEmergency(address token) external onlyLosslessEnv {
         emergencyMode[token].emergency = true;
