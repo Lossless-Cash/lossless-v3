@@ -74,6 +74,46 @@ describe('Random LERC20 Token', () => {
     });
   });
 
+  describe('when transfering between users with transferFrom', () => {
+    beforeEach(async () => {
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
+
+      await lerc20Token.connect(adr.regularUser1).approve(adr.regularUser3.address, 50);
+      await lerc20Token.connect(adr.regularUser2).approve(adr.regularUser3.address, 50);
+    });
+
+    it('should revert if 5 minutes haven\'t passed and and it\'s a second transfer', async () => {
+      await expect(
+        lerc20Token.connect(adr.regularUser3).transferFrom(adr.regularUser2.address, adr.regularUser4.address, 5),
+      ).to.not.be.reverted;
+
+      await expect(
+        lerc20Token.connect(adr.regularUser3).transferFrom(adr.regularUser2.address, adr.regularUser4.address, 5),
+      ).to.be.revertedWith('LSS: Transfers limit reached');
+    });
+
+    it('should not revert if 5 minutes haven\'t passed but its the first transfer', async () => {
+      await expect(
+        lerc20Token.connect(adr.regularUser3).transferFrom(adr.regularUser2.address, adr.regularUser4.address, 5),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert if 5 minutes have passed', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await expect(
+        lerc20Token.connect(adr.regularUser3).transferFrom(adr.regularUser1.address, adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+
+      expect(
+        await lerc20Token.balanceOf(adr.regularUser3.address),
+      ).to.be.equal(5);
+    });
+  });
+
   describe('when emergency mode is active', () => {
     beforeEach(async () => {
       await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
