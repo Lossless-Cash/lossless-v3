@@ -276,10 +276,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         losslessGovernance = ILssGovernance(_adr);
     }
 
-    /// @notice This function starts the Timelock to change the settlement period
-    /// @dev This function should be called in seconds
-    /// @param token to set time settlement period on
-    /// @param _seconds Time frame of the recieved funds will be locked
+    /// @notice This function starts a new proposal to change the SettlementPeriod
+    /// @param token to propose the settlement change period on
+    /// @param _seconds Time frame that the recieved funds will be locked
     function proposeNewSettlementPeriod(address token, uint256 _seconds) public {
         require(ILERC20(token).admin() == msg.sender, "LSS: Must be Token Admin");
         require(changeSettlementTimelock[token] <= block.timestamp, "LSS: Time lock in progress");
