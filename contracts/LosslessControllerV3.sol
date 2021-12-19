@@ -174,6 +174,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         recoveryAdmin = newRecoveryAdmin;
     }
 
+    /// @notice This function sets a new pause admin
+    /// @dev Only can be called by the Recovery admin
+    /// @param newPauseAdmin Address corresponding to the new Lossless Recovery Admin
     function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
         require(newPauseAdmin != address(0), "LERC20: Cannot be zero address");
         emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
