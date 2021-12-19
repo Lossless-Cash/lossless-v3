@@ -165,6 +165,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         admin = newAdmin;
     }
 
+    /// @notice This function sets a new recovery admin
+    /// @dev Only can be called by the previous Recovery admin
+    /// @param newRecoveryAdmin Address corresponding to the new Lossless Recovery Admin
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
         require(newRecoveryAdmin != address(0), "LERC20: Cannot be zero address");
         emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
