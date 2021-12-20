@@ -72,6 +72,21 @@ describe('Random LERC20 Token', () => {
         await lerc20Token.balanceOf(adr.regularUser3.address),
       ).to.be.equal(5);
     });
+
+    it('should not revert when sending two transactions at the same time', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await expect(
+        lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+        lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+
+      expect(
+        await lerc20Token.balanceOf(adr.regularUser3.address),
+      ).to.be.equal(10);
+    });
   });
 
   describe('when transfering between users with transferFrom', () => {

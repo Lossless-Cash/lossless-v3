@@ -98,6 +98,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
+
+    // --- V3 EVENTS ---
+
     event NewSettlementPeriodProposed(address token, uint256 _seconds);
     event SettlementPeriodChanged(address token, uint256 proposedTokenLockTimeframe);
 
@@ -146,6 +149,16 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         return 3;
     }
 
+        // --- V2 VIEWS ---
+
+    function isAddressProtected(address token, address protectedAddress) external view returns (bool) {
+        return tokenProtections[token].protections[protectedAddress].isProtected;
+    }
+
+    function getProtectedAddressStrategy(address token, address protectedAddress) external view returns (address) {
+        return address(tokenProtections[token].protections[protectedAddress].strategy);
+    }
+
     // --- ADMINISTRATION ---
 
     function pause() public onlyPauseAdmin  {
@@ -190,11 +203,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingToken Address corresponding to the Lossless Governance Token
-    function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
+/*     function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
         require(_stakingToken != address(0), "LERC20: Cannot be zero address");
         stakingToken = ILERC20(_stakingToken);
     }
-
+ */
     /// @notice This function sets the timelock for tokens to change the settlement period
     /// @dev Only can be called by the Lossless Admin
     /// @param newTimelock Timelock in seconds
@@ -316,10 +329,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     // --- GUARD ---
+   // --- GUARD ---
 
     // @notice Set a guardian contract.
     // @dev Guardian contract must be trusted as it has some access rights and can modify controller's state.
-    function setGuardian(address newGuardian) public onlyLosslessAdmin whenNotPaused {
+    function setGuardian(address newGuardian) external onlyLosslessAdmin whenNotPaused {
+        require(newGuardian != address(0), "LSS: Cannot be zero address");
         emit GuardianSet(guardian, newGuardian);
         guardian = newGuardian;
     }
@@ -341,7 +356,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         delete tokenProtections[token].protections[protectedAddresss];
         emit RemovedProtectedAddress(token, protectedAddresss);
     }
-    
+
     /// @notice This function will return the non-settled tokens amount
     /// @param token Address corresponding to the token being held
     /// @param account Address to get the available amount
@@ -380,7 +395,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function _enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
-
         if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
             queue.lockedFunds[queue.last].amount += checkpoint.amount;
         } else {

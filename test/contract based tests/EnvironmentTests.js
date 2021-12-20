@@ -157,12 +157,6 @@ describe('Lossless Environment', () => {
         ).to.be.equal(3);
       });
 
-      it('should set the Lossless Token address correctly', async () => {
-        expect(
-          await env.lssController.stakingToken(),
-        ).to.be.equal(env.lssToken.address);
-      });
-
       it('should set the Lossless Staking address correctly', async () => {
         expect(
           await env.lssController.losslessStaking(),

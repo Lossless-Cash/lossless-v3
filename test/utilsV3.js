@@ -167,7 +167,6 @@ const setupEnvironment = async (
     { initializer: 'initialize' },
   );
 
-  await lssController.connect(lssAdmin).setStakingToken(lssToken.address);
   await lssController
     .connect(lssAdmin)
     .setStakingContractAddress(lssStaking.address);

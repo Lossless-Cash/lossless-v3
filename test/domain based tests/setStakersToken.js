@@ -42,35 +42,6 @@ describe(scriptName, () => {
   });
 
   describe('when setting up the stakers token', () => {
-    describe('on Lossless Controller V3', () => {
-      it('should revert when not admin', async () => {
-        await expect(
-          env.lssController.connect(adr.regularUser1).setStakingToken(otherLerc20Token.address),
-        ).to.be.revertedWith('LSS: Must be admin');
-      });
-
-      it('should not revert when admin', async () => {
-        await expect(
-          env.lssController.connect(adr.lssAdmin).setStakingToken(otherLerc20Token.address),
-        ).to.not.be.reverted;
-
-        expect(
-          await env.lssController.stakingToken(),
-        ).to.be.equal(otherLerc20Token.address);
-      });
-
-      it('should revert when setting as zero address', async () => {
-        await expect(
-          env.lssController.connect(adr.lssAdmin).setStakingToken(ZERO_ADDRESS),
-        ).to.be.revertedWith('LERC20: Cannot be zero address');
-      });
-
-      it('should revert when setting as zero address', async () => {
-        await expect(
-          env.lssGovernance.connect(adr.lssAdmin).setStakingToken(ZERO_ADDRESS),
-        ).to.be.revertedWith('LERC20: Cannot be zero address');
-      });
-    });
     describe('on Lossless Staking', () => {
       it('should revert when not admin', async () => {
         await expect(
@@ -102,23 +73,6 @@ describe(scriptName, () => {
 
         expect(
           await env.lssReporting.stakingToken(),
-        ).to.be.equal(otherLerc20Token.address);
-      });
-    });
-    describe('on Lossless Governance', () => {
-      it('should revert when not admin', async () => {
-        await expect(
-          env.lssGovernance.connect(adr.regularUser1).setStakingToken(otherLerc20Token.address),
-        ).to.be.revertedWith('LSS: Must be admin');
-      });
-
-      it('should not revert when admin', async () => {
-        await expect(
-          env.lssGovernance.connect(adr.lssAdmin).setStakingToken(otherLerc20Token.address),
-        ).to.not.be.reverted;
-
-        expect(
-          await env.lssGovernance.stakingToken(),
         ).to.be.equal(otherLerc20Token.address);
       });
     });
