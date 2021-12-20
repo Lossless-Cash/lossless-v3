@@ -87,6 +87,37 @@ describe('Random LERC20 Token', () => {
         await lerc20Token.balanceOf(adr.regularUser3.address),
       ).to.be.equal(10);
     });
+
+    describe('when transfering at the same timestamp', () => {
+      beforeEach(async () => {
+        const MockTransfer = await ethers.getContractFactory(
+          'MockTransfer',
+        );
+
+        mockTransfer = await upgrades.deployProxy(
+          MockTransfer,
+          [
+            lerc20Token.address,
+          ],
+          { initializer: 'initialize' },
+        );
+      });
+
+      it('should not revert', async () => {
+        await lerc20Token.connect(adr.lerc20InitialHolder)
+          .transfer(adr.regularUser2.address, 200);
+
+        await lerc20Token.connect(adr.regularUser2).approve(mockTransfer.address, 200);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(30)),
+        ]);
+
+        await expect(
+          mockTransfer.testSameTimestamp(adr.regularUser2.address, adr.regularUser3.address, 25),
+        ).to.not.be.reverted;
+      });
+    });
   });
 
   describe('when transfering between users with transferFrom', () => {

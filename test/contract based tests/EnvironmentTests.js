@@ -221,12 +221,6 @@ describe('Lossless Environment', () => {
         ).to.be.equal(Number(env.reportLifetime));
       });
 
-      it('should set the report Lossless Token address correctly', async () => {
-        expect(
-          await env.lssReporting.stakingToken(),
-        ).to.be.equal(env.lssToken.address);
-      });
-
       it('should set the report Lossless Staking address correctly', async () => {
         expect(
           await env.lssReporting.losslessController(),
@@ -299,12 +293,6 @@ describe('Lossless Environment', () => {
         expect(
           await env.lssGovernance.losslessStaking(),
         ).to.be.equal(env.lssStaking.address);
-      });
-
-      it('should set the staking token address correctly', async () => {
-        expect(
-          await env.lssGovernance.stakingToken(),
-        ).to.be.equal(env.lssToken.address);
       });
     });
   });

@@ -162,7 +162,6 @@ const setupEnvironment = async (
       lssReporting.address,
       lssController.address,
       lssStaking.address,
-      lssToken.address,
     ],
     { initializer: 'initialize' },
   );

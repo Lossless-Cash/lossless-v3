@@ -29,7 +29,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     ILssReporting public losslessReporting;
     ILssController public losslessController;
     ILssStaking public losslessStaking;
-    ILERC20 public stakingToken;
 
     struct Vote {
         mapping(address => bool) committeeMemberVoted;
@@ -82,11 +81,10 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event CompensationRetrieved(address indexed wallet);
     event LosslessClaimed(address indexed token, uint256 indexed reportID);
 
-    function initialize(address _losslessReporting, address _losslessController, address _losslessStaking, address _stakingToken) public initializer {
+    function initialize(address _losslessReporting, address _losslessController, address _losslessStaking) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
         losslessStaking = ILssStaking(_losslessStaking);
-        stakingToken = ILERC20(_stakingToken);
         walletDisputePeriod = 7 days;
         tokenOwnersVoteIndex = 1;
         committeeVoteIndex = 2;
