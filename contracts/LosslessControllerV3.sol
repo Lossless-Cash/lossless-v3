@@ -18,6 +18,11 @@ interface ProtectionStrategy {
 /// @title Lossless Controller Contract
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
 contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgradeable {
+    
+    // IMPORTANT!: For future reference, when adding new variables for following versions of the controller. 
+    // All the previous ones should be kept in place and not change locations, types or names.
+    // If thye're modified this would cause issues with the memory slots.
+
     address public pauseAdmin;
     address public admin;
     address public recoveryAdmin;
