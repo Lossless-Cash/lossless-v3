@@ -9,8 +9,6 @@ const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
 let adr;
 let env;
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-
 describe('Lossless Controller', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -48,7 +46,7 @@ describe('Lossless Controller', () => {
 
     it('should revert when setting zero address', async () => {
       await expect(
-        env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(ZERO_ADDRESS),
+        env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(adr.ZERO_ADDRESS),
       ).to.be.revertedWith('LERC20: Cannot be zero address');
     });
 
@@ -76,7 +74,7 @@ describe('Lossless Controller', () => {
 
     it('should revert when setting zero address', async () => {
       await expect(
-        env.lssController.connect(adr.lssRecoveryAdmin).setPauseAdmin(ZERO_ADDRESS),
+        env.lssController.connect(adr.lssRecoveryAdmin).setPauseAdmin(adr.ZERO_ADDRESS),
       ).to.be.revertedWith('LERC20: Cannot be zero address');
     });
 
@@ -104,7 +102,7 @@ describe('Lossless Controller', () => {
 
     it('should revert when setting zero address', async () => {
       await expect(
-        env.lssController.connect(adr.lssRecoveryAdmin).setRecoveryAdmin(ZERO_ADDRESS),
+        env.lssController.connect(adr.lssRecoveryAdmin).setRecoveryAdmin(adr.ZERO_ADDRESS),
       ).to.be.revertedWith('LERC20: Cannot be zero address');
     });
 
@@ -167,7 +165,7 @@ describe('Lossless Controller', () => {
       ).to.not.be.reverted;
     });
 
-    describe('when paused', () => {
+    describe('when unpaused', () => {
       beforeEach(async () => {
         await env.lssController.connect(adr.lssPauseAdmin).unpause();
       });

@@ -9,8 +9,6 @@ const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
 let adr;
 let env;
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-
 describe('Lossless Environment', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -78,7 +76,7 @@ describe('Lossless Environment', () => {
 
         it('should revert when setting up as zero address', async () => {
           await expect(
-            env.lssStaking.connect(adr.lssAdmin).setLssReporting(ZERO_ADDRESS),
+            env.lssStaking.connect(adr.lssAdmin).setLssReporting(adr.ZERO_ADDRESS),
           ).to.be.revertedWith('LERC20: Cannot be zero address');
         });
 
@@ -98,7 +96,7 @@ describe('Lossless Environment', () => {
 
         it('should revert when setting up as zero address', async () => {
           await expect(
-            env.lssStaking.connect(adr.lssAdmin).setLosslessGovernance(ZERO_ADDRESS),
+            env.lssStaking.connect(adr.lssAdmin).setLosslessGovernance(adr.ZERO_ADDRESS),
           ).to.be.revertedWith('LERC20: Cannot be zero address');
         });
 
@@ -118,7 +116,7 @@ describe('Lossless Environment', () => {
 
         it('should revert when setting up as zero address', async () => {
           await expect(
-            env.lssStaking.connect(adr.lssAdmin).setStakingToken(ZERO_ADDRESS),
+            env.lssStaking.connect(adr.lssAdmin).setStakingToken(adr.ZERO_ADDRESS),
           ).to.be.revertedWith('LERC20: Cannot be zero address');
         });
 
@@ -133,19 +131,19 @@ describe('Lossless Environment', () => {
     describe('when setting up Lossless Controller Contract', () => {
       it('should revert when setting Staking contract as zero address', async () => {
         await expect(
-          env.lssController.connect(adr.lssAdmin).setStakingContractAddress(ZERO_ADDRESS),
+          env.lssController.connect(adr.lssAdmin).setStakingContractAddress(adr.ZERO_ADDRESS),
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
 
       it('should revert when setting Report contract as zero address', async () => {
         await expect(
-          env.lssController.connect(adr.lssAdmin).setReportingContractAddress(ZERO_ADDRESS),
+          env.lssController.connect(adr.lssAdmin).setReportingContractAddress(adr.ZERO_ADDRESS),
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
 
       it('should revert when setting Governance contract as zero address', async () => {
         await expect(
-          env.lssController.connect(adr.lssAdmin).setGovernanceContractAddress(ZERO_ADDRESS),
+          env.lssController.connect(adr.lssAdmin).setGovernanceContractAddress(adr.ZERO_ADDRESS),
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
     });

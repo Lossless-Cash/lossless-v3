@@ -13,7 +13,6 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -59,7 +58,7 @@ describe(scriptName, () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
-            .report(lerc20Token.address, ZERO_ADDRESS),
+            .report(lerc20Token.address, adr.ZERO_ADDRESS),
         ).to.be.revertedWith('LSS: Cannot report zero address');
       });
     });

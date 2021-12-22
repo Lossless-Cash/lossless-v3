@@ -11,7 +11,6 @@ let adr;
 let env;
 
 const scriptName = path.basename(__filename, '.js');
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 describe(scriptName, () => {
   beforeEach(async () => {
