@@ -135,8 +135,6 @@ describe(scriptName, () => {
 
       describe('when dispute period has closed', () => {
         beforeEach(async () => {
-          await env.lssGovernance.connect(adr.regularUser1).rejectWallet(1);
-
           await env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1);
           await env.lssGovernance.connect(adr.member1).rejectWallet(1);
           await env.lssGovernance.connect(adr.member2).rejectWallet(1);

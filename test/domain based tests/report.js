@@ -13,7 +13,6 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -59,7 +58,7 @@ describe(scriptName, () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
-            .report(lerc20Token.address, ZERO_ADDRESS),
+            .report(lerc20Token.address, adr.ZERO_ADDRESS),
         ).to.be.revertedWith('LSS: Cannot report zero address');
       });
     });
@@ -126,6 +125,80 @@ describe(scriptName, () => {
           lerc20Token.connect(adr.maliciousActor1).transfer(adr.regularUser1.address, 10),
         ).to.be.revertedWith('LSS: You cannot operate');
       });
+
+      it('should prevent blacklisted account to receive tokens', async () => {
+        await lerc20Token.connect(adr.lerc20InitialHolder)
+          .transfer(adr.maliciousActor1.address, 200);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+
+        await env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address);
+
+        await expect(
+          lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 10),
+        ).to.be.revertedWith('LSS: Recipient is blacklisted');
+      });
+
+      it('should prevent blacklisted account to transferFrom tokens', async () => {
+        await lerc20Token.connect(adr.lerc20InitialHolder)
+          .transfer(adr.maliciousActor1.address, 200);
+
+        await lerc20Token.connect(adr.maliciousActor1).approve(adr.maliciousActor2.address, 200);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+
+        await env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address);
+
+        await expect(
+          lerc20Token.connect(adr.maliciousActor2).transferFrom(adr.maliciousActor1.address, adr.maliciousActor2.address, 10),
+        ).to.be.revertedWith('LSS: Sender is blacklisted');
+      });
+
+      it('should prevent blacklisted account to trigger transferFrom', async () => {
+        await lerc20Token.connect(adr.lerc20InitialHolder)
+          .transfer(adr.maliciousActor1.address, 200);
+
+        await lerc20Token.connect(adr.maliciousActor2).approve(adr.maliciousActor1.address, 200);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+
+        await env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address);
+
+        await expect(
+          lerc20Token.connect(adr.maliciousActor1).transferFrom(adr.maliciousActor2.address, adr.maliciousActor3.address, 10),
+        ).to.be.revertedWith('LSS: You cannot operate');
+      });
+
+      it('should prevent blacklisted account to receive tokens using transferFrom', async () => {
+        await lerc20Token.connect(adr.lerc20InitialHolder)
+          .transfer(adr.maliciousActor1.address, 200);
+
+        await lerc20Token.connect(adr.lerc20InitialHolder)
+          .transfer(adr.maliciousActor3.address, 100);
+
+        await lerc20Token.connect(adr.maliciousActor1).approve(adr.maliciousActor2.address, 200);
+        await lerc20Token.connect(adr.maliciousActor3).approve(adr.maliciousActor2.address, 200);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+
+        await env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address);
+
+        await expect(
+          lerc20Token.connect(adr.maliciousActor2).transferFrom(adr.maliciousActor3.address, adr.maliciousActor1.address, 10),
+        ).to.be.revertedWith('LSS: Recipient is blacklisted');
+      });
     });
 
     describe('when reporting the same token and address twice', () => {
@@ -136,7 +209,7 @@ describe(scriptName, () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
             .report(lerc20Token.address, adr.maliciousActor1.address),
-        ).to.be.revertedWith('LSS: Already blacklisted');
+        ).to.be.revertedWith('LSS: Report already exists');
       });
     });
 

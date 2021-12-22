@@ -29,7 +29,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     ILssReporting public losslessReporting;
     ILssController public losslessController;
     ILssStaking public losslessStaking;
-    ILERC20 public stakingToken;
 
     struct Vote {
         mapping(address => bool) committeeMemberVoted;
@@ -82,11 +81,10 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event CompensationRetrieved(address indexed wallet);
     event LosslessClaimed(address indexed token, uint256 indexed reportID);
 
-    function initialize(address _losslessReporting, address _losslessController, address _losslessStaking, address _stakingToken) public initializer {
+    function initialize(address _losslessReporting, address _losslessController, address _losslessStaking) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
         losslessStaking = ILssStaking(_losslessStaking);
-        stakingToken = ILERC20(_stakingToken);
         walletDisputePeriod = 7 days;
         tokenOwnersVoteIndex = 1;
         committeeVoteIndex = 2;
@@ -155,10 +153,10 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @notice This function sets the address of the staking token
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingToken Address corresponding to the staking token
-    function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
+/*     function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
         require(_stakingToken != address(0), "LERC20: Cannot be zero address");
         stakingToken = ILERC20(_stakingToken);
-    }
+    } */
 
     /// @notice This function sets the wallet dispute period
     /// @param timeFrame Time in seconds for the dispute period

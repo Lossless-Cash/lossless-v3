@@ -10,8 +10,6 @@ let adr;
 let env;
 let lerc20Token;
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-
 describe('Lossless Reporting', () => {
   beforeEach(async () => {
     adr = await setupAddresses();
@@ -142,7 +140,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
-            .secondReport(1, ZERO_ADDRESS),
+            .secondReport(1, adr.ZERO_ADDRESS),
         ).to.be.revertedWith('LSS: Cannot report zero address');
       });
     });
@@ -169,7 +167,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
-            .secondReport(5, adr.maliciousActor1.address),
+            .secondReport(5, adr.maliciousActor2.address),
         ).to.be.revertedWith('LSS: report does not exists');
       });
     });
@@ -178,7 +176,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter2)
-            .secondReport(1, adr.maliciousActor1.address),
+            .secondReport(1, adr.maliciousActor2.address),
         ).to.be.revertedWith('LSS: invalid reporter');
       });
     });
@@ -187,7 +185,7 @@ describe('Lossless Reporting', () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter2)
-            .secondReport(1, adr.maliciousActor1.address),
+            .secondReport(1, adr.maliciousActor2.address),
         ).to.be.revertedWith('LSS: invalid reporter');
       });
     });

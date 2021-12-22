@@ -37,30 +37,20 @@ describe('Random LERC20 Token', () => {
       .executeNewSettlementPeriod(lerc20Token.address);
   });
 
-  /* describe('when setting up the settlement period', () => {
-    it('should revert when not token admin', async () => {
-      await expect(
-        env.lssController.connect(adr.regularUser1).setLockTimeframe(lerc20Token.address, 0),
-      ).to.be.revertedWith('LSS: Must be Token Admin');
-    });
-
-    it('should revert when trying to change before the timelock', async () => {
-      await expect(
-        env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 10 * 60),
-      ).to.be.revertedWith('LSS: Must wait to change');
-    });
-
-    it('should not revert when trying to change after the timelock by token admin', async () => {
-      await expect(
-        env.lssController.connect(adr.lerc20Admin).setLockTimeframe(lerc20Token.address, 10 * 60),
-      ).to.be.revertedWith('LSS: Must wait to change');
-    });
-  }); */
-
   describe('when transfering between users', () => {
     beforeEach(async () => {
       await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
       await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
+    });
+
+    it('should revert if 5 minutes haven\'t passed and and it\'s a second transfer', async () => {
+      await expect(
+        lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 5),
+      ).to.not.be.reverted;
+
+      await expect(
+        lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 5),
+      ).to.be.revertedWith('LSS: Transfers limit reached');
     });
 
     it('should not revert if 5 minutes haven\'t passed but its the first transfer', async () => {
@@ -69,13 +59,117 @@ describe('Random LERC20 Token', () => {
       ).to.not.be.reverted;
     });
 
-    it('should not revert', async () => {
+    it('should not revert if 5 minutes have passed on first transfer', async () => {
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
       ]);
 
       await expect(
         lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+
+      expect(
+        await lerc20Token.balanceOf(adr.regularUser3.address),
+      ).to.be.equal(5);
+    });
+
+    it('should not revert if 5 minutes have passed on second transfer', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await expect(
+        lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+
+      await expect(
+        lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+
+      expect(
+        await lerc20Token.balanceOf(adr.regularUser3.address),
+      ).to.be.equal(10);
+    });
+
+    it('should not revert when sending two transactions at the same time', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await expect(
+        lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+        lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+
+      expect(
+        await lerc20Token.balanceOf(adr.regularUser3.address),
+      ).to.be.equal(10);
+    });
+
+    describe('when transfering at the same timestamp', () => {
+      beforeEach(async () => {
+        const MockTransfer = await ethers.getContractFactory(
+          'MockTransfer',
+        );
+
+        mockTransfer = await upgrades.deployProxy(
+          MockTransfer,
+          [
+            lerc20Token.address,
+          ],
+          { initializer: 'initialize' },
+        );
+      });
+
+      it('should not revert', async () => {
+        await lerc20Token.connect(adr.lerc20InitialHolder)
+          .transfer(adr.regularUser2.address, 200);
+
+        await lerc20Token.connect(adr.regularUser2).approve(mockTransfer.address, 200);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(30)),
+        ]);
+
+        await expect(
+          mockTransfer.testSameTimestamp(adr.regularUser2.address, adr.regularUser3.address, 25),
+        ).to.not.be.reverted;
+      });
+    });
+  });
+
+  describe('when transfering between users with transferFrom', () => {
+    beforeEach(async () => {
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
+
+      await lerc20Token.connect(adr.regularUser1).approve(adr.regularUser3.address, 50);
+      await lerc20Token.connect(adr.regularUser2).approve(adr.regularUser3.address, 50);
+    });
+
+    it('should revert if 5 minutes haven\'t passed and and it\'s a second transfer', async () => {
+      await expect(
+        lerc20Token.connect(adr.regularUser3).transferFrom(adr.regularUser2.address, adr.regularUser4.address, 5),
+      ).to.not.be.reverted;
+
+      await expect(
+        lerc20Token.connect(adr.regularUser3).transferFrom(adr.regularUser2.address, adr.regularUser4.address, 5),
+      ).to.be.revertedWith('LSS: Transfers limit reached');
+    });
+
+    it('should not revert if 5 minutes haven\'t passed but its the first transfer', async () => {
+      await expect(
+        lerc20Token.connect(adr.regularUser3).transferFrom(adr.regularUser2.address, adr.regularUser4.address, 5),
+      ).to.not.be.reverted;
+    });
+
+    it('should not revert if 5 minutes have passed', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await expect(
+        lerc20Token.connect(adr.regularUser3).transferFrom(adr.regularUser1.address, adr.regularUser3.address, 5),
       ).to.not.be.reverted;
 
       expect(
