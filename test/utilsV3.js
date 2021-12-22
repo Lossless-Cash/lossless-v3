@@ -41,6 +41,8 @@ const setupAddresses = async () => {
     dexAddress,
   ] = await ethers.getSigners();
 
+  const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
   return {
     lssInitialHolder,
     lssAdmin,
@@ -73,6 +75,7 @@ const setupAddresses = async () => {
     regularUser4,
     regularUser5,
     dexAddress,
+    ZERO_ADDRESS,
   };
 };
 
