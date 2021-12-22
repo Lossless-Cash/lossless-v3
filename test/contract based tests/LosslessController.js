@@ -130,7 +130,7 @@ describe('Lossless Controller', () => {
       ).to.be.revertedWith('LSS: Must be pauseAdmin');
     });
 
-    it('should not revert when not pause admin', async () => {
+    it('should not revert when pause admin', async () => {
       await expect(
         env.lssController.connect(adr.lssPauseAdmin).pause(),
       ).to.not.be.reverted;
