@@ -327,7 +327,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         emergencyMode[token].emergencyTimestamp = block.timestamp;
     }
 
-    /// @notice This function activates the emergency mode
+    /// @notice This function deactivates the emergency mode
     /// @param token Token on which the emergency mode will be deactivated
     function deactivateEmergency(address token) external onlyLosslessEnv {
         emergencyMode[token].emergencyTimestamp = 0;
