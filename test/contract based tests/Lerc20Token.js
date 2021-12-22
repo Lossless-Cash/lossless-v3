@@ -59,7 +59,7 @@ describe('Random LERC20 Token', () => {
       ).to.not.be.reverted;
     });
 
-    it('should not revert if 5 minutes have passed', async () => {
+    it('should not revert if 5 minutes have passed on first transfer', async () => {
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
       ]);
@@ -71,6 +71,24 @@ describe('Random LERC20 Token', () => {
       expect(
         await lerc20Token.balanceOf(adr.regularUser3.address),
       ).to.be.equal(5);
+    });
+
+    it('should not revert if 5 minutes have passed on second transfer', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await expect(
+        lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+
+      await expect(
+        lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+      ).to.not.be.reverted;
+
+      expect(
+        await lerc20Token.balanceOf(adr.regularUser3.address),
+      ).to.be.equal(10);
     });
 
     it('should not revert when sending two transactions at the same time', async () => {
