@@ -102,24 +102,49 @@ describe(scriptName, () => {
         ).to.not.be.reverted;
       });
       describe('when dispute period is open', () => {
+        it('should  not revert when lossless votes one time', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1),
+          ).to.not.be.reverted;
+        });
+
         it('should revert when lossless votes two times', async () => {
-          await env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1);
+          await expect(
+            env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1),
+          ).to.not.be.reverted;
 
           await expect(
             env.lssGovernance.connect(adr.lssAdmin).rejectWallet(1),
           ).to.be.revertedWith('LSS: Already Voted.');
         });
-
+        it('should revert when token admin votes one time', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
+          ).to.not.be.reverted;
+        });
         it('should revert when token admin votes two times', async () => {
-          await env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1);
+          await expect(
+            env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
+          ).to.not.be.reverted;
 
           await expect(
             env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
           ).to.be.revertedWith('LSS: Already Voted.');
         });
 
+        it('should not revert when committee member votes one time', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.member1).rejectWallet(1),
+          ).to.not.be.reverted;
+
+          await expect(
+            env.lssGovernance.connect(adr.member1).rejectWallet(1),
+          ).to.be.revertedWith('LSS: Already Voted.');
+        });
         it('should revert when committee member votes two times', async () => {
-          await env.lssGovernance.connect(adr.member1).rejectWallet(1);
+          await expect(
+            env.lssGovernance.connect(adr.member1).rejectWallet(1),
+          ).to.not.be.reverted;
 
           await expect(
             env.lssGovernance.connect(adr.member1).rejectWallet(1),

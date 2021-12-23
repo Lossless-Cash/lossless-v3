@@ -112,13 +112,18 @@ describe(scriptName, () => {
 
       describe('when transfering between users', () => {
         beforeEach(async () => {
-          await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
+          await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 50);
+          await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.minutes(5)),
+          ]);
+          await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 50);
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
         });
 
-        it('should revert if 5 minutes haven\'t passed and and it\'s a second transfer', async () => {
+        it('should revert if 5 minutes haven\'t passed and it\'s a second transfer over the unsettled amount', async () => {
           await expect(
-            lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 5),
+            lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 101),
           ).to.not.be.reverted;
 
           await expect(
@@ -126,9 +131,9 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LSS: Transfers limit reached');
         });
 
-        it('should not revert if 5 minutes haven\'t passed but its the first transfer', async () => {
+        it('should not revert if 5 minutes haven\'t passed but its the first transfer over the unsettled amount', async () => {
           await expect(
-            lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 5),
+            lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 55),
           ).to.not.be.reverted;
         });
 
