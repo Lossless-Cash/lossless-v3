@@ -160,7 +160,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     /// @notice This function sets the wallet dispute period
     /// @param timeFrame Time in seconds for the dispute period
-    function setDisputePeriod(uint256 timeFrame) public onlyLosslessAdmin {
+    function setDisputePeriod(uint256 timeFrame) public onlyLosslessAdmin whenNotPaused {
         walletDisputePeriod = timeFrame;
     }
     
