@@ -6,7 +6,7 @@
 const { time, constants } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 const path = require('path');
-const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
+const { setupAddresses, setupEnvironment, setupToken } = require('../utils');
 
 let adr;
 let env;

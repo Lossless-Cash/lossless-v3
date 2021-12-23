@@ -6,13 +6,12 @@
 const { time, constants } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 const path = require('path');
-const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
+const { setupAddresses, setupEnvironment, setupToken } = require('../utils');
 
 let adr;
 let env;
 
 const scriptName = path.basename(__filename, '.js');
-
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -248,6 +247,83 @@ describe(scriptName, () => {
 
         await expect(env.lssReporting.connect(adr.reporter1)
           .report(lerc20Token.address, adr.maliciousActor1.address)).to.not.be.reverted;
+      });
+    });
+  });
+
+  describe('when a malicious actor self reports for no reason', () => {
+    beforeEach(async () => {
+      await env.lssController.connect(adr.lssAdmin).setWhitelist(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      );
+
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.maliciousActor1.address, env.stakingAmount);
+
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.maliciousActor2.address, 100);
+
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.reporter1.address, env.stakingAmount);
+
+      await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
+      await env.lssToken.connect(adr.maliciousActor1)
+        .approve(env.lssReporting.address, env.stakingAmount);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+    });
+
+    it('should let report himself', async () => {
+      await expect(
+        env.lssReporting.connect(adr.maliciousActor1)
+          .report(lerc20Token.address, adr.maliciousActor2.address),
+      ).to.not.be.reverted;
+    });
+
+    describe('when the report gets solved negatively', () => {
+      beforeEach(async () => {
+        await expect(
+          env.lssReporting.connect(adr.maliciousActor1)
+            .report(lerc20Token.address, adr.maliciousActor2.address),
+        ).to.not.be.reverted;
+
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+      });
+
+      it('should resolve negatively', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        expect(
+          await env.lssGovernance.isReportSolved(1),
+        ).to.be.equal(true);
+
+        expect(
+          await env.lssGovernance.reportResolution(1),
+        ).to.be.equal(false);
+      });
+    });
+
+    describe('when a legit reports tries to take place to maliciousActor2', () => {
+      beforeEach(async () => {
+        await expect(
+          env.lssReporting.connect(adr.maliciousActor1)
+            .report(lerc20Token.address, adr.maliciousActor2.address),
+        ).to.not.be.reverted;
+
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+      });
+
+      it('should let report again', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, adr.maliciousActor2.address),
+        ).to.not.be.reverted;
       });
     });
   });
