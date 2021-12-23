@@ -86,6 +86,20 @@ describe(scriptName, () => {
           env.lssGovernance.connect(adr.lssAdmin).losslessVote(10, true),
         ).to.be.revertedWith('LSS: report is not valid');
       });
+
+      it('should revert if report already closed', async () => {
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+
+        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true),
+        ).to.be.revertedWith('LSS: Report already solved.');
+      });
     });
 
     describe('when the Token Owner is voting', () => {
@@ -103,6 +117,20 @@ describe(scriptName, () => {
         await expect(
           env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true),
         ).to.be.revertedWith('LSS: owners already voted');
+      });
+
+      it('should revert if report already closed', async () => {
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        await expect(
+          env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true),
+        ).to.be.revertedWith('LSS: Report already solved.');
       });
 
       it('should revert if report is not valid', async () => {
