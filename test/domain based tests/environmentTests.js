@@ -4,12 +4,15 @@
 /* eslint-disable prefer-destructuring */
 const { time, constants } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
+const path = require('path');
 const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
 
 let adr;
 let env;
 
-describe('Lossless Environment', () => {
+const scriptName = path.basename(__filename, '.js');
+
+describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -374,6 +377,177 @@ describe('Lossless Environment', () => {
           await expect(
             env.lssController.connect(adr.regularUser1).afterDecreaseAllowance(adr.regularUser1.address, adr.regularUser2.address, 100),
           ).to.not.be.reverted;
+        });
+      });
+    });
+
+    describe('when setting up Lossless Governance Contract', () => {
+      describe('when paused', () => {
+        beforeEach(async () => {
+          await env.lssGovernance.connect(adr.lssAdmin).pause();
+        });
+
+        it('should prevent adding committee members', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lssAdmin)
+              .addCommitteeMembers([adr.member1.address]),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should prevent removing committee members', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lssAdmin)
+              .removeCommitteeMembers([adr.member1.address]),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should prevent lossless team vote', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lssAdmin)
+              .losslessVote(1, true),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should prevent token owners vote', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lerc20Admin)
+              .tokenOwnersVote(1, true),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should prevent committee member vote', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.member1)
+              .committeeMemberVote(1, true),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should prevent solving a report', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.member1)
+              .resolveReport(1),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should prevent proposing a wallet', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lerc20Admin)
+              .proposeWallet(1, adr.reporter1.address),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should prevent rejecting a wallet', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lerc20Admin)
+              .rejectWallet(1),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should prevent retrieving funds', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.reporter1)
+              .retrieveFunds(1),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should prevent retrieving compensation', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.reporter1)
+              .retrieveCompensation(),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+      });
+
+      describe('when unpausing', () => {
+        beforeEach(async () => {
+          await env.lssGovernance.connect(adr.lssAdmin).pause();
+        });
+
+        it('should unpause', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.lssAdmin).unpause(),
+          ).to.not.be.reverted;
+        });
+
+        it('should revert when other than admin', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.regularUser1).unpause(),
+          ).to.be.revertedWith('LSS: Must be admin');
+        });
+
+        describe('when unpaused', async () => {
+          beforeEach(async () => {
+            await env.lssGovernance.connect(adr.lssAdmin).unpause();
+          });
+          it('should prevent adding committee members', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.lssAdmin)
+                .addCommitteeMembers([adr.member1.address]),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
+
+          it('should prevent removing committee members', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.lssAdmin)
+                .removeCommitteeMembers([adr.member1.address]),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
+
+          it('should prevent lossless team vote', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.lssAdmin)
+                .losslessVote(1, true),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
+
+          it('should prevent token owners vote', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.lerc20Admin)
+                .tokenOwnersVote(1, true),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
+
+          it('should prevent committee member vote', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.member1)
+                .committeeMemberVote(1, true),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
+
+          it('should prevent solving a report', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.member1)
+                .resolveReport(1),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
+
+          it('should prevent proposing a wallet', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.lerc20Admin)
+                .proposeWallet(1, adr.reporter1.address),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
+
+          it('should prevent rejecting a wallet', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.lerc20Admin)
+                .rejectWallet(1),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
+
+          it('should prevent retrieving funds', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.reporter1)
+                .retrieveFunds(1),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
+
+          it('should prevent retrieving compensation', async () => {
+            await expect(
+              env.lssGovernance.connect(adr.reporter1)
+                .retrieveCompensation(),
+            ).to.not.be.revertedWith('Pausable: paused');
+          });
         });
       });
     });
