@@ -5,7 +5,7 @@
 const { time, constants } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 const path = require('path');
-const { setupAddresses, setupEnvironment, setupToken } = require('../utilsV3');
+const { setupAddresses, setupEnvironment, setupToken } = require('../utils');
 
 let adr;
 let env;
@@ -203,6 +203,74 @@ describe(scriptName, () => {
           await expect(
             env.lssStaking.connect(adr.lssAdmin).setStakingToken(env.lssToken.address),
           ).to.not.be.reverted;
+        });
+      });
+
+      describe('when pausing', () => {
+        it('should revert when called by other than admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.regularUser1).pause(),
+          ).to.be.revertedWith('LSS: Must be pauseAdmin');
+        });
+
+        it('should not revert when called by pause admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.lssPauseAdmin).pause(),
+          ).to.not.be.reverted;
+        });
+
+        describe('when paused', () => {
+          beforeEach(async () => {
+            await env.lssStaking.connect(adr.lssPauseAdmin).pause();
+          });
+
+          it('should revert when trying to stake', async () => {
+            await expect(
+              env.lssStaking.connect(adr.staker1).stake(1),
+            ).to.be.revertedWith('Pausable: paused');
+          });
+
+          it('should revert when trying to claim', async () => {
+            await expect(
+              env.lssStaking.connect(adr.staker1).stakerClaim(1),
+            ).to.be.revertedWith('Pausable: paused');
+          });
+        });
+      });
+
+      describe('when unpausing', () => {
+        beforeEach(async () => {
+          await env.lssStaking.connect(adr.lssPauseAdmin).pause();
+        });
+
+        it('should revert when called by other than admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.regularUser1).unpause(),
+          ).to.be.revertedWith('LSS: Must be pauseAdmin');
+        });
+
+        it('should not revert when called by pause admin', async () => {
+          await expect(
+            env.lssStaking.connect(adr.lssPauseAdmin).unpause(),
+          ).to.not.be.reverted;
+        });
+
+        describe('when unpaused', () => {
+          beforeEach(async () => {
+            await env.lssStaking.connect(adr.lssPauseAdmin).unpause();
+          });
+
+          it('should prevent staking on normal conditions', async () => {
+            await expect(
+              env.lssStaking.connect(adr.staker1).stake(1),
+            ).to.be.revertedWith('LSS: report does not exists');
+          });
+
+          it('should prevent staker claiming on normal conditions', async () => {
+            await expect(
+              env.lssStaking.connect(adr.staker1).stakerClaim(1),
+            ).to.be.revertedWith('LSS: Report solved negatively');
+          });
         });
       });
     });
