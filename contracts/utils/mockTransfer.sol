@@ -16,8 +16,6 @@ contract MockTransfer is Initializable {
 
     function testSameTimestamp(address from, address to, uint256 amount) public {
       lerc20Token.transferFrom(from, to, amount);
-      console.log("Third transfer");
       lerc20Token.transferFrom(from, to, amount);
-      console.log("Last transfer");
     }
 }
