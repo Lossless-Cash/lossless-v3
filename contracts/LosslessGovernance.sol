@@ -220,14 +220,14 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report to cast the vote
     /// @param vote Resolution
     function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin whenNotPaused {
-        require(!isReportSolved(reportId), "LSS: Report already solved.");
+        require(!isReportSolved(reportId), "LSS: Report already solved");
 
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
         
         Vote storage reportVote = reportVotes[reportId];
         
-        require(!reportVotes[reportId].voted[lssTeamVoteIndex], "LSS: LSS already voted.");
+        require(!reportVotes[reportId].voted[lssTeamVoteIndex], "LSS: LSS already voted");
 
         reportVote.voted[lssTeamVoteIndex] = true;
         reportVote.votes[lssTeamVoteIndex] = vote;
@@ -262,7 +262,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report to cast the vote
     /// @param vote Resolution
     function committeeMemberVote(uint256 reportId, bool vote) public whenNotPaused {
-        require(!isReportSolved(reportId), "LSS: Report already solved.");
+        require(!isReportSolved(reportId), "LSS: Report already solved");
         require(isCommitteeMember(msg.sender), "LSS: Must be a committee member");
 
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
@@ -270,7 +270,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         Vote storage reportVote = reportVotes[reportId];
 
-        require(!reportVote.committeeMemberVoted[msg.sender], "LSS: Member already voted.");
+        require(!reportVote.committeeMemberVoted[msg.sender], "LSS: Member already voted");
         
         reportVote.committeeMemberVoted[msg.sender] = true;
         reportVote.committeeVotes.push(vote);
@@ -371,7 +371,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
                 "LSS: Role cannot propose.");
         require(isReportSolved(reportId), "LSS: Report is not solved.");
         require(reportResolution(reportId), "LSS: Report solved negatively.");
-        require(proposedWalletOnReport[reportId].wallet == address(0), "LSS: Wallet already proposed.");
+        require(proposedWalletOnReport[reportId].wallet == address(0), "LSS: Wallet already proposed");
 
         proposedWalletOnReport[reportId].wallet = wallet;
         proposedWalletOnReport[reportId].timestamp = block.timestamp;
@@ -393,18 +393,18 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         bool isLosslessTeam = msg.sender == losslessController.admin();
         bool isTokenOwner = msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin();
 
-        require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot reject.");
+        require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot reject");
 
         if (isMember) {
-            require(!proposedWalletOnReport[reportId].memberVoted[msg.sender], "LSS: Already Voted.");
+            require(!proposedWalletOnReport[reportId].memberVoted[msg.sender], "LSS: Already Voted");
             proposedWalletOnReport[reportId].committeeDisagree += 1;
             proposedWalletOnReport[reportId].memberVoted[msg.sender] = true;
         } else if (isLosslessTeam) {
-            require(!proposedWalletOnReport[reportId].losslessVoted, "LSS: Already Voted.");
+            require(!proposedWalletOnReport[reportId].losslessVoted, "LSS: Already Voted");
             proposedWalletOnReport[reportId].losslessVote = false;
             proposedWalletOnReport[reportId].losslessVoted = true;
         } else {
-            require(!proposedWalletOnReport[reportId].tokenOwnersVoted, "LSS: Already Voted.");
+            require(!proposedWalletOnReport[reportId].tokenOwnersVoted, "LSS: Already Voted");
             proposedWalletOnReport[reportId].tokenOwnersVote = false;
             proposedWalletOnReport[reportId].tokenOwnersVoted = true;
         }
@@ -480,8 +480,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     ///@notice This function is for committee members to claim their rewards
     ///@param reportId report ID to claim reward from
     function claimCommitteeReward(uint256 reportId) public {
-        require(isReportSolved(reportId), "LSS: Report is not solved.");
-        require(reportResolution(reportId), "LSS: Report solved negatively.");
+        require(isReportSolved(reportId), "LSS: Report is not solved");
+        require(reportResolution(reportId), "LSS: Report solved negatively");
         require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
 
         uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
@@ -499,7 +499,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId report worked on
     function losslessClaim(uint256 reportId) public whenNotPaused onlyLosslessAdmin {
         require(isReportSolved(reportId), "LSS: Report still open");
-        require(reportResolution(reportId), "LSS: Report solved negatively.");
+        require(reportResolution(reportId), "LSS: Report solved negatively");
         require(!losslessPayed[reportId], "LSS: Already claimed");
 
         uint256 amountToClaim = amountReported[reportId] * losslessReporting.losslessReward() / 10**2;

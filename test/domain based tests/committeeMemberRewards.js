@@ -61,7 +61,7 @@ describe(scriptName, () => {
       it('should revert when member claims', async () => {
         await expect(
           env.lssGovernance.connect(adr.member1).claimCommitteeReward(1),
-        ).to.be.revertedWith('LSS: Report is not solved.');
+        ).to.be.revertedWith('LSS: Report is not solved');
       });
     });
 
@@ -83,7 +83,7 @@ describe(scriptName, () => {
       it('should revert when member claims', async () => {
         await expect(
           env.lssGovernance.connect(adr.member1).claimCommitteeReward(1),
-        ).to.be.revertedWith('LSS: Report solved negatively.');
+        ).to.be.revertedWith('LSS: Report solved negatively');
       });
     });
 

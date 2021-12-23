@@ -139,7 +139,7 @@ describe(scriptName, () => {
       it('should revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1).reporterClaim(1),
-        ).to.be.revertedWith('LSS: Report solved negatively.');
+        ).to.be.revertedWith('LSS: Report solved negatively');
       });
     });
   });

@@ -162,7 +162,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Staked report
     function stakerClaim(uint256 reportId) public whenNotPaused {
         require(!stakes[msg.sender].stakeInfoOnReport[reportId].payed, "LSS: You already claimed");
-        require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively.");
+        require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively");
 
         stakes[msg.sender].stakeInfoOnReport[reportId].payed = true;
 

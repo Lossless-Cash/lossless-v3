@@ -70,7 +70,7 @@ describe(scriptName, () => {
 
         await expect(
           env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true),
-        ).to.be.revertedWith('LSS: LSS already voted.');
+        ).to.be.revertedWith('LSS: LSS already voted');
       });
 
       it('should revert when trying to resolve if no other party voted', async () => {
@@ -98,7 +98,7 @@ describe(scriptName, () => {
 
         await expect(
           env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true),
-        ).to.be.revertedWith('LSS: Report already solved.');
+        ).to.be.revertedWith('LSS: Report already solved');
       });
     });
 
@@ -130,7 +130,7 @@ describe(scriptName, () => {
 
         await expect(
           env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true),
-        ).to.be.revertedWith('LSS: Report already solved.');
+        ).to.be.revertedWith('LSS: Report already solved');
       });
 
       it('should revert if report is not valid', async () => {
@@ -148,7 +148,7 @@ describe(scriptName, () => {
 
         await expect(
           env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true),
-        ).to.be.revertedWith('LSS: Member already voted.');
+        ).to.be.revertedWith('LSS: Member already voted');
       });
 
       it('should revert if report is not valid', async () => {
@@ -200,15 +200,15 @@ describe(scriptName, () => {
 
         await expect(
           env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true),
-        ).to.be.revertedWith('LSS: Report already solved.');
+        ).to.be.revertedWith('LSS: Report already solved');
 
         await expect(
           env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true),
-        ).to.be.revertedWith('LSS: Report already solved.');
+        ).to.be.revertedWith('LSS: Report already solved');
 
         await expect(
           env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true),
-        ).to.be.revertedWith('LSS: Report already solved.');
+        ).to.be.revertedWith('LSS: Report already solved');
       });
     });
   });

@@ -73,7 +73,7 @@ describe(scriptName, () => {
       it('should revert', async () => {
         await expect(
           env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-        ).to.be.revertedWith('LSS: Report solved negatively.');
+        ).to.be.revertedWith('LSS: Report solved negatively');
       });
     });
     describe('when the report resolved positively', () => {
@@ -106,7 +106,7 @@ describe(scriptName, () => {
       it('should revert if proposed by other than LssTeam or TokenOwner', async () => {
         await expect(
           env.lssGovernance.connect(adr.regularUser5).proposeWallet(1, adr.regularUser5.address),
-        ).to.be.revertedWith('LSS: Role cannot propose.');
+        ).to.be.revertedWith('LSS: Role cannot propose');
       });
 
       it('should revert when trying to propose another', async () => {
@@ -116,7 +116,7 @@ describe(scriptName, () => {
 
         await expect(
           env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),
-        ).to.be.revertedWith('LSS: Wallet already proposed.');
+        ).to.be.revertedWith('LSS: Wallet already proposed');
       });
 
       describe('when retrieving funds to proposed wallet', () => {
