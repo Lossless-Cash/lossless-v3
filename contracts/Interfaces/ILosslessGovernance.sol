@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity 0.8.4;
 
 interface ILssGovernance {
     function lssTeamVoteIndex() external view returns(address);
