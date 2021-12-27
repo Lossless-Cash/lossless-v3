@@ -91,6 +91,13 @@ describe(scriptName, () => {
           Number(time.duration.minutes(1)),
         ]);
       });
+
+      it('should revert if wallet is zero address', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Wallet cannot ber zero adr');
+      });
+
       it('should accept a proposed wallet by Lossless Team', async () => {
         await expect(
           env.lssGovernance.connect(adr.lssAdmin).proposeWallet(1, adr.regularUser5.address),

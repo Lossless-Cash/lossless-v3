@@ -371,6 +371,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
                 msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
                 "LSS: Role cannot propose");
         require(reportResolution(reportId), "LSS: Report solved negatively");
+        require(wallet != address(0), "LSS: Wallet cannot ber zero adr");
         require(proposedWalletOnReport[reportId].wallet == address(0), "LSS: Wallet already proposed");
 
         proposedWalletOnReport[reportId].wallet = wallet;
