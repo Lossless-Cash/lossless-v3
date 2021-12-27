@@ -80,8 +80,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event WalletRejected(uint256 indexed reportId, address indexed wallet);
     event FundsRetrieved(uint256 indexed reportId, address indexed wallet);
     event CompensationRetrieved(address indexed wallet, uint256 indexed amount);
-    event LosslessClaimed(address indexed token, uint256 indexed reportID);
-    event CommitteeMemberClaimed(uint256 indexed reportID, address indexed member);
+    event LosslessClaimed(address indexed token, uint256 indexed reportID, uint256 indexed amount);
+    event CommitteeMemberClaimed(uint256 indexed reportID, address indexed member, uint256 indexed amount);
     event CommitteeMajorityReached(uint256 indexed reportId, bool indexed result);
 
     function initialize(address _losslessReporting, address _losslessController, address _losslessStaking) public initializer {
@@ -498,7 +498,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         ILERC20(token).transfer(msg.sender, compensationPerMember);
 
-        emit CommitteeMemberClaimed(reportId, msg.sender);
+        emit CommitteeMemberClaimed(reportId, msg.sender, compensationPerMember);
     }
 
     
@@ -512,7 +512,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         losslessPayed[reportId] = true;
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(losslessController.admin(), amountToClaim);
 
-        emit LosslessClaimed(losslessReporting.reportTokens(reportId), reportId);
+        emit LosslessClaimed(losslessReporting.reportTokens(reportId), reportId, amountToClaim);
     }
 
 }

@@ -130,6 +130,7 @@ describe(scriptName, () => {
         ).to.emit(env.lssGovernance, 'CommitteeMemberClaimed').withArgs(
           1,
           adr.member1.address,
+          (reportedAmount * committeeReward) / 4,
         );
       });
 

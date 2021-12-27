@@ -116,6 +116,16 @@ describe(scriptName, () => {
           reportedAmount * losslessReward,
         );
       });
+
+      it('should emit event', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
+        ).to.emit(env.lssGovernance, 'LosslessClaimed').withArgs(
+          lerc20Token.address,
+          1,
+          reportedAmount * losslessReward,
+        );
+      });
     });
 
     describe('when lossless team claims two times', () => {
