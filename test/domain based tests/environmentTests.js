@@ -540,6 +540,12 @@ describe(scriptName, () => {
 
         it('should revert when committee tries to claim', async () => {
           await expect(
+            env.lssGovernance.connect(adr.staker1).losslessClaim(1),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should revert when committee tries to claim', async () => {
+          await expect(
             env.lssGovernance.connect(adr.staker1).claimCommitteeReward(1),
           ).to.be.revertedWith('Pausable: paused');
         });
