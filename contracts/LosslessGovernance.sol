@@ -357,7 +357,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         for(uint256 i; i < addresses.length; i++) {
             losslessController.resolvedNegatively(addresses[i]);      
             compensation[addresses[i]].amount +=  (reportingAmount * compensationAmount) / 10**2;
-            compensation[addresses[i]].payed =  false;
         }
     }
 
