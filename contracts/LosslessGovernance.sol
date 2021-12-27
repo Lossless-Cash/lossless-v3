@@ -32,6 +32,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     struct Vote {
         mapping(address => bool) committeeMemberVoted;
+        mapping(address => bool) committeeMemberClaimed;
         bool[] committeeVotes;
         bool[3] votes;
         bool[3] voted;
@@ -483,6 +484,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function claimCommitteeReward(uint256 reportId) public whenNotPaused {
         require(reportResolution(reportId), "LSS: Report solved negatively");
         require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
+        require(!reportVotes[reportId].committeeMemberClaimed[msg.sender], "LSS: Already claimed");
 
         uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
         (,,uint256 committeeReward,) = losslessReporting.getRewards();
@@ -490,6 +492,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         uint256 compensationPerMember = (amountReported[reportId] * committeeReward /  10**2) / numberOfMembersVote;
 
         address token = losslessReporting.reportTokens(reportId);
+
+        reportVotes[reportId].committeeMemberClaimed[msg.sender] = true;
 
         ILERC20(token).transfer(msg.sender, compensationPerMember);
     }

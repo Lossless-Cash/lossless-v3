@@ -123,6 +123,16 @@ describe(scriptName, () => {
           await lerc20Token.balanceOf(adr.member1.address),
         ).to.be.equal((reportedAmount * committeeReward) / 4);
       });
+
+      it('should revert when member 1 claims two times', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.member1).claimCommitteeReward(1),
+        ).to.not.be.reverted;
+        await expect(
+          env.lssGovernance.connect(adr.member1).claimCommitteeReward(1),
+        ).to.be.revertedWith('LSS: Already claimed');
+      });
+
       it('should not revert when member 2 claims', async () => {
         await expect(
           env.lssGovernance.connect(adr.member2).claimCommitteeReward(1),
