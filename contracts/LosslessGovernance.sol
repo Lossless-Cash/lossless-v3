@@ -80,6 +80,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event FundsRetrieved(uint256 indexed reportId, address indexed wallet);
     event CompensationRetrieved(address indexed wallet);
     event LosslessClaimed(address indexed token, uint256 indexed reportID);
+    event CommitteeMajorityReached(uint256 indexed reportId, bool indexed result);
 
     function initialize(address _losslessReporting, address _losslessController, address _losslessStaking) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
@@ -280,6 +281,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         if (isMajorityReached) {
             reportVote.votes[committeeVoteIndex] = result;
             reportVote.voted[committeeVoteIndex] = true;
+            emit CommitteeMajorityReached(reportId, result);
         }
 
         emit CommitteeMemberVoted(reportId, msg.sender, vote);

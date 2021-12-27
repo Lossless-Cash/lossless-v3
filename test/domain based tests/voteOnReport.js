@@ -156,6 +156,19 @@ describe(scriptName, () => {
           env.lssGovernance.connect(adr.member1).committeeMemberVote(10, true),
         ).to.be.revertedWith('LSS: report is not valid');
       });
+
+      it('should emit event when majority has been reached', async () => {
+        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
+
+        await expect(
+          env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true),
+        ).to.emit(env.lssGovernance, 'CommitteeMajorityReached').withArgs(
+          1,
+          true,
+        );
+      });
     });
   });
 
