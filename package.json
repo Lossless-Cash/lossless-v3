@@ -6,7 +6,6 @@
   "scripts": {
     "test": " npx hardhat test",
     "coverage": "npx hardhat coverage",
-    "pair-address": "node ./utils/getNextUniAddress.js",
     "build": "npx waffle"
   },
   "author": "",
