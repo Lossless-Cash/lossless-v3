@@ -15,22 +15,31 @@ const scriptName = path.basename(__filename, '.js');
 describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
-    env = await setupEnvironment(adr.lssAdmin,
+    env = await setupEnvironment(
+      adr.lssAdmin,
       adr.lssRecoveryAdmin,
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
-      adr.lssBackupAdmin);
-
-    await env.lssController.connect(adr.lssAdmin).setWhitelist(
-      [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      adr.lssBackupAdmin,
     );
+
+    await env.lssController
+      .connect(adr.lssAdmin)
+      .setWhitelist(
+        [
+          env.lssGovernance.address,
+          env.lssReporting.address,
+          env.lssStaking.address,
+        ],
+        true,
+      );
   });
 
   describe('when whitelisting an account', () => {
     it('should set governance contract', async () => {
       expect(
         await env.lssController.whitelist(env.lssGovernance.address),
-      ).to.be.equal(true);
+      ).to.be.equal(false);
     });
     it('should set reporting contract', async () => {
       expect(
