@@ -481,7 +481,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     ///@notice This function is for committee members to claim their rewards
     ///@param reportId report ID to claim reward from
     function claimCommitteeReward(uint256 reportId) public whenNotPaused {
-        require(isReportSolved(reportId), "LSS: Report is not solved");
         require(reportResolution(reportId), "LSS: Report solved negatively");
         require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
 
