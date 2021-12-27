@@ -363,7 +363,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     // REFUND PROCESS
 
     /// @notice This function proposes a wallet where the recovered funds will be returned
-    /// @dev Only can be run by the three pilars.
+    /// @dev Only can be run by lossless team or token owners.
     /// @param reportId Report to propose the wallet
     /// @param wallet proposed address
     function proposeWallet(uint256 reportId, address wallet) public whenNotPaused {
