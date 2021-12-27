@@ -241,7 +241,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report to cast the vote
     /// @param vote Resolution
     function tokenOwnersVote(uint256 reportId, bool vote) public whenNotPaused {
-        require(!isReportSolved(reportId), "LSS: Report already solved.");
+        require(!isReportSolved(reportId), "LSS: Report already solved");
 
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
         require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
@@ -369,9 +369,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function proposeWallet(uint256 reportId, address wallet) public whenNotPaused {
         require(msg.sender == losslessController.admin() || 
                 msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
-                "LSS: Role cannot propose.");
-        require(isReportSolved(reportId), "LSS: Report is not solved.");
-        require(reportResolution(reportId), "LSS: Report solved negatively.");
+                "LSS: Role cannot propose");
+        require(reportResolution(reportId), "LSS: Report solved negatively");
         require(proposedWalletOnReport[reportId].wallet == address(0), "LSS: Wallet already proposed");
 
         proposedWalletOnReport[reportId].wallet = wallet;
