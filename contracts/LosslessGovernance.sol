@@ -498,8 +498,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @notice This function is for the Lossless to claim the rewards
     /// @param reportId report worked on
     function losslessClaim(uint256 reportId) public whenNotPaused onlyLosslessAdmin {
-        require(isReportSolved(reportId), "LSS: Report still open");
-        require(reportResolution(reportId), "LSS: Report solved negatively");
+        require(reportResolution(reportId), "LSS: Report solved negatively");   
         require(!losslessPayed[reportId], "LSS: Already claimed");
 
         uint256 amountToClaim = amountReported[reportId] * losslessReporting.losslessReward() / 10**2;

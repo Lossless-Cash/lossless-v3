@@ -60,7 +60,7 @@ describe(scriptName, () => {
     it('should revert', async () => {
       await expect(
         env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
-      ).to.be.revertedWith('LSS: Report still open');
+      ).to.be.revertedWith('LSS: Report solved negatively');
     });
   });
 
