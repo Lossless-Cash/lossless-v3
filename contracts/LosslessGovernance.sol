@@ -78,7 +78,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event WalletProposed(uint256 indexed reportId, address indexed wallet);
     event WalletRejected(uint256 indexed reportId, address indexed wallet);
     event FundsRetrieved(uint256 indexed reportId, address indexed wallet);
-    event CompensationRetrieved(address indexed wallet);
+    event CompensationRetrieved(address indexed wallet, uint256 indexed amount);
     event LosslessClaimed(address indexed token, uint256 indexed reportID);
     event CommitteeMajorityReached(uint256 indexed reportId, bool indexed result);
 
@@ -473,9 +473,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         losslessReporting.retrieveCompensation(msg.sender, compensation[msg.sender].amount);
 
-        compensation[msg.sender].amount = 0;
+        emit CompensationRetrieved(msg.sender, compensation[msg.sender].amount);
 
-        emit CompensationRetrieved(msg.sender);
+        compensation[msg.sender].amount = 0;
     }
 
     ///@notice This function is for committee members to claim their rewards
