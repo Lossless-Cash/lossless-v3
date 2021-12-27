@@ -49,6 +49,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     mapping(uint256 => bool) public losslessPayed;
 
     struct ProposedWallet {
+        uint16 proposal;
         address wallet;
         uint256 timestamp;
         bool status;
@@ -58,12 +59,16 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         bool tokenOwnersVoted;
         bool walletAccepted;
         uint16 committeeDisagree;
-        mapping (address => bool) memberVoted;
+        mapping (uint16 => MemberVotesOnProposal) memberVotesOnProposal;
     }
 
     struct Compensation {
         uint256 amount;
         bool payed;
+    }
+
+    struct MemberVotesOnProposal {
+        mapping (address => bool) memberVoted;
     }
 
     mapping(address => Compensation) private compensation;
@@ -399,9 +404,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot reject");
 
         if (isMember) {
-            require(!proposedWalletOnReport[reportId].memberVoted[msg.sender], "LSS: Already Voted");
+            require(!proposedWalletOnReport[reportId].memberVotesOnProposal[proposedWalletOnReport[reportId].proposal].memberVoted[msg.sender], "LSS: Already Voted");
             proposedWalletOnReport[reportId].committeeDisagree += 1;
-            proposedWalletOnReport[reportId].memberVoted[msg.sender] = true;
+            proposedWalletOnReport[reportId].memberVotesOnProposal[proposedWalletOnReport[reportId].proposal].memberVoted[msg.sender] = true;
         } else if (isLosslessTeam) {
             require(!proposedWalletOnReport[reportId].losslessVoted, "LSS: Already Voted");
             proposedWalletOnReport[reportId].losslessVote = false;
@@ -462,6 +467,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         proposedWalletOnReport[reportId].tokenOwnersVote = true;
         proposedWalletOnReport[reportId].tokenOwnersVoted = false;
         proposedWalletOnReport[reportId].walletAccepted = false;
+        proposedWalletOnReport[reportId].committeeDisagree = 0;
+        proposedWalletOnReport[reportId].proposal += 1;
 
         return false;
     }
