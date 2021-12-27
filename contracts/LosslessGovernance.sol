@@ -229,9 +229,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param vote Resolution
     function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved");
-
-        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
+        require(isReportActive(reportId), "LSS: report is not valid");
         
         Vote storage reportVote = reportVotes[reportId];
         
@@ -249,10 +247,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param vote Resolution
     function tokenOwnersVote(uint256 reportId, bool vote) public whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved");
-
-        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
-
+        require(isReportActive(reportId), "LSS: report is not valid");
         require(ILERC20(losslessReporting.reportTokens(reportId)).admin() == msg.sender, "LSS: Must be token owner");
 
         Vote storage reportVote = reportVotes[reportId];
@@ -272,9 +267,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function committeeMemberVote(uint256 reportId, bool vote) public whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved");
         require(isCommitteeMember(msg.sender), "LSS: Must be a committee member");
-
-        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
-        require(reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp, "LSS: report is not valid");
+        require(isReportActive(reportId), "LSS: report is not valid");
 
         Vote storage reportVote = reportVotes[reportId];
 
@@ -315,6 +308,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         emit ReportResolved(reportId, reportVotes[reportId].resolution);
     }
 
+    /// @notice This function has the logic to solve a report that it's still active
+    /// @param reportId Report to be resolved
     function _resolveActive(uint256 reportId) private {
                 
         address token = losslessReporting.reportTokens(reportId);
@@ -356,6 +351,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         }
     } 
 
+    /// @notice This function has the logic to solve a report that it's expired
+    /// @param reportId Report to be resolved
     function _resolveExpired(uint256 reportId) private {
         address reportedAddress = losslessReporting.reportedAddress(reportId);
 
@@ -380,6 +377,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             losslessController.resolvedNegatively(addresses[i]);      
             compensation[addresses[i]].amount +=  (reportingAmount * compensationAmount) / 10**2;
         }
+    }
+
+    function isReportActive(uint256 reportId) public view returns(bool) {
+        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
+        return reportTimestamp != 0 && reportTimestamp + losslessReporting.reportLifetime() > block.timestamp;
     }
 
     // REFUND PROCESS
