@@ -166,7 +166,7 @@ describe(scriptName, () => {
         });
       });
 
-      describe('when setting up the Lossless Governance address', () => {
+      describe('when setting up the Lossless Staking address', () => {
         it('should revert when not admin', async () => {
           await expect(
             env.lssStaking.connect(adr.regularUser1).setLosslessGovernance(env.lssGovernance.address),
@@ -535,6 +535,12 @@ describe(scriptName, () => {
           await expect(
             env.lssGovernance.connect(adr.lssAdmin)
               .addCommitteeMembers([adr.member1.address]),
+          ).to.be.revertedWith('Pausable: paused');
+        });
+
+        it('should revert when committee tries to claim', async () => {
+          await expect(
+            env.lssGovernance.connect(adr.staker1).claimCommitteeReward(1),
           ).to.be.revertedWith('Pausable: paused');
         });
 
