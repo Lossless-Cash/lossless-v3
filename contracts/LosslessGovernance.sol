@@ -301,11 +301,24 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report to be resolved
     function resolveReport(uint256 reportId) public whenNotPaused {
 
-        address token = losslessReporting.reportTokens(reportId);
-
-        Vote storage reportVote = reportVotes[reportId];
-
         require(!isReportSolved(reportId), "LSS: Report already resolved");
+        
+        if (losslessReporting.reportTimestamps(reportId) + losslessReporting.reportLifetime() > block.timestamp) {
+            _resolveActive(reportId);
+        } else {
+            _resolveExpired(reportId);
+        }
+        
+        reportVotes[reportId].resolved = true;
+        delete reportedAddresses;
+
+        emit ReportResolved(reportId, reportVotes[reportId].resolution);
+    }
+
+    function _resolveActive(uint256 reportId) private {
+                
+        address token = losslessReporting.reportTokens(reportId);
+        Vote storage reportVote = reportVotes[reportId];
 
         uint256 aggreeCount;
         uint256 voteCount;
@@ -319,15 +332,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         if (committeeResoluted) {voteCount += 1;
         if (committeeResolution) {aggreeCount += 1;}}
 
-        bool expired;
+        require(voteCount >= 2, "LSS: Not enough votes");
+        require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need another vote to untie");
 
-        if (losslessReporting.reportTimestamps(reportId) + losslessReporting.reportLifetime() > block.timestamp) {
-            require(voteCount >= 2, "LSS: Not enough votes");
-            require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need another vote to untie");
-        } else {
-            expired = true;
-        }
-        
         address reportedAddress = losslessReporting.reportedAddress(reportId);
 
         reportedAddresses.push(reportedAddress);
@@ -336,7 +343,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             reportedAddresses.push(losslessReporting.secondReportedAddress(reportId));
         }
 
-        if (aggreeCount > (voteCount - aggreeCount) && !expired){
+        if (aggreeCount > (voteCount - aggreeCount)){
             reportVote.resolution = true;
             for(uint256 i; i < reportedAddresses.length; i++) {
                 amountReported[reportId] += ILERC20(token).balanceOf(reportedAddresses[i]);
@@ -347,11 +354,19 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             reportVote.resolution = false;
             _compensateAddresses(reportedAddresses);
         }
-        
-        reportVote.resolved = true;
-        delete reportedAddresses;
+    } 
 
-        emit ReportResolved(reportId, reportVote.resolution);
+    function _resolveExpired(uint256 reportId) private {
+        address reportedAddress = losslessReporting.reportedAddress(reportId);
+
+        reportedAddresses.push(reportedAddress);
+
+        if (losslessReporting.secondReports(reportId)) {
+            reportedAddresses.push(losslessReporting.secondReportedAddress(reportId));
+        }
+
+        reportVotes[reportId].resolution = false;
+        _compensateAddresses(reportedAddresses);
     }
 
     /// @notice This compensates the addresses wrongly reported
