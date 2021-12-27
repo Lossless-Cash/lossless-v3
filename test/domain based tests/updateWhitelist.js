@@ -39,7 +39,7 @@ describe(scriptName, () => {
     it('should set governance contract', async () => {
       expect(
         await env.lssController.whitelist(env.lssGovernance.address),
-      ).to.be.equal(false);
+      ).to.be.equal(true);
     });
     it('should set reporting contract', async () => {
       expect(
