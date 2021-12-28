@@ -101,7 +101,10 @@ describe(scriptName, () => {
 
       await expect(
         env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation(),
-      ).to.not.be.reverted;
+      ).to.emit(env.lssGovernance, 'CompensationRetrieved').withArgs(
+        adr.maliciousActor1.address,
+        20,
+      );
 
       const compensationPercentage = await env.lssController.erroneousCompensation();
 
