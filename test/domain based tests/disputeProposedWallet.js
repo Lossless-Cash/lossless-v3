@@ -24,7 +24,7 @@ describe(scriptName, () => {
       'Random Token',
       'RAND',
       adr.lerc20InitialHolder,
-      adr.lerc20Admin.address,
+      adr.dexAddress.address,
       adr.lerc20BackupAdmin.address,
       Number(time.duration.days(1)),
       env.lssController.address);
@@ -53,7 +53,7 @@ describe(scriptName, () => {
       adr.member5.address]);
 
     await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-    await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
+    await env.lssGovernance.connect(adr.dexAddress).tokenOwnersVote(1, true);
     await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
     await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
     await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
@@ -75,7 +75,7 @@ describe(scriptName, () => {
 
     it('should accept a proposed wallet by Token Owner', async () => {
       await expect(
-        env.lssGovernance.connect(adr.lerc20Admin).proposeWallet(1, adr.regularUser5.address),
+        env.lssGovernance.connect(adr.dexAddress).proposeWallet(1, adr.regularUser5.address),
       ).to.not.be.reverted;
     });
 
@@ -119,16 +119,16 @@ describe(scriptName, () => {
         });
         it('should revert when token admin votes one time', async () => {
           await expect(
-            env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
+            env.lssGovernance.connect(adr.dexAddress).rejectWallet(1),
           ).to.not.be.reverted;
         });
         it('should revert when token admin votes two times', async () => {
           await expect(
-            env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
+            env.lssGovernance.connect(adr.dexAddress).rejectWallet(1),
           ).to.not.be.reverted;
 
           await expect(
-            env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
+            env.lssGovernance.connect(adr.dexAddress).rejectWallet(1),
           ).to.be.revertedWith('LSS: Already Voted');
         });
 
@@ -212,16 +212,16 @@ describe(scriptName, () => {
               });
               it('should revert when token admin votes one time', async () => {
                 await expect(
-                  env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
+                  env.lssGovernance.connect(adr.dexAddress).rejectWallet(1),
                 ).to.not.be.reverted;
               });
               it('should revert when token admin votes two times', async () => {
                 await expect(
-                  env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
+                  env.lssGovernance.connect(adr.dexAddress).rejectWallet(1),
                 ).to.not.be.reverted;
 
                 await expect(
-                  env.lssGovernance.connect(adr.lerc20Admin).rejectWallet(1),
+                  env.lssGovernance.connect(adr.dexAddress).rejectWallet(1),
                 ).to.be.revertedWith('LSS: Already Voted');
               });
 
