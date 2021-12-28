@@ -184,11 +184,12 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
                 agreeCount += 1;
             }
         }
-        if (agreeCount > (committeeMembersCount / 2)) {
+
+        if (agreeCount >= ((committeeMembersCount/2)+1)) {
             return (true, true);
         }
 
-        if ((reportVote.committeeVotes.length - agreeCount) > (committeeMembersCount / 2)) {
+        if ((reportVote.committeeVotes.length - agreeCount) >= ((committeeMembersCount/2)+1)) {
             return (true, false);
         }
 
@@ -460,7 +461,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         
         uint256 agreementCount;
         
-        if (proposedWalletOnReport[reportId].committeeDisagree < committeeMembersCount/2 ){
+        if (proposedWalletOnReport[reportId].committeeDisagree < (committeeMembersCount/2)+1 ){
             agreementCount += 1;
         }
 
