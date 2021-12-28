@@ -101,6 +101,23 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LSS: An address is not member');
       });
 
+      it('should revert if a duplicate address exists in the array', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address,
+          adr.member4.address]);
+
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).removeCommitteeMembers([
+            adr.member1.address,
+            adr.member2.address,
+            adr.member3.address,
+            adr.member3.address]),
+        ).to.be.revertedWith('LSS: An address is not member');
+      });
+
+
       it('should remove members', async () => {
         await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
           adr.member1.address,

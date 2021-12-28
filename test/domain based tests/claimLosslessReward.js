@@ -60,7 +60,7 @@ describe(scriptName, () => {
     it('should revert', async () => {
       await expect(
         env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
-      ).to.be.revertedWith('LSS: Report still open');
+      ).to.be.revertedWith('LSS: Report solved negatively');
     });
   });
 
@@ -83,7 +83,7 @@ describe(scriptName, () => {
       it('should revert', async () => {
         await expect(
           env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
-        ).to.be.revertedWith('LSS: Report solved negatively.');
+        ).to.be.revertedWith('LSS: Report solved negatively');
       });
     });
   });
@@ -113,6 +113,16 @@ describe(scriptName, () => {
         await env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1);
 
         expect(await lerc20Token.balanceOf(adr.lssAdmin.address)).to.be.equal(
+          reportedAmount * losslessReward,
+        );
+      });
+
+      it('should emit event', async () => {
+        await expect(
+          env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
+        ).to.emit(env.lssGovernance, 'LosslessClaimed').withArgs(
+          lerc20Token.address,
+          1,
           reportedAmount * losslessReward,
         );
       });

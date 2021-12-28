@@ -147,7 +147,7 @@ describe(scriptName, () => {
         it('should revert', async () => {
           await expect(
             env.lssStaking.connect(adr.staker1).stakerClaim(1),
-          ).to.be.revertedWith('LSS: Report solved negatively.');
+          ).to.be.revertedWith('LSS: Report solved negatively');
         });
       });
     });

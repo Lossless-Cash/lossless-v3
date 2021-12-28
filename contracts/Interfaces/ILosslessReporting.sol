@@ -6,7 +6,7 @@ interface ILssReporting {
   function losslessReward() external returns(uint256);
   function stakersReward() external returns(uint256);
   function committeeReward() external returns(uint256);
-  function reportLifetime() external returns(uint256);
+  function reportLifetime() external view returns(uint256);
   function reportingAmount() external returns(uint256);
   function reportCount() external returns(uint256);
   function stakingToken() external returns(address);
@@ -15,7 +15,7 @@ interface ILssReporting {
   function reporter(uint256 reportId) external returns(address);
   function reportedAddress(uint256 reportId) external returns(address);
   function secondReportedAddress(uint256 reportId) external returns(address);
-  function reportTimestamps(uint256 reportId) external returns(uint256);
+  function reportTimestamps(uint256 reportId) external view returns(uint256);
   function reportTokens(uint256 reportId) external returns(address);
   function secondReports(uint256 reportId) external returns(bool);
   function getVersion() external pure returns (uint256);
