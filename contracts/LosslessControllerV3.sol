@@ -85,12 +85,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 emergencyTimestamp;
     }
 
-    struct PeriodTransfers {
-        mapping (address => uint256) timestampInToken;
-    }
-
-    mapping (address => PeriodTransfers) private tokenTransferInPeriod;
-
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -478,8 +472,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                 _removeUsedUpLocks(settledAmount, sender, amount);
             }
         }
-
-        tokenTransferInPeriod[sender].timestampInToken[msg.sender] = block.timestamp + tokenLockTimeframe[msg.sender];
 
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
         _enqueueLockedFunds(newCheckpoint, recipient);
