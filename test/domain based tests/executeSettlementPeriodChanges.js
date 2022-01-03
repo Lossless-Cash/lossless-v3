@@ -31,12 +31,22 @@ describe(scriptName, () => {
 
     await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
     await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
+  });
 
-    await env.lssController.connect(adr.lerc20Admin)
-      .proposeNewSettlementPeriod(lerc20Token.address, 5 * 60);
+  describe('when there is no proposal active', () => {
+    it('should revert if there is no proposal', async () => {
+      await expect(
+        env.lssController.connect(adr.lerc20Admin)
+          .executeNewSettlementPeriod(lerc20Token.address),
+      ).to.be.revertedWith('LSS: New Settlement not proposed');
+    });
   });
 
   describe('when executing the proposal', () => {
+    beforeEach(async () => {
+      await env.lssController.connect(adr.lerc20Admin)
+        .proposeNewSettlementPeriod(lerc20Token.address, 5 * 60);
+    });
     it('should not revert after timeLock', async () => {
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.hours(13)),
