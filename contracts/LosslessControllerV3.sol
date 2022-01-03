@@ -416,9 +416,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function will lift the locks after a certain amount
     /// @dev The condition to lift the locks is that their checkpoint should be greater than the set amount
-    /// @param availableAmount Address to lift the locks
+    /// @param availableAmount Unlocked Amount
     /// @param account Address to lift the locks
-    /// @param amount Address to lift the locks
+    /// @param amount Amount to lift
     function _removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[account];

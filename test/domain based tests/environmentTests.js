@@ -342,6 +342,12 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LSS: Lss SC only');
       });
 
+      it('should revert when trying to retrieve blacklisted funds from other than Lossless Contracts', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).retrieveBlacklistedFunds([adr.regularUser1.address], env.lssToken.address, 1),
+        ).to.be.revertedWith('LSS: Lss SC only');
+      });
+
       describe('when setting a new admin', () => {
         it('should revert when not recoveryAdmin', async () => {
           await expect(
