@@ -294,6 +294,12 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
 
+      it('should revert when setting Report contract by non admin', async () => {
+        await expect(
+          env.lssController.connect(adr.regularUser1).setReportingContractAddress(adr.ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
       it('should revert when setting Governance contract as zero address', async () => {
         await expect(
           env.lssController.connect(adr.lssAdmin).setGovernanceContractAddress(adr.ZERO_ADDRESS),
