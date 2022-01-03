@@ -294,6 +294,12 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
 
+      it('should revert when setDexTransferThreshold by non admin', async () => {
+        await expect(
+          env.lssController.connect(adr.regularUser1).setDexTransferThreshold(20),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
       describe('when setting a new admin', () => {
         it('should revert when not recoveryAdmin', async () => {
           await expect(
@@ -729,12 +735,6 @@ describe(scriptName, () => {
         ).to.be.equal(3);
       });
 
-      it('should revert when setDexTransferThreshold by non admin', async () => {
-        await expect(
-          env.lssController.connect(adr.regularUser1).setDexTransferThreshold(20),
-        ).to.be.revertedWith('LSS: Must be admin');
-      });
-
       it('should set the Lossless Staking address correctly', async () => {
         expect(
           await env.lssController.losslessStaking(),
@@ -751,6 +751,12 @@ describe(scriptName, () => {
         expect(
           await env.lssController.losslessGovernance(),
         ).to.be.equal(env.lssGovernance.address);
+      });
+
+      it('should set the Dex Transfer Threshold correctly', async () => {
+        expect(
+          await env.lssController.dexTranferThreshold(),
+        ).to.be.equal(20);
       });
     });
 
