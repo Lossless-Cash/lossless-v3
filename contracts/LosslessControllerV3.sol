@@ -223,7 +223,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the transfer threshold for Dexes
     /// @dev Only can be called by the Lossless Admin
     /// @param newThreshold Timelock in seconds
-    function setDexTrasnferThreshold(uint256 newThreshold) public onlyLosslessAdmin {
+    function setDexTransferThreshold(uint256 newThreshold) public onlyLosslessAdmin {
         dexTranferThreshold = newThreshold;
     }
 

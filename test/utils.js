@@ -183,7 +183,7 @@ const setupEnvironment = async (
     lssRecoveryAdmin.address,
     lssAdmin.address],
   true);
-  await lssController.connect(lssAdmin).setDexTrasnferThreshold(20);
+  await lssController.connect(lssAdmin).setDexTransferThreshold(20);
   await lssController.connect(lssAdmin).setCompensationAmount(2);
   await lssController.connect(lssAdmin).setSettlementTimeLock(12 * 3600);
   await lssController.connect(lssAdmin).setLocksLiftUpExpiration(300);
