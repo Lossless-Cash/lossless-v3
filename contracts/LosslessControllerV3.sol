@@ -317,7 +317,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         emergencyMode[token].emergencyTimestamp = 0;
     }
 
-    // --- GUARD ---
    // --- GUARD ---
 
     // @notice Set a guardian contract.
