@@ -729,6 +729,12 @@ describe(scriptName, () => {
         ).to.be.equal(3);
       });
 
+      it('should revert when setDexTransferThreshold by non admin', async () => {
+        await expect(
+          env.lssController.connect(adr.regularUser1).setDexTransferThreshold(20),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
       it('should set the Lossless Staking address correctly', async () => {
         expect(
           await env.lssController.losslessStaking(),

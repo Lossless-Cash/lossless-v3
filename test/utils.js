@@ -187,8 +187,7 @@ const setupEnvironment = async (
   true);
   await lssController.connect(lssAdmin).setDexTransferThreshold(20);
   await lssController.connect(lssAdmin).setSettlementTimeLock(12 * 3600);
-  await lssController.connect(lssAdmin).setLocksLiftUpExpiration(300);
-
+  
   await lssStaking.connect(lssAdmin).setStakingAmount(stakingAmount);
   await lssStaking.connect(lssAdmin).setStakingToken(lssToken.address);
   await lssStaking
