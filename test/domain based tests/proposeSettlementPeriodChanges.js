@@ -42,6 +42,18 @@ describe(scriptName, () => {
         ).to.not.be.reverted;
       });
 
+      it('should set new proposed values', async () => {
+        await expect(
+          env.lssController.connect(adr.lerc20Admin)
+            .proposeNewSettlementPeriod(lerc20Token.address, 5 * 60),
+        ).to.not.be.reverted;
+
+        expect(
+          await env.lssController.connect(adr.lerc20Admin)
+            .proposedTokenLockTimeframe(lerc20Token.address),
+        ).to.be.equal(5 * 60);
+      });
+
       it('should emit event', async () => {
         await expect(
           env.lssController.connect(adr.lerc20Admin)
