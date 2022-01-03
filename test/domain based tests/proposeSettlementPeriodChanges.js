@@ -87,6 +87,12 @@ describe(scriptName, () => {
           .executeNewSettlementPeriod(lerc20Token.address);
       });
 
+      it('should set the new settlement period', async () => {
+        expect(
+          await env.lssController.proposedTokenLockTimeframe(lerc20Token.address),
+        ).to.be.equal(5 * 60);
+      });
+
       describe('when transfering to a dex', () => {
         beforeEach(async () => {
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
