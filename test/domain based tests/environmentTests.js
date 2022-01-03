@@ -300,6 +300,12 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LSS: Must be admin');
       });
 
+      it('should revert when truing to add to blacklist from other than Lossless Contracts', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).addToBlacklist(adr.maliciousActor1.address),
+        ).to.be.revertedWith('LSS: Lss SC only');
+      });
+
       describe('when setting a new admin', () => {
         it('should revert when not recoveryAdmin', async () => {
           await expect(
