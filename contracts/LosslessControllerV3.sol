@@ -430,13 +430,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         
         while (amountLeft > 0 && i <= queue.last) {
             ReceiveCheckpoint storage checkpoint = queue.lockedFunds[i];
-                if (checkpoint.amount > amountLeft) {
-                    checkpoint.amount -= amountLeft;
-                    delete amountLeft;
-                } else {
-                    amountLeft -= checkpoint.amount;
-                    delete checkpoint.amount;
-                }
+            if (checkpoint.amount > amountLeft) {
+                checkpoint.amount -= amountLeft;
+                delete amountLeft;
+            } else {
+                amountLeft -= checkpoint.amount;
+                delete checkpoint.amount;
+            }
             i += 1;
         }
 
