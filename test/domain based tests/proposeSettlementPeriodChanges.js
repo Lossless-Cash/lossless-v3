@@ -156,6 +156,16 @@ describe(scriptName, () => {
           ).to.be.equal(100);
         });
 
+        it('should get available amount correctly', async () => {
+          expect(
+            await env.lssController.getAvailableAmount(lerc20Token.address, adr.regularUser1.address),
+          ).to.be.equal(50);
+
+          expect(
+            await env.lssController.getAvailableAmount(lerc20Token.address, adr.regularUser2.address),
+          ).to.be.equal(100);
+        });
+
         it('should revert if 5 minutes haven\'t passed and it\'s a second transfer over the unsettled amount', async () => {
           await expect(
             lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 101),
