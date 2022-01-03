@@ -377,7 +377,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // LOCKs & QUEUES
 
     /// @notice This function add transfers to the lock queues
-    /// @param checkpoint Address to add the locks
+    /// @param checkpoint timestamp of the transfer
     /// @param recipient Address to add the locks
     function _enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
