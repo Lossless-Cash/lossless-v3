@@ -71,12 +71,5 @@ describe(scriptName, () => {
           .executeNewSettlementPeriod(lerc20Token.address),
       ).to.be.revertedWith('LSS: Time lock in progress');
     });
-
-    it('should revert on executing proposal before timelock expiration', async () => {
-      await expect(
-        env.lssController.connect(adr.lerc20Admin)
-          .executeNewSettlementPeriod(lerc20Token.address),
-      ).to.be.revertedWith('LSS: Time lock in progress');
-    });
   });
 });
