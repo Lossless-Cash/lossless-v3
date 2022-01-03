@@ -93,6 +93,15 @@ describe(scriptName, () => {
         ).to.not.be.empty;
       });
 
+      it('should blacklist address', async () => {
+        await env.lssReporting.connect(adr.reporter1)
+          .report(lerc20Token.address, adr.maliciousActor1.address);
+
+        expect(
+          await env.lssController.blacklist(adr.maliciousActor1.address),
+        ).to.be.equal(true);
+      });
+
       it('should emit event', async () => {
         expect(
           await env.lssReporting.connect(adr.reporter1)
