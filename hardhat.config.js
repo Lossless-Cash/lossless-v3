@@ -7,14 +7,12 @@ require('@nomiclabs/hardhat-etherscan');
 require('@openzeppelin/hardhat-defender');
 require('hardhat-gas-reporter');
 
-// const {
-//   ROPSTEN_PRIVATE_KEY,
-//   INFURA_KEY,
-//   ETHERSCAN_KEY,
-//   COINMARKETCAP,
-//   DEFENDER_KEY,
-//   DEFENDER_SECRET,
-// } = require('./config');
+const {
+  ROPSTEN_PRIVATE_KEY,
+  INFURA_KEY,
+  ETHERSCAN_KEY,
+  COINMARKETCAP,
+} = require('./config');
 
 module.exports = {
   solidity: {
@@ -33,7 +31,7 @@ module.exports = {
   paths: {
     artifacts: './src/artifacts',
   },
-  /*   networks: {
+  networks: {
     hardhat: {
       chainId: 1337,
       forking: {
@@ -50,11 +48,11 @@ module.exports = {
       accounts: [`0x${ROPSTEN_PRIVATE_KEY}`],
     },
   },
-  gasReporter: {
+  /*   gasReporter: {
     currency: 'USD',
     gasPrice: 70,
     coinmarketcap: COINMARKETCAP,
-  },
+  }, */
   abiExporter: {
     path: './abi',
     clear: true,
@@ -65,12 +63,12 @@ module.exports = {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
     apiKey: ETHERSCAN_KEY,
-  }, */
+  },
+  mocha: {
+    timeout: 100000,
+  },
   /* defender: {
     apiKey: DEFENDER_KEY,
     apiSecret: DEFENDER_SECRET,
   }, */
-  mocha: {
-    timeout: 100000,
-  },
 };
