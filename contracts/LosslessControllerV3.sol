@@ -426,7 +426,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(queue.touchedTimestamp + tokenLockTimeframe[msg.sender] <= block.timestamp, "LSS: Transfers limit reached");
 
         uint256 amountLeft =  amount - availableAmount;
-        uint256 i = 1;
+        uint256 i = queue.first;
         
         while (amountLeft > 0 && i <= queue.last) {
             ReceiveCheckpoint storage checkpoint = queue.lockedFunds[i];
