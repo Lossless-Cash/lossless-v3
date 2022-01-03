@@ -26,6 +26,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     uint256 public walletDisputePeriod;
 
+    uint256 public erroneousCompensation;
+
     ILssReporting public losslessReporting;
     ILssController public losslessController;
     ILssStaking public losslessStaking;
@@ -170,6 +172,13 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param timeFrame Time in seconds for the dispute period
     function setDisputePeriod(uint256 timeFrame) public onlyLosslessAdmin whenNotPaused {
         walletDisputePeriod = timeFrame;
+    }
+
+    /// @notice This function sets the amount of tokens given to the erroneously reported address
+    /// @param amount Percentage to return
+    function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
+        require(0 <= amount && amount <= 100, "LSS: Invalid amount");
+        erroneousCompensation = amount;
     }
     
     /// @notice This function returns if the majority of the commitee voted and the resolution of the votes
@@ -371,12 +380,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @dev The array of addresses will contain the main reported address and the second reported address
     /// @param addresses Array of addresses to be compensated
     function _compensateAddresses(address[] memory addresses) private {
-        uint256 compensationAmount = losslessController.erroneousCompensation();
         uint256 reportingAmount = losslessReporting.reportingAmount();
         
         for(uint256 i; i < addresses.length; i++) {
             losslessController.resolvedNegatively(addresses[i]);      
-            compensation[addresses[i]].amount +=  (reportingAmount * compensationAmount) / 10**2;
+            compensation[addresses[i]].amount +=  (reportingAmount * erroneousCompensation) / 10**2;
         }
     }
 

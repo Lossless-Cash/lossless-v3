@@ -52,8 +52,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(address => uint256) public changeSettlementTimelock;
     mapping(address => bool) public isNewSettlementProposed;
 
-    uint256 public erroneousCompensation;
-
     ILERC20 public stakingToken;
     ILssStaking public losslessStaking;
     ILssReporting public losslessReporting;
@@ -227,12 +225,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         dexTranferThreshold = newThreshold;
     }
 
-    /// @notice This function sets the amount of tokens given to the erroneously reported address
-    /// @param amount Percentage to return
-    function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
-        require(0 <= amount && amount <= 100, "LSS: Invalid amount");
-        erroneousCompensation = amount;
-    }
 
     /// @notice This function sets the amount of time for used up and expired tokens to be lifted
     /// @param time Time in seconds

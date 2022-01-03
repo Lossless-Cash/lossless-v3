@@ -18,6 +18,7 @@ interface ILssGovernance {
     function isReportSolved(uint256 reportId) external view returns(bool);
     function reportResolution(uint256 reportId) external view returns(bool);
     function amountReported(uint256 reportId) external view returns (uint256);
+    function erroneousCompensation() external view returns (uint256);
     
     function setDisputePeriod(uint256 timeFrame) external;
     function addCommitteeMembers(address[] memory members) external;
@@ -31,6 +32,7 @@ interface ILssGovernance {
     function retrieveFunds(uint256 reportId) external;
     function retrieveCompensation() external;
     function claimCommitteeReward(uint256 reportId) external;
+    function setCompensationAmount(uint256 amount) external;
 
     event NewCommitteeMembers(address[] indexed members);
     event CommitteeMembersRemoved(address[] indexed members);
