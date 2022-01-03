@@ -330,6 +330,18 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LSS: Lss SC only');
       });
 
+      it('should revert when trying to activate emergency from other than Lossless Contracts', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).activateEmergency(env.lssToken.address),
+        ).to.be.revertedWith('LSS: Lss SC only');
+      });
+
+      it('should revert when trying to deactivate emergency from other than Lossless Contracts', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).deactivateEmergency(env.lssToken.address),
+        ).to.be.revertedWith('LSS: Lss SC only');
+      });
+
       describe('when setting a new admin', () => {
         it('should revert when not recoveryAdmin', async () => {
           await expect(
