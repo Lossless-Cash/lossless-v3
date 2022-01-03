@@ -352,8 +352,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function getLockedAmount(address token, address account) public view returns (uint256) {
         uint256 lockedAmount;
         
-        LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[token].queue[account];
+        LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
 
         uint i = queue.first;
         while (i <= queue.last) {
