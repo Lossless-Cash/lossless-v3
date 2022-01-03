@@ -42,7 +42,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     // --- V3 VARIABLES ---
-    uint256 public lockCheckpointExpiration;
 
     uint256 public dexTranferThreshold;
 
@@ -223,13 +222,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param newThreshold Timelock in seconds
     function setDexTransferThreshold(uint256 newThreshold) public onlyLosslessAdmin {
         dexTranferThreshold = newThreshold;
-    }
-
-
-    /// @notice This function sets the amount of time for used up and expired tokens to be lifted
-    /// @param time Time in seconds
-    function setLocksLiftUpExpiration(uint256 time) public onlyLosslessAdmin {
-        lockCheckpointExpiration = time;
     }
     
     /// @notice This function removes or adds an array of dex addresses from the whitelst

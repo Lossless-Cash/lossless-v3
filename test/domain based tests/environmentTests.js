@@ -320,12 +320,6 @@ describe(scriptName, () => {
             adr.lssAdmin.address, adr.regularUser1.address,
           );
         });
-
-        it('should revert setLocksLiftUpExpiration when not admin', async () => {
-          await expect(
-            env.lssController.connect(adr.regularUser1).setLocksLiftUpExpiration(300),
-          ).to.be.revertedWith('LSS: Must be admin');
-        });
       });
 
       describe('when setting a new pause admin', () => {
