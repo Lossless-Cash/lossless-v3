@@ -487,7 +487,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         }
 
         require(!blacklist[sender], "LSS: You cannot operate");
-        require(!blacklist[recipient], "LSS: Recipient is blacklisted");
         
         if (tokenLockTimeframe[msg.sender] != 0) {
             _evaluateTransfer(sender, recipient, amount);
@@ -502,7 +501,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         }
 
         require(!blacklist[msgSender], "LSS: You cannot operate");
-        require(!blacklist[recipient], "LSS: Recipient is blacklisted");
         require(!blacklist[sender], "LSS: Sender is blacklisted");
 
         if (tokenLockTimeframe[msg.sender] != 0) {
