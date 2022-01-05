@@ -20,13 +20,23 @@ describe(scriptName, () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-
-    await env.lssController.connect(adr.lssAdmin).setDexList(
-      [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
-    );
   });
 
   describe('when Dex Listing an account', () => {
+    beforeEach(async () => {
+      await env.lssController.connect(adr.lssAdmin).setDexList(
+        [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+      );
+    });
+
+    it('should revert when non admin', async () => {
+      await expect(
+        env.lssController.connect(adr.regularUser1).setDexList(
+          [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], true,
+        ),
+      ).to.be.revertedWith('LSS: Must be admin');
+    });
+
     it('should set governance contract', async () => {
       expect(
         await env.lssController.dexList(env.lssGovernance.address),
@@ -41,6 +51,28 @@ describe(scriptName, () => {
       expect(
         await env.lssController.dexList(env.lssStaking.address),
       ).to.be.equal(true);
+    });
+
+    describe('when removing and address from the dex List', () => {
+      it('should revert when non admin', async () => {
+        await expect(
+          env.lssController.connect(adr.regularUser1).setDexList(
+            [env.lssGovernance.address, env.lssReporting.address, env.lssStaking.address], false,
+          ),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
+      it('should remove the address', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setDexList(
+            [env.lssGovernance.address], false,
+          ),
+        ).to.not.be.reverted;
+
+        expect(
+          await env.lssController.dexList(env.lssGovernance.address),
+        ).to.be.equal(false);
+      });
     });
   });
 });

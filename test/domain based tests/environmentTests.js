@@ -282,16 +282,70 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
 
+      it('should revert when setting Staking contract by non admin', async () => {
+        await expect(
+          env.lssController.connect(adr.regularUser1).setStakingContractAddress(adr.ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
       it('should revert when setting Report contract as zero address', async () => {
         await expect(
           env.lssController.connect(adr.lssAdmin).setReportingContractAddress(adr.ZERO_ADDRESS),
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
 
+      it('should revert when setting Report contract by non admin', async () => {
+        await expect(
+          env.lssController.connect(adr.regularUser1).setReportingContractAddress(adr.ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
       it('should revert when setting Governance contract as zero address', async () => {
         await expect(
           env.lssController.connect(adr.lssAdmin).setGovernanceContractAddress(adr.ZERO_ADDRESS),
         ).to.be.revertedWith('LERC20: Cannot be zero address');
+      });
+
+      it('should revert when setting Governance contract by non admin', async () => {
+        await expect(
+          env.lssController.connect(adr.regularUser1).setGovernanceContractAddress(adr.ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
+      it('should revert when setDexTransferThreshold by non admin', async () => {
+        await expect(
+          env.lssController.connect(adr.regularUser1).setDexTransferThreshold(20),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
+      it('should revert when trying to add to blacklist from other than Lossless Contracts', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).addToBlacklist(adr.maliciousActor1.address),
+        ).to.be.revertedWith('LSS: Lss SC only');
+      });
+
+      it('should revert when trying to resolve negatively from other than Lossless Contracts', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).resolvedNegatively(adr.maliciousActor1.address),
+        ).to.be.revertedWith('LSS: Lss SC only');
+      });
+
+      it('should revert when trying to activate emergency from other than Lossless Contracts', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).activateEmergency(env.lssToken.address),
+        ).to.be.revertedWith('LSS: Lss SC only');
+      });
+
+      it('should revert when trying to deactivate emergency from other than Lossless Contracts', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).deactivateEmergency(env.lssToken.address),
+        ).to.be.revertedWith('LSS: Lss SC only');
+      });
+
+      it('should revert when trying to retrieve blacklisted funds from other than Lossless Contracts', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).retrieveBlacklistedFunds([adr.regularUser1.address], env.lssToken.address, 1),
+        ).to.be.revertedWith('LSS: Lss SC only');
       });
 
       describe('when setting a new admin', () => {
@@ -745,6 +799,12 @@ describe(scriptName, () => {
         expect(
           await env.lssController.losslessGovernance(),
         ).to.be.equal(env.lssGovernance.address);
+      });
+
+      it('should set the Dex Transfer Threshold correctly', async () => {
+        expect(
+          await env.lssController.dexTranferThreshold(),
+        ).to.be.equal(20);
       });
     });
 

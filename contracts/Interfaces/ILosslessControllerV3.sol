@@ -6,7 +6,6 @@ interface ILssController {
     function getLockedAmount(address token, address account) external view returns (uint256);
     function getAvailableAmount(address token, address account) external view returns (uint256 amount);
     function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) external returns(uint256);
-    function erroneousCompensation() external view returns (uint256);
     function reportLifetime() external returns (uint256);
     function stakeAmount() external view returns (uint256);
     function reportingAmount() external returns (uint256);
@@ -22,7 +21,6 @@ interface ILssController {
     function stakingToken() external view returns (address);
     function losslessStaking() external view returns (address);
     function losslessReporting() external view returns (address);
-    function lockCheckpointExpiration() external view returns (uint256);
     function dexTranferThreshold() external view returns (uint256);
     function settlementTimeLock() external view returns (uint256);
     function tokenLockTimeframe(address token) external view returns (uint256);
@@ -38,8 +36,6 @@ interface ILssController {
     function setStakingToken(address _stakingToken) external;
     function setSettlementTimeLock(uint256 newTimelock) external;
     function setDexTrasnferThreshold(uint256 newThreshold) external;
-    function setCompensationAmount(uint256 amount) external;
-    function setLocksLiftUpExpiration(uint256 time) external;
     function setDexList(address[] calldata _dexList, bool value) external;
     function setWhitelist(address[] calldata _addrList, bool value) external;
     function addToBlacklist(address _adr) external;

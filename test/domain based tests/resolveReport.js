@@ -116,6 +116,13 @@ describe(scriptName, () => {
                 await env.lssGovernance.reportResolution(1),
               ).to.be.equal(false);
             });
+
+            it('should remove the reported address from blacklist', async () => {
+              await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+              expect(
+                await env.lssController.blacklist(adr.maliciousActor1.address),
+              ).to.be.equal(false);
+            });
           });
 
           describe('when Lossless Team votes negative and Token Owners positive', () => {

@@ -42,6 +42,25 @@ describe(scriptName, () => {
         ).to.not.be.reverted;
       });
 
+      it('should set new proposed values', async () => {
+        await expect(
+          env.lssController.connect(adr.lerc20Admin)
+            .proposeNewSettlementPeriod(lerc20Token.address, 5 * 60),
+        ).to.not.be.reverted;
+
+        expect(
+          await env.lssController.connect(adr.lerc20Admin)
+            .proposedTokenLockTimeframe(lerc20Token.address),
+        ).to.be.equal(5 * 60);
+      });
+
+      it('should emit event', async () => {
+        await expect(
+          env.lssController.connect(adr.lerc20Admin)
+            .proposeNewSettlementPeriod(lerc20Token.address, 5 * 60),
+        ).to.emit(env.lssController, 'NewSettlementPeriodProposed').withArgs(lerc20Token.address, 5 * 60);
+      });
+
       it('should revert if it\'s not token admin', async () => {
         await expect(
           env.lssController.connect(adr.regularUser1)
@@ -78,6 +97,12 @@ describe(scriptName, () => {
 
         await env.lssController.connect(adr.lerc20Admin)
           .executeNewSettlementPeriod(lerc20Token.address);
+      });
+
+      it('should set the new settlement period', async () => {
+        expect(
+          await env.lssController.proposedTokenLockTimeframe(lerc20Token.address),
+        ).to.be.equal(5 * 60);
       });
 
       describe('when transfering to a dex', () => {
@@ -119,6 +144,26 @@ describe(scriptName, () => {
           ]);
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 50);
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
+        });
+
+        it('should get locked amount correctly', async () => {
+          expect(
+            await env.lssController.getLockedAmount(lerc20Token.address, adr.regularUser1.address),
+          ).to.be.equal(50);
+
+          expect(
+            await env.lssController.getLockedAmount(lerc20Token.address, adr.regularUser2.address),
+          ).to.be.equal(100);
+        });
+
+        it('should get available amount correctly', async () => {
+          expect(
+            await env.lssController.getAvailableAmount(lerc20Token.address, adr.regularUser1.address),
+          ).to.be.equal(50);
+
+          expect(
+            await env.lssController.getAvailableAmount(lerc20Token.address, adr.regularUser2.address),
+          ).to.be.equal(100);
         });
 
         it('should revert if 5 minutes haven\'t passed and it\'s a second transfer over the unsettled amount', async () => {

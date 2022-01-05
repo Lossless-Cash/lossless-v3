@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-expressions */
 /* eslint-disable max-len */
 /* eslint-disable no-undef */
 /* eslint-disable no-unused-vars */
@@ -36,6 +37,20 @@ describe(scriptName, () => {
   });
 
   describe('when whitelisting an account', () => {
+    it('should revert when non admin', async () => {
+      expect(
+        env.lssController
+          .connect(adr.regularUser1)
+          .setWhitelist(
+            [
+              env.lssGovernance.address,
+              env.lssReporting.address,
+              env.lssStaking.address,
+            ],
+            true,
+          ),
+      ).to.be.revertedWith('LSS: Must be admin');
+    });
     it('should set governance contract', async () => {
       expect(
         await env.lssController.whitelist(env.lssGovernance.address),
@@ -50,6 +65,38 @@ describe(scriptName, () => {
       expect(
         await env.lssController.whitelist(env.lssStaking.address),
       ).to.be.equal(true);
+    });
+
+    describe('when removing from whitelst', () => {
+      it('should revert when non admin', async () => {
+        expect(
+          env.lssController
+            .connect(adr.regularUser1)
+            .setWhitelist(
+              [
+                env.lssGovernance.address,
+              ],
+              false,
+            ),
+        ).to.be.revertedWith('LSS: Must be admin');
+      });
+
+      it('should remove from whitelist', async () => {
+        expect(
+          env.lssController
+            .connect(adr.lssAdmin)
+            .setWhitelist(
+              [
+                env.lssGovernance.address,
+              ],
+              false,
+            ),
+        ).to.not.be.reverted;
+
+        expect(
+          await env.lssController.whitelist(env.lssGovernance.address),
+        ).to.be.equal(false);
+      });
     });
   });
 });

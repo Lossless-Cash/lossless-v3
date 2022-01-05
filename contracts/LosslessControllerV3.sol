@@ -42,7 +42,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     // --- V3 VARIABLES ---
-    uint256 public lockCheckpointExpiration;
 
     uint256 public dexTranferThreshold;
 
@@ -51,8 +50,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(address => uint256) public proposedTokenLockTimeframe;
     mapping(address => uint256) public changeSettlementTimelock;
     mapping(address => bool) public isNewSettlementProposed;
-
-    uint256 public erroneousCompensation;
 
     ILERC20 public stakingToken;
     ILssStaking public losslessStaking;
@@ -87,12 +84,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         bool emergency;
         uint256 emergencyTimestamp;
     }
-
-    struct PeriodTransfers {
-        mapping (address => uint256) timestampInToken;
-    }
-
-    mapping (address => PeriodTransfers) private tokenTransferInPeriod;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -223,21 +214,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the transfer threshold for Dexes
     /// @dev Only can be called by the Lossless Admin
     /// @param newThreshold Timelock in seconds
-    function setDexTrasnferThreshold(uint256 newThreshold) public onlyLosslessAdmin {
+    function setDexTransferThreshold(uint256 newThreshold) public onlyLosslessAdmin {
         dexTranferThreshold = newThreshold;
-    }
-
-    /// @notice This function sets the amount of tokens given to the erroneously reported address
-    /// @param amount Percentage to return
-    function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
-        require(0 <= amount && amount <= 100, "LSS: Invalid amount");
-        erroneousCompensation = amount;
-    }
-
-    /// @notice This function sets the amount of time for used up and expired tokens to be lifted
-    /// @param time Time in seconds
-    function setLocksLiftUpExpiration(uint256 time) public onlyLosslessAdmin {
-        lockCheckpointExpiration = time;
     }
     
     /// @notice This function removes or adds an array of dex addresses from the whitelst
@@ -333,7 +311,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         emergencyMode[token].emergencyTimestamp = 0;
     }
 
-    // --- GUARD ---
    // --- GUARD ---
 
     // @notice Set a guardian contract.
@@ -369,8 +346,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function getLockedAmount(address token, address account) public view returns (uint256) {
         uint256 lockedAmount;
         
-        LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[token].queue[account];
+        LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
 
         uint i = queue.first;
         while (i <= queue.last) {
@@ -395,7 +371,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // LOCKs & QUEUES
 
     /// @notice This function add transfers to the lock queues
-    /// @param checkpoint Address to add the locks
+    /// @param checkpoint timestamp of the transfer
     /// @param recipient Address to add the locks
     function _enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
@@ -434,9 +410,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function will lift the locks after a certain amount
     /// @dev The condition to lift the locks is that their checkpoint should be greater than the set amount
-    /// @param availableAmount Address to lift the locks
+    /// @param availableAmount Unlocked Amount
     /// @param account Address to lift the locks
-    /// @param amount Address to lift the locks
+    /// @param amount Amount to lift
     function _removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[msg.sender].queue[account];
@@ -444,17 +420,17 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(queue.touchedTimestamp + tokenLockTimeframe[msg.sender] <= block.timestamp, "LSS: Transfers limit reached");
 
         uint256 amountLeft =  amount - availableAmount;
-        uint256 i = 1;
+        uint256 i = queue.first;
         
         while (amountLeft > 0 && i <= queue.last) {
             ReceiveCheckpoint storage checkpoint = queue.lockedFunds[i];
-                if (checkpoint.amount > amountLeft) {
-                    checkpoint.amount -= amountLeft;
-                    delete amountLeft;
-                } else {
-                    amountLeft -= checkpoint.amount;
-                    delete checkpoint.amount;
-                }
+            if (checkpoint.amount > amountLeft) {
+                checkpoint.amount -= amountLeft;
+                delete amountLeft;
+            } else {
+                amountLeft -= checkpoint.amount;
+                delete checkpoint.amount;
+            }
             i += 1;
         }
 
@@ -496,8 +472,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                 _removeUsedUpLocks(settledAmount, sender, amount);
             }
         }
-
-        tokenTransferInPeriod[sender].timestampInToken[msg.sender] = block.timestamp + tokenLockTimeframe[msg.sender];
 
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
         _enqueueLockedFunds(newCheckpoint, recipient);
