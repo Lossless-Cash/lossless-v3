@@ -54,6 +54,45 @@ describe(scriptName, () => {
       adr.member3.address,
       adr.member4.address,
       adr.member5.address]);
+
+    await env.lssReporting.connect(adr.lssAdmin).setLosslessReward(10);
+
+    await env.lssToken
+      .connect(adr.lssInitialHolder)
+      .transfer(adr.reporter1.address, env.stakingAmount);
+
+    await env.lssToken
+      .connect(adr.lssInitialHolder)
+      .transfer(adr.staker1.address, env.stakingAmount);
+
+    await env.lssToken
+      .connect(adr.lssInitialHolder)
+      .transfer(adr.staker2.address, env.stakingAmount);
+
+    await env.lssToken
+      .connect(adr.lssInitialHolder)
+      .transfer(adr.staker3.address, env.stakingAmount);
+
+    await env.lssToken
+      .connect(adr.lssInitialHolder)
+      .transfer(adr.staker4.address, env.stakingAmount);
+
+    await env.lssToken
+      .connect(adr.staker1)
+      .approve(env.lssStaking.address, env.stakingAmount);
+    await env.lssToken
+      .connect(adr.staker2)
+      .approve(env.lssStaking.address, env.stakingAmount);
+    await env.lssToken
+      .connect(adr.staker3)
+      .approve(env.lssStaking.address, env.stakingAmount);
+    await env.lssToken
+      .connect(adr.staker4)
+      .approve(env.lssStaking.address, env.stakingAmount);
+
+    await ethers.provider.send('evm_increaseTime', [
+      Number(time.duration.minutes(5)),
+    ]);
   });
 
   describe('when report has not been solved', () => {
@@ -97,6 +136,30 @@ describe(scriptName, () => {
       await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, true);
       await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true);
 
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssStaking.connect(adr.staker1).stake(1);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(45)),
+      ]);
+
+      await env.lssStaking.connect(adr.staker2).stake(1);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.hours(8)),
+      ]);
+
+      await env.lssStaking.connect(adr.staker3).stake(1);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.hours(10)),
+      ]);
+
+      await env.lssStaking.connect(adr.staker4).stake(1);
+
       await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
       await ethers.provider.send('evm_increaseTime', [
@@ -105,6 +168,16 @@ describe(scriptName, () => {
     });
     describe('when lossless team claims', () => {
       it('should not revert', async () => {
+        await env.lssGovernance.connect(adr.member1).claimCommitteeReward(1);
+        await env.lssGovernance.connect(adr.member2).claimCommitteeReward(1);
+        await env.lssGovernance.connect(adr.member3).claimCommitteeReward(1);
+        await env.lssGovernance.connect(adr.member4).claimCommitteeReward(1);
+
+        env.lssStaking.connect(adr.staker1).stakerClaim(1);
+        env.lssStaking.connect(adr.staker2).stakerClaim(1);
+        env.lssStaking.connect(adr.staker3).stakerClaim(1);
+        env.lssStaking.connect(adr.staker4).stakerClaim(1);
+
         let balance;
         expect(
           (balance = await lerc20Token.balanceOf(adr.lssAdmin.address)),

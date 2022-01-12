@@ -396,7 +396,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                 
         (uint256 reporterReward, uint256 losslessReward, uint256 committeeReward, uint256 stakersReward) = losslessReporting.getRewards();
 
-        uint256 toLssStaking = totalAmount * (stakersReward + losslessReward) / 10**2;
+        uint256 toLssStaking = totalAmount * stakersReward / 10**2;
         uint256 toLssReporting = totalAmount * reporterReward / 10**2;
         uint256 toLssGovernance = totalAmount - toLssStaking - toLssReporting;
 
@@ -404,7 +404,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         ILERC20(token).transfer(address(losslessReporting), toLssReporting);
         ILERC20(token).transfer(address(losslessGovernance), toLssGovernance);
 
-        return totalAmount - toLssStaking - toLssReporting - (totalAmount * committeeReward / 10**2);
+        return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / 10**2);
     }
 
 
