@@ -39,10 +39,10 @@ describe(scriptName, () => {
       adr.member4.address]);
 
     await env.lssToken.connect(adr.lssInitialHolder)
-      .transfer(adr.reporter1.address, env.stakingAmount);
+      .transfer(adr.reporter1.address, env.stakingAmount * 2);
     await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 1000);
 
-    await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount);
+    await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount * 2);
 
     await ethers.provider.send('evm_increaseTime', [
       Number(time.duration.minutes(5)),
@@ -199,6 +199,47 @@ describe(scriptName, () => {
       await expect(
         env.lssGovernance.connect(adr.regularUser1).retrieveCompensation(),
       ).to.be.revertedWith('LSS: No retribution assigned');
+    });
+  });
+
+  describe('when erroneusly reported twice', () => {
+    beforeEach(async () => {
+      await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
+      await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
+      await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, false);
+      await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, false);
+      await env.lssGovernance.connect(adr.member3).committeeMemberVote(1, false);
+      await env.lssGovernance.connect(adr.member4).committeeMemberVote(1, false);
+
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+      await expect(
+        env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation(),
+      ).to.emit(env.lssGovernance, 'CompensationRetrieved').withArgs(
+        adr.maliciousActor1.address,
+        20,
+      );
+
+      await env.lssReporting.connect(adr.reporter1)
+        .report(lerc20Token.address, adr.maliciousActor1.address);
+
+      await env.lssGovernance.connect(adr.lssAdmin).losslessVote(2, false);
+      await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(2, false);
+      await env.lssGovernance.connect(adr.member1).committeeMemberVote(2, false);
+      await env.lssGovernance.connect(adr.member2).committeeMemberVote(2, false);
+      await env.lssGovernance.connect(adr.member3).committeeMemberVote(2, false);
+      await env.lssGovernance.connect(adr.member4).committeeMemberVote(2, false);
+
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(2);
+    });
+
+    it('should let the address retrieve compensation twice', async () => {
+      await expect(
+        env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation(),
+      ).to.emit(env.lssGovernance, 'CompensationRetrieved').withArgs(
+        adr.maliciousActor1.address,
+        20,
+      );
     });
   });
 });

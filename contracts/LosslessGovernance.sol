@@ -385,6 +385,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         for(uint256 i; i < addresses.length; i++) {
             losslessController.resolvedNegatively(addresses[i]);      
             compensation[addresses[i]].amount +=  (reportingAmount * erroneousCompensation) / 10**2;
+            compensation[addresses[i]].payed = false;
         }
     }
 
@@ -511,6 +512,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         emit CompensationRetrieved(msg.sender, compensation[msg.sender].amount);
 
         compensation[msg.sender].amount = 0;
+
     }
 
     ///@notice This function is for committee members to claim their rewards
