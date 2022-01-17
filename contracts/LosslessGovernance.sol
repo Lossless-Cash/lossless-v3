@@ -184,7 +184,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         Vote storage reportVote = reportVotes[reportId];
 
         uint256 agreeCount;
-        for(uint256 i; i < reportVote.committeeVotes.length; i++) {
+        for(uint256 i = 0; i < reportVote.committeeVotes.length; i++) {
             if (reportVote.committeeVotes[i]) {
                 agreeCount += 1;
             }
@@ -206,7 +206,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function addCommitteeMembers(address[] memory members) public onlyLosslessAdmin whenNotPaused {
         committeeMembersCount += members.length;
 
-        for (uint256 i; i < members.length; ++i) {
+        for (uint256 i = 0; i < members.length; ++i) {
             require(!isCommitteeMember(members[i]), "LSS: duplicate members");
             grantRole(COMMITTEE_ROLE, members[i]);
         }
@@ -221,7 +221,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         committeeMembersCount -= members.length;
 
-        for (uint256 i; i < members.length; ++i) {
+        for (uint256 i = 0; i < members.length; ++i) {
             require(isCommitteeMember(members[i]), "LSS: An address is not member");
             revokeRole(COMMITTEE_ROLE, members[i]);
         }
