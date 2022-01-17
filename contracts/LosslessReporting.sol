@@ -32,7 +32,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         mapping(address => uint256) reports;
     }
 
-    mapping(address => TokenReports) private tokenReports;
+    mapping(ILERC20 => TokenReports) private tokenReports;
 
     mapping(uint256 => bool)  private reporterClaimStatus;
 
@@ -178,7 +178,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
         require(!losslessController.dexList(account), "LSS: Cannot report Dex");
 
-        uint256 reportId = tokenReports[token].reports[account];
+        uint256 reportId = tokenReports[ILERC20(token)].reports[account];
 
         require(reportId == 0 || 
                 reportTimestamps[reportId] + reportLifetime < block.timestamp || 
@@ -189,7 +189,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         reportId = reportCount;
         reporter[reportId] = msg.sender;
 
-        tokenReports[token].reports[account] = reportId;
+        tokenReports[ILERC20(token)].reports[account] = reportId;
         reportTimestamps[reportId] = block.timestamp;
         reportTokens[reportId] = token;
 
@@ -226,7 +226,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(msg.sender == reporter[reportId], "LSS: invalid reporter");
 
         secondReports[reportId] = true;
-        tokenReports[token].reports[account] = reportId;
+        tokenReports[ILERC20(token)].reports[account] = reportId;
 
         losslessController.addToBlacklist(account);
         secondReportedAddress[reportId] = account;
