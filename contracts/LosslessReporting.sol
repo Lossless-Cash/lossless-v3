@@ -94,8 +94,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingToken Address corresponding to the Lossless Governance Token
-    function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
-        require(_stakingToken != address(0), "LERC20: Cannot be zero address");
+    function setStakingToken(ILERC20 _stakingToken) public onlyLosslessAdmin {
+        require(address(ILERC20(_stakingToken)) != address(0), "LERC20: Cannot be zero address");
         stakingToken = ILERC20(_stakingToken);
     }
 
