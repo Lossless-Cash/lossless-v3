@@ -50,4 +50,5 @@ interface ILssGovernance {
     event LosslessClaim(address indexed token, uint256 indexed reportID);
     event CommitteeMemberClaim(uint256 indexed reportID, address indexed member, uint256 indexed amount);
     event CommitteeMajorityReach(uint256 indexed reportId, bool indexed result);
+    event NewDisputePeriod(uint256 indexed newPeriod);
 }

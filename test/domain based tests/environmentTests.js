@@ -714,7 +714,7 @@ describe(scriptName, () => {
             await expect(
               env.lssGovernance.connect(adr.lssAdmin)
                 .setDisputePeriod(600),
-            ).to.not.be.revertedWith('Pausable: paused');
+            ).to.emit(env.lssGovernance, 'NewDisputePeriod').withArgs(600);
           });
 
           it('should not prevent lossless team vote', async () => {

@@ -93,6 +93,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event LosslessClaim(address indexed token, uint256 indexed reportID, uint256 indexed amount);
     event CommitteeMemberClaim(uint256 indexed reportID, address indexed member, uint256 indexed amount);
     event CommitteeMajorityReach(uint256 indexed reportId, bool indexed result);
+    event NewDisputePeriod(uint256 indexed newPeriod);
 
     function initialize(ILssReporting _losslessReporting, ILssController _losslessController, ILssStaking _losslessStaking) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
@@ -162,18 +163,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         return reportVotes[reportId].resolution;
     }
 
-    /// @notice This function sets the address of the staking token
-    /// @dev Only can be called by the Lossless Admin
-    /// @param _stakingToken Address corresponding to the staking token
-/*     function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
-        require(_stakingToken != address(0), "LERC20: Cannot be zero address");
-        stakingToken = ILERC20(_stakingToken);
-    } */
-
     /// @notice This function sets the wallet dispute period
     /// @param timeFrame Time in seconds for the dispute period
     function setDisputePeriod(uint256 timeFrame) public onlyLosslessAdmin whenNotPaused {
         walletDisputePeriod = timeFrame;
+        emit NewDisputePeriod(walletDisputePeriod);
     }
 
     /// @notice This function sets the amount of tokens given to the erroneously reported address
