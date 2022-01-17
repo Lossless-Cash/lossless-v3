@@ -44,8 +44,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     mapping(uint256 => bool) public secondReports;
 
 
-    event ReportSubmission(address indexed token, address indexed account, uint256 reportId);
-    event SecondReportSubmission(address indexed token, address indexed account, uint256 reportId);
+    event ReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
+    event SecondReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
     event NewReportingAmount(uint256 indexed newAmount);
 
     // --- MODIFIERS ---

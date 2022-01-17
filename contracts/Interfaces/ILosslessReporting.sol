@@ -37,7 +37,7 @@ interface ILssReporting {
   function reporterClaim(uint256 reportId) external;
   function retrieveCompensation(address adr, uint256 amount) external;
 
-  event ReportSubmission(address indexed token, address indexed account, uint256 reportId);
-  event SecondReportSubmission(address indexed token, address indexed account, uint256 reportId);
+  event ReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
+  event SecondReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
   event NewReportingAmount(uint256 indexed newAmount);
 }
