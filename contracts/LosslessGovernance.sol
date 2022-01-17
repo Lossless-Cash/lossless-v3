@@ -16,11 +16,11 @@ import "./Interfaces/ILosslessReporting.sol";
 /// @notice The governance contract is in charge of handling the voting process over the reports and their resolution
 contract LosslessGovernance is Initializable, AccessControlUpgradeable, PausableUpgradeable {
 
-    uint256 public lssTeamVoteIndex;
-    uint256 public tokenOwnersVoteIndex;
-    uint256 public committeeVoteIndex;
+    uint256 public constant lssTeamVoteIndex = 0;
+    uint256 public constant tokenOwnersVoteIndex = 1;
+    uint256 public constant committeeVoteIndex = 2;
 
-    bytes32 private constant COMMITTEE_ROLE = keccak256("COMMITTEE_ROLE");
+    bytes32 public constant COMMITTEE_ROLE = keccak256("COMMITTEE_ROLE");
 
     uint256 public committeeMembersCount;
 
@@ -96,8 +96,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         losslessController = ILssController(_losslessController);
         losslessStaking = ILssStaking(_losslessStaking);
         walletDisputePeriod = 7 days;
-        tokenOwnersVoteIndex = 1;
-        committeeVoteIndex = 2;
+        committeeMembersCount = 0;
         _setupRole(DEFAULT_ADMIN_ROLE, losslessController.admin());
     }
 

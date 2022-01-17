@@ -24,7 +24,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     uint256 public reportCount;
 
-    uint256 public toPercentage;
+    uint256 constant toPercentage = 10**2;
 
     ILERC20 public stakingToken;
     ILssController public losslessController;
@@ -85,7 +85,6 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     function initialize(ILssController _losslessController) public initializer {
         reportCount = 0;
-        toPercentage = 10**2;
         losslessController = ILssController(_losslessController);
     }
     
