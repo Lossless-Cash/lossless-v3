@@ -79,9 +79,12 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     event NewCommitteeMembers(address[] indexed members);
     event CommitteeMembersRemoval(address[] indexed members);
-    event LosslessTeamVote(uint256 indexed reportId, bool indexed vote);
-    event TokenOwnersVote(uint256 indexed reportId, bool indexed vote);
-    event CommitteeMemberVote(uint256 indexed reportId, address indexed member, bool indexed vote);
+    event LosslessTeamPositiveVote(uint256 indexed reportId);
+    event LosslessTeamNegativeVote(uint256 indexed reportId);
+    event TokenOwnersPositiveVote(uint256 indexed reportId);
+    event TokenOwnersNegativeVote(uint256 indexed reportId);
+    event CommitteeMemberPositiveVote(uint256 indexed reportId, address indexed member);
+    event CommitteeMemberNegativeVote(uint256 indexed reportId, address indexed member);
     event ReportResolve(uint256 indexed reportId, bool indexed resolution);
     event WalletProposal(uint256 indexed reportId, address indexed wallet);
     event WalletRejection(uint256 indexed reportId, address indexed wallet);
@@ -247,7 +250,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         reportVote.voted[lssTeamVoteIndex] = true;
         reportVote.votes[lssTeamVoteIndex] = vote;
 
-        emit LosslessTeamVote(reportId, vote);
+        if (vote) {
+            emit LosslessTeamPositiveVote(reportId);
+        } else {
+            emit LosslessTeamNegativeVote(reportId);
+        }
     }
 
     /// @notice This function emits a vote on a report by the Token Owners
@@ -266,7 +273,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         reportVote.voted[tokenOwnersVoteIndex] = true;
         reportVote.votes[tokenOwnersVoteIndex] = vote;
 
-        emit TokenOwnersVote(reportId, vote);
+        if (vote) {
+            emit TokenOwnersPositiveVote(reportId);
+        } else {
+            emit TokenOwnersNegativeVote(reportId);
+        }
     }
 
     /// @notice This function emits a vote on a report by a Committee member
@@ -293,7 +304,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             emit CommitteeMajorityReach(reportId, result);
         }
 
-        emit CommitteeMemberVote(reportId, msg.sender, vote);
+        if (vote) {
+            emit CommitteeMemberPositiveVote(reportId, msg.sender);
+        } else {
+            emit CommitteeMemberNegativeVote(reportId, msg.sender);
+        }
     }
 
     /// @notice This function solves a report based on the voting resolution of the three pilars

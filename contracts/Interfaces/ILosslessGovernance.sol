@@ -36,9 +36,12 @@ interface ILssGovernance {
 
     event NewCommitteeMembers(address[] indexed members);
     event CommitteeMembersRemoval(address[] indexed members);
-    event LosslessTeamVote(uint256 indexed reportId, bool indexed vote);
-    event TokenOwnersVote(uint256 indexed reportId, bool indexed vote);
-    event CommitteeMemberVote(uint256 indexed reportId, address indexed member, bool indexed vote);
+    event LosslessTeamPositiveVote(uint256 indexed reportId);
+    event LosslessTeamNegativeVote(uint256 indexed reportId);
+    event TokenOwnersPositiveVote(uint256 indexed reportId);
+    event TokenOwnersNegativeVote(uint256 indexed reportId);
+    event CommitteeMemberPositiveVote(uint256 indexed reportId, address indexed member);
+    event CommitteeMemberNegativeVote(uint256 indexed reportId, address indexed member);
     event ReportResolve(uint256 indexed reportId, bool indexed resolution);
     event WalletProposal(uint256 indexed reportId, address indexed wallet);
     event WalletRejected(uint256 indexed reportId, address indexed wallet);
