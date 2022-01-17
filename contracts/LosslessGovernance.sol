@@ -196,9 +196,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             return (true, true);
         } else if ((committeeLength - agreeCount) >= committeeQuorum) {
             return (true, false);
+        } else {
+            return (false, false);
         }
-
-        return (false, false);
     }
 
     /// @notice This function adds committee members    
