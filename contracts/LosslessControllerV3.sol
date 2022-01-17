@@ -292,6 +292,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(changeSettlementTimelock[token] <= block.timestamp, "LSS: Time lock in progress");
         tokenLockTimeframe[token] = proposedTokenLockTimeframe[token];
         isNewSettlementProposed[token] = false;
+        proposedTokenLockTimeframe[token] = 0; 
         emit SettlementPeriodChanged(token, proposedTokenLockTimeframe[token]);
     }
 

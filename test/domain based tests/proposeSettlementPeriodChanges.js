@@ -101,7 +101,7 @@ describe(scriptName, () => {
 
       it('should set the new settlement period', async () => {
         expect(
-          await env.lssController.proposedTokenLockTimeframe(lerc20Token.address),
+          await env.lssController.tokenLockTimeframe(lerc20Token.address),
         ).to.be.equal(5 * 60);
       });
 
