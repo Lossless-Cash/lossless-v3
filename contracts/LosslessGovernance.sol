@@ -78,18 +78,18 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     address[] private reportedAddresses;
 
     event NewCommitteeMembers(address[] indexed members);
-    event CommitteeMembersRemoved(address[] indexed members);
-    event LosslessTeamVoted(uint256 indexed reportId, bool indexed vote);
-    event TokenOwnersVoted(uint256 indexed reportId, bool indexed vote);
-    event CommitteeMemberVoted(uint256 indexed reportId, address indexed member, bool indexed vote);
-    event ReportResolved(uint256 indexed reportId, bool indexed resolution);
-    event WalletProposed(uint256 indexed reportId, address indexed wallet);
-    event WalletRejected(uint256 indexed reportId, address indexed wallet);
-    event FundsRetrieved(uint256 indexed reportId, address indexed wallet);
-    event CompensationRetrieved(address indexed wallet, uint256 indexed amount);
-    event LosslessClaimed(address indexed token, uint256 indexed reportID, uint256 indexed amount);
-    event CommitteeMemberClaimed(uint256 indexed reportID, address indexed member, uint256 indexed amount);
-    event CommitteeMajorityReached(uint256 indexed reportId, bool indexed result);
+    event CommitteeMembersRemoval(address[] indexed members);
+    event LosslessTeamVote(uint256 indexed reportId, bool indexed vote);
+    event TokenOwnersVote(uint256 indexed reportId, bool indexed vote);
+    event CommitteeMemberVote(uint256 indexed reportId, address indexed member, bool indexed vote);
+    event ReportResolve(uint256 indexed reportId, bool indexed resolution);
+    event WalletProposal(uint256 indexed reportId, address indexed wallet);
+    event WalletRejection(uint256 indexed reportId, address indexed wallet);
+    event FundsRetrieval(uint256 indexed reportId, address indexed wallet);
+    event CompensationRetrieval(address indexed wallet, uint256 indexed amount);
+    event LosslessClaim(address indexed token, uint256 indexed reportID, uint256 indexed amount);
+    event CommitteeMemberClaim(uint256 indexed reportID, address indexed member, uint256 indexed amount);
+    event CommitteeMajorityReach(uint256 indexed reportId, bool indexed result);
 
     function initialize(address _losslessReporting, address _losslessController, address _losslessStaking) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
@@ -229,7 +229,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             revokeRole(COMMITTEE_ROLE, members[i]);
         }
 
-        emit CommitteeMembersRemoved(members);
+        emit CommitteeMembersRemoval(members);
     }
 
     /// @notice This function emits a vote on a report by the Lossless Team
@@ -247,7 +247,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         reportVote.voted[lssTeamVoteIndex] = true;
         reportVote.votes[lssTeamVoteIndex] = vote;
 
-        emit LosslessTeamVoted(reportId, vote);
+        emit LosslessTeamVote(reportId, vote);
     }
 
     /// @notice This function emits a vote on a report by the Token Owners
@@ -266,7 +266,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         reportVote.voted[tokenOwnersVoteIndex] = true;
         reportVote.votes[tokenOwnersVoteIndex] = vote;
 
-        emit TokenOwnersVoted(reportId, vote);
+        emit TokenOwnersVote(reportId, vote);
     }
 
     /// @notice This function emits a vote on a report by a Committee member
@@ -290,10 +290,10 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         if (isMajorityReached) {
             reportVote.votes[committeeVoteIndex] = result;
             reportVote.voted[committeeVoteIndex] = true;
-            emit CommitteeMajorityReached(reportId, result);
+            emit CommitteeMajorityReach(reportId, result);
         }
 
-        emit CommitteeMemberVoted(reportId, msg.sender, vote);
+        emit CommitteeMemberVote(reportId, msg.sender, vote);
     }
 
     /// @notice This function solves a report based on the voting resolution of the three pilars
@@ -314,7 +314,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         reportVotes[reportId].resolved = true;
         delete reportedAddresses;
 
-        emit ReportResolved(reportId, reportVotes[reportId].resolution);
+        emit ReportResolve(reportId, reportVotes[reportId].resolution);
     }
 
     /// @notice This function has the logic to solve a report that it's still active
@@ -413,7 +413,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         proposedWalletOnReport[reportId].tokenOwnersVote = true;
         proposedWalletOnReport[reportId].walletAccepted = true;
 
-        emit WalletProposed(reportId, wallet);
+        emit WalletProposal(reportId, wallet);
     }
 
     /// @notice This function is used to reject the wallet proposal
@@ -445,7 +445,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         _determineProposedWallet(reportId);
 
-        emit WalletRejected(reportId, proposedWalletOnReport[reportId].wallet);
+        emit WalletRejection(reportId, proposedWalletOnReport[reportId].wallet);
     }
 
     /// @notice This function retrieves the fund to the accepted proposed wallet
@@ -460,7 +460,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, retrievalAmount[reportId]);
 
-        emit FundsRetrieved(reportId, msg.sender);
+        emit FundsRetrieval(reportId, msg.sender);
     }
 
     /// @notice This function determins if the refund wallet was accepted
@@ -508,7 +508,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         losslessReporting.retrieveCompensation(msg.sender, compensation[msg.sender].amount);
 
-        emit CompensationRetrieved(msg.sender, compensation[msg.sender].amount);
+        emit CompensationRetrieval(msg.sender, compensation[msg.sender].amount);
 
         compensation[msg.sender].amount = 0;
 
@@ -532,7 +532,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         ILERC20(token).transfer(msg.sender, compensationPerMember);
 
-        emit CommitteeMemberClaimed(reportId, msg.sender, compensationPerMember);
+        emit CommitteeMemberClaim(reportId, msg.sender, compensationPerMember);
     }
 
     
@@ -546,7 +546,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         losslessPayed[reportId] = true;
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(losslessController.admin(), amountToClaim);
 
-        emit LosslessClaimed(losslessReporting.reportTokens(reportId), reportId, amountToClaim);
+        emit LosslessClaim(losslessReporting.reportTokens(reportId), reportId, amountToClaim);
     }
 
 }

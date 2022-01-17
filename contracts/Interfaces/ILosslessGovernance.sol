@@ -35,14 +35,16 @@ interface ILssGovernance {
     function setCompensationAmount(uint256 amount) external;
 
     event NewCommitteeMembers(address[] indexed members);
-    event CommitteeMembersRemoved(address[] indexed members);
-    event LosslessTeamVoted(uint256 indexed reportId, bool indexed vote);
-    event TokenOwnersVoted(uint256 indexed reportId, bool indexed vote);
-    event CommitteeMemberVoted(uint256 indexed reportId, address indexed member, bool indexed vote);
-    event ReportResolved(uint256 indexed reportId, bool indexed resolution);
-    event WalletProposed(uint256 indexed reportId, address indexed wallet);
+    event CommitteeMembersRemoval(address[] indexed members);
+    event LosslessTeamVote(uint256 indexed reportId, bool indexed vote);
+    event TokenOwnersVote(uint256 indexed reportId, bool indexed vote);
+    event CommitteeMemberVote(uint256 indexed reportId, address indexed member, bool indexed vote);
+    event ReportResolve(uint256 indexed reportId, bool indexed resolution);
+    event WalletProposal(uint256 indexed reportId, address indexed wallet);
     event WalletRejected(uint256 indexed reportId, address indexed wallet);
-    event FundsRetrieved(uint256 indexed reportId, address indexed wallet);
-    event CompensationRetrieved(address indexed wallet);
-    event LosslessClaimed(address indexed token, uint256 indexed reportID);
+    event FundsRetrieval(uint256 indexed reportId, address indexed wallet);
+    event CompensationRetrieval(address indexed wallet);
+    event LosslessClaim(address indexed token, uint256 indexed reportID);
+    event CommitteeMemberClaim(uint256 indexed reportID, address indexed member, uint256 indexed amount);
+    event CommitteeMajorityReach(uint256 indexed reportId, bool indexed result);
 }

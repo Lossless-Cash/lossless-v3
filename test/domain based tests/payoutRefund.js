@@ -101,7 +101,7 @@ describe(scriptName, () => {
 
       await expect(
         env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation(),
-      ).to.emit(env.lssGovernance, 'CompensationRetrieved').withArgs(
+      ).to.emit(env.lssGovernance, 'CompensationRetrieval').withArgs(
         adr.maliciousActor1.address,
         20,
       );
@@ -215,7 +215,7 @@ describe(scriptName, () => {
 
       await expect(
         env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation(),
-      ).to.emit(env.lssGovernance, 'CompensationRetrieved').withArgs(
+      ).to.emit(env.lssGovernance, 'CompensationRetrieval').withArgs(
         adr.maliciousActor1.address,
         20,
       );
@@ -236,7 +236,7 @@ describe(scriptName, () => {
     it('should let the address retrieve compensation twice', async () => {
       await expect(
         env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensation(),
-      ).to.emit(env.lssGovernance, 'CompensationRetrieved').withArgs(
+      ).to.emit(env.lssGovernance, 'CompensationRetrieval').withArgs(
         adr.maliciousActor1.address,
         20,
       );
