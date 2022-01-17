@@ -58,7 +58,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     /// @notice Avoids execution from other than the Pause Admin
     modifier onlyPauseAdmin() {
-        require(msg.sender == losslessController.pauseAdmin(), "LSS: Must be pauseAdmin");
+        require(losslessController.pauseAdmin() == msg.sender, "LSS: Must be pauseAdmin");
         _;
     }
 
