@@ -106,7 +106,7 @@ describe(scriptName, () => {
         expect(
           await env.lssReporting.connect(adr.reporter1)
             .report(lerc20Token.address, adr.maliciousActor1.address),
-        ).to.emit(env.lssReporting, 'ReportSubmitted').withArgs(
+        ).to.emit(env.lssReporting, 'ReportSubmission').withArgs(
           lerc20Token.address,
           adr.maliciousActor1.address,
           1,

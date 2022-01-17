@@ -44,9 +44,9 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     mapping(uint256 => bool) public secondReports;
 
 
-    event ReportSubmitted(address indexed token, address indexed account, uint256 reportId);
-    event SecondReportsubmitted(address indexed token, address indexed account, uint256 reportId);
-    event ReportingAmountChanged(uint256 indexed newAmount);
+    event ReportSubmission(address indexed token, address indexed account, uint256 reportId);
+    event SecondReportSubmission(address indexed token, address indexed account, uint256 reportId);
+    event NewReportingAmount(uint256 indexed newAmount);
 
     // --- MODIFIERS ---
 
@@ -111,7 +111,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param _reportingAmount Amount to generate a report
     function setReportingAmount(uint256 _reportingAmount) public onlyLosslessAdmin {
         reportingAmount = _reportingAmount;
-        emit ReportingAmountChanged(_reportingAmount);
+        emit NewReportingAmount(_reportingAmount);
     }
 
     /// @notice This function sets the default reporter reward
@@ -200,7 +200,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         
         losslessController.activateEmergency(token);
 
-        emit ReportSubmitted(token, account, reportId);
+        emit ReportSubmission(token, account, reportId);
 
         return reportId;
     }
@@ -231,7 +231,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         losslessController.addToBlacklist(account);
         secondReportedAddress[reportId] = account;
 
-        emit SecondReportsubmitted(token, account, reportId);
+        emit SecondReportSubmission(token, account, reportId);
     }
 
     /// @notice This function is for the reporter to claim their rewards

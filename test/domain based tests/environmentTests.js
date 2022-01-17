@@ -27,7 +27,7 @@ describe(scriptName, () => {
       it('should set reporting amount correctly and emit the event', async () => {
         await expect(
           env.lssReporting.connect(adr.lssAdmin).setReportingAmount(env.reportingAmount),
-        ).to.emit(env.lssReporting, 'ReportingAmountChanged')
+        ).to.emit(env.lssReporting, 'NewReportingAmount')
           .withArgs(
             env.reportingAmount,
           );
