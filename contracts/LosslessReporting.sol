@@ -75,6 +75,12 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         _;
     }
 
+    /// @notice Avoids rewards to exceed a hundrer percent
+    modifier cannotExceedHundred() {
+        _;
+        require(reporterReward + losslessReward + committeeReward + stakersReward <= 100, "LSS: Total exceed 100");
+    }
+
     function initialize(ILssController _losslessController) public initializer {
         losslessController = ILssController(_losslessController);
     }
@@ -117,29 +123,25 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     /// @notice This function sets the default reporter reward
     /// @param reward Percentage rewarded to the reporter when a report gets resolved positively
-    function setReporterReward(uint256 reward) public onlyLosslessAdmin {
-        require(reward + losslessReward + committeeReward + stakersReward <= 100, "LSS: Total exceed 100");
+    function setReporterReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
         reporterReward = reward;
     }
 
     /// @notice This function sets the default Lossless Reward
     /// @param reward Percentage attributed to Lossless when a report gets resolved positively
-    function setLosslessReward(uint256 reward) public onlyLosslessAdmin {
-        require(reporterReward + reward + committeeReward + stakersReward <= 100, "LSS: Total exceed 100");
+    function setLosslessReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
         losslessReward = reward;
     }
 
     /// @notice This function sets the default Stakers Reward
     /// @param reward Percentage attributed to Stakers when a report gets resolved positively
-    function setStakersReward(uint256 reward) public onlyLosslessAdmin {
-        require(reporterReward + losslessReward + committeeReward + reward <= 100, "LSS: Total exceed 100");
+    function setStakersReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
         stakersReward = reward;
     }
 
     /// @notice This function sets the default Committee Reward
     /// @param reward Percentage attributed to committee when a report gets resolved positively
-    function setCommitteeReward(uint256 reward) public onlyLosslessAdmin {
-        require(reporterReward + losslessReward + reward + stakersReward <= 100, "LSS: Total exceed 100");
+    function setCommitteeReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
         committeeReward = reward;
     }
 
