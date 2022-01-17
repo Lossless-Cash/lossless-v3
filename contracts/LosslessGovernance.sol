@@ -94,7 +94,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event CommitteeMemberClaim(uint256 indexed reportID, address indexed member, uint256 indexed amount);
     event CommitteeMajorityReach(uint256 indexed reportId, bool indexed result);
 
-    function initialize(address _losslessReporting, address _losslessController, address _losslessStaking) public initializer {
+    function initialize(ILssReporting _losslessReporting, ILssController _losslessController, ILssStaking _losslessStaking) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
         losslessStaking = ILssStaking(_losslessStaking);
