@@ -110,6 +110,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the amount of tokens to be staked when reporting
     /// @param _reportingAmount Amount to generate a report
     function setReportingAmount(uint256 _reportingAmount) public onlyLosslessAdmin {
+        require(reportingAmount != _reportingAmount, "LSS: Already set to that amount");
         reportingAmount = _reportingAmount;
         emit NewReportingAmount(_reportingAmount);
     }
