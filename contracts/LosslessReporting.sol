@@ -102,8 +102,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the address of the Lossless Governance smart contract
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessGovernance Address corresponding to the Lossless Governance smart contract
-    function setLosslessGovernance(address _losslessGovernance) public onlyLosslessAdmin {
-        require(_losslessGovernance != address(0), "LERC20: Cannot be zero address");
+    function setLosslessGovernance(ILssGovernance _losslessGovernance) public onlyLosslessAdmin {
+        require(address(ILssGovernance(_losslessGovernance)) != address(0), "LERC20: Cannot be zero address");
         losslessGovernance = ILssGovernance(_losslessGovernance);
     }
 
