@@ -176,7 +176,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// Lossless Contracts, Admin addresses and Dexes cannot be reported.
     /// @param token Token address of the stolen funds
     /// @param account Potential malicious address
-    function report(address token, address account) public notBlacklisted whenNotPaused returns (uint256){
+    function report(ILERC20 token, address account) public notBlacklisted whenNotPaused returns (uint256){
         require(account != address(0), "LSS: Cannot report zero address");
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
         require(!losslessController.dexList(account), "LSS: Cannot report Dex");
@@ -194,16 +194,16 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         tokenReports[ILERC20(token)].reports[account] = reportId;
         reportTimestamps[reportId] = block.timestamp;
-        reportTokens[reportId] = token;
+        reportTokens[reportId] = address(ILERC20(token));
 
         stakingToken.transferFrom(msg.sender, address(this), reportingAmount);
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
         
-        losslessController.activateEmergency(token);
+        losslessController.activateEmergency(address(ILERC20(token)));
 
-        emit ReportSubmission(token, account, reportId);
+        emit ReportSubmission(address(ILERC20(token)), account, reportId);
 
         return reportId;
     }
