@@ -40,6 +40,13 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     mapping(uint256 => uint256) public reportCoefficient;
 
+
+    mapping(address => PerReportAmount) stakedOnReport;
+
+    struct PerReportAmount {
+        mapping(uint256 => uint256) report;
+    }
+
     event Staked(address indexed token, address indexed account, uint256 reportId);
     event StakerClaimed(address indexed staker, address indexed token, uint256 indexed reportID);
     event StakingAmountChanged(uint256 indexed newAmount);
@@ -138,6 +145,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakingToken.transferFrom(msg.sender, address(this), stakingAmount);
 
         totalStakedOnReport[reportId] += stakingAmount;
+        stakedOnReport[msg.sender].report[reportId] = stakingAmount;
         
         emit Staked(losslessReporting.reportTokens(reportId), msg.sender, reportId);
     }
@@ -167,7 +175,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         stakes[msg.sender].stakeInfoOnReport[reportId].payed = true;
 
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, stakerClaimableAmount(reportId));
-        stakingToken.transfer( msg.sender, stakingAmount);
+        stakingToken.transfer(msg.sender, stakedOnReport[msg.sender].report[reportId]);
 
         emit StakerClaimed(msg.sender, losslessReporting.reportTokens(reportId), reportId);
     }
