@@ -26,7 +26,7 @@ describe(scriptName, () => {
     describe('when setting up Lossless Reporting Contract', () => {
       it('should set reporting amount correctly and emit the event', async () => {
         await expect(
-          env.lssReporting.connect(adr.lssAdmin).setReportingAmount(env.reportingAmount),
+          env.lssReporting.connect(adr.lssAdmin).setReportingAmount(env.reportingAmount + 1),
         ).to.emit(env.lssReporting, 'NewReportingAmount')
           .withArgs(
             env.reportingAmount,

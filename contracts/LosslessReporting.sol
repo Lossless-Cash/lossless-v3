@@ -118,28 +118,28 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the default reporter reward
     /// @param reward Percentage rewarded to the reporter when a report gets resolved positively
     function setReporterReward(uint256 reward) public onlyLosslessAdmin {
-        require(reward + losslessReward + committeeReward + stakersReward <= 100 && 0 <= reward, "LSS: Total exceed 100");
+        require(reward + losslessReward + committeeReward + stakersReward <= 100, "LSS: Total exceed 100");
         reporterReward = reward;
     }
 
     /// @notice This function sets the default Lossless Reward
     /// @param reward Percentage attributed to Lossless when a report gets resolved positively
     function setLosslessReward(uint256 reward) public onlyLosslessAdmin {
-        require(reporterReward + reward + committeeReward + stakersReward <= 100 && 0 <= reward, "LSS: Total exceed 100");
+        require(reporterReward + reward + committeeReward + stakersReward <= 100, "LSS: Total exceed 100");
         losslessReward = reward;
     }
 
     /// @notice This function sets the default Stakers Reward
     /// @param reward Percentage attributed to Stakers when a report gets resolved positively
     function setStakersReward(uint256 reward) public onlyLosslessAdmin {
-        require(reporterReward + losslessReward + committeeReward + reward <= 100 && 0 <= reward, "LSS: Total exceed 100");
+        require(reporterReward + losslessReward + committeeReward + reward <= 100, "LSS: Total exceed 100");
         stakersReward = reward;
     }
 
     /// @notice This function sets the default Committee Reward
     /// @param reward Percentage attributed to committee when a report gets resolved positively
     function setCommitteeReward(uint256 reward) public onlyLosslessAdmin {
-        require(reporterReward + losslessReward + reward + stakersReward <= 100 && 0 <= reward, "LSS: Total exceed 100");
+        require(reporterReward + losslessReward + reward + stakersReward <= 100, "LSS: Total exceed 100");
         committeeReward = reward;
     }
 
