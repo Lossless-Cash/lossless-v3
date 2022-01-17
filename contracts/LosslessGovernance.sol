@@ -183,6 +183,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function _getCommitteeMajorityReachedResult(uint256 reportId) private view returns(bool isMajorityReached, bool result) {        
         Vote storage reportVote = reportVotes[reportId];
         uint256 committeeLength = reportVote.committeeVotes.length;
+        uint256 committeeQuorum = (committeeMembersCount/2) + 1; 
 
         uint256 agreeCount;
         for(uint256 i = 0; i < committeeLength; i++) {
@@ -191,11 +192,11 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             }
         }
 
-        if (agreeCount >= ((committeeMembersCount/2)+1)) {
+        if (agreeCount >= committeeQuorum) {
             return (true, true);
         }
 
-        if ((committeeLength - agreeCount) >= ((committeeMembersCount/2)+1)) {
+        if ((committeeLength - agreeCount) >= committeeQuorum) {
             return (true, false);
         }
 
