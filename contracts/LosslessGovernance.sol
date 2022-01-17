@@ -88,7 +88,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event ReportResolve(uint256 indexed reportId, bool indexed resolution);
     event WalletProposal(uint256 indexed reportId, address indexed wallet);
     event WalletRejection(uint256 indexed reportId, address indexed wallet);
-    event FundsRetrieval(uint256 indexed reportId, address indexed wallet);
+    event FundsRetrieval(uint256 indexed reportId, address indexed wallet, uint256 indexed amount);
     event CompensationRetrieval(address indexed wallet, uint256 indexed amount);
     event LosslessClaim(address indexed token, uint256 indexed reportID, uint256 indexed amount);
     event CommitteeMemberClaim(uint256 indexed reportID, address indexed member, uint256 indexed amount);
@@ -475,7 +475,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, retrievalAmount[reportId]);
 
-        emit FundsRetrieval(reportId, msg.sender);
+        emit FundsRetrieval(reportId, msg.sender, retrievalAmount[reportId]);
     }
 
     /// @notice This function determins if the refund wallet was accepted
