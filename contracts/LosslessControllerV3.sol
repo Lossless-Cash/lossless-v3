@@ -400,9 +400,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 toLssReporting = totalAmount * reporterReward / 10**2;
         uint256 toLssGovernance = totalAmount - toLssStaking - toLssReporting;
 
-        ILERC20(token).transfer(address(losslessStaking), toLssStaking);
-        ILERC20(token).transfer(address(losslessReporting), toLssReporting);
-        ILERC20(token).transfer(address(losslessGovernance), toLssGovernance);
+        require(ILERC20(token).transfer(address(losslessStaking), toLssStaking), "LSS: Error on Staking retrieval");
+        require(ILERC20(token).transfer(address(losslessReporting), toLssReporting), "LSS: Error on Reportin retrieval");
+        require(ILERC20(token).transfer(address(losslessGovernance), toLssGovernance), "LSS: Error on Gov retrieval");
 
         return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / 10**2);
     }
