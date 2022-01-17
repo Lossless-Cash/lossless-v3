@@ -82,6 +82,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     }
 
     function initialize(ILssController _losslessController) public initializer {
+        reportCount = 0;
         losslessController = ILssController(_losslessController);
     }
     
