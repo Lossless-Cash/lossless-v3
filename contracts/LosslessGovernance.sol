@@ -333,20 +333,20 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         address token = losslessReporting.reportTokens(reportId);
         Vote storage reportVote = reportVotes[reportId];
 
-        uint256 aggreeCount;
-        uint256 voteCount;
+        uint256 agreeCount = 0;
+        uint256 voteCount = 0;
 
         if (getIsVoted(reportId, lssTeamVoteIndex)){voteCount += 1;
-        if (getVote(reportId, lssTeamVoteIndex)){ aggreeCount += 1;}}
+        if (getVote(reportId, lssTeamVoteIndex)){ agreeCount += 1;}}
         if (getIsVoted(reportId, tokenOwnersVoteIndex)){voteCount += 1;
-        if (getVote(reportId, tokenOwnersVoteIndex)){ aggreeCount += 1;}}
+        if (getVote(reportId, tokenOwnersVoteIndex)){ agreeCount += 1;}}
 
         (bool committeeResoluted, bool committeeResolution) = _getCommitteeMajorityReachedResult(reportId);
         if (committeeResoluted) {voteCount += 1;
-        if (committeeResolution) {aggreeCount += 1;}}
+        if (committeeResolution) {agreeCount += 1;}}
 
         require(voteCount >= 2, "LSS: Not enough votes");
-        require(!(voteCount == 2 && aggreeCount == 1), "LSS: Need another vote to untie");
+        require(!(voteCount == 2 && agreeCount == 1), "LSS: Need another vote to untie");
 
         address reportedAddress = losslessReporting.reportedAddress(reportId);
 
@@ -356,7 +356,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             reportedAddresses.push(losslessReporting.secondReportedAddress(reportId));
         }
 
-        if (aggreeCount > (voteCount - aggreeCount)){
+        if (agreeCount > (voteCount - agreeCount)){
             reportVote.resolution = true;
             for(uint256 i; i < reportedAddresses.length; i++) {
                 amountReported[reportId] += ILERC20(token).balanceOf(reportedAddresses[i]);
