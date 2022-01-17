@@ -24,6 +24,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     uint256 public reportCount;
 
+    uint256 public toPercentage;
+
     ILERC20 public stakingToken;
     ILssController public losslessController;
     ILssGovernance public losslessGovernance;
@@ -83,6 +85,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     function initialize(ILssController _losslessController) public initializer {
         reportCount = 0;
+        toPercentage = 10**2;
         losslessController = ILssController(_losslessController);
     }
     
@@ -258,7 +261,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param reportId Staked report    
     function reporterClaimableAmount(uint256 reportId) public view returns (uint256) {
         uint256 reportedAmount = losslessGovernance.amountReported(reportId);
-        return reportedAmount * reporterReward / 10**2;
+        return reportedAmount * reporterReward / toPercentage;
     }
     
     /// @notice This function allows the governance token to retribute an erroneous report

@@ -29,7 +29,7 @@ describe(scriptName, () => {
           env.lssReporting.connect(adr.lssAdmin).setReportingAmount(env.reportingAmount + 1),
         ).to.emit(env.lssReporting, 'NewReportingAmount')
           .withArgs(
-            env.reportingAmount,
+            env.reportingAmount + 1,
           );
       });
 
