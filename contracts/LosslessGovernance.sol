@@ -453,9 +453,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             proposedWallet.tokenOwnersVoted = true;
         } else revert ("LSS: Role cannot reject.");
 
-        _determineProposedWallet(reportId);
-
-        emit WalletRejection(reportId, proposedWallet.wallet);
+        if (!_determineProposedWallet(reportId)) {
+            emit WalletRejection(reportId, proposedWallet.wallet);
+        }
     }
 
     /// @notice This function retrieves the fund to the accepted proposed wallet
