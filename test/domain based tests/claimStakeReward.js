@@ -201,6 +201,7 @@ describe(scriptName, () => {
             adr.staker1.address,
             lerc20Token.address,
             1,
+            env.stakingAmount,
           );
         });
       });

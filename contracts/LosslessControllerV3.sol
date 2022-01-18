@@ -46,10 +46,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     uint256 public dexTranferThreshold;
 
     uint256 public settlementTimeLock;
-    mapping(address => uint256) public tokenLockTimeframe;
-    mapping(address => uint256) public proposedTokenLockTimeframe;
-    mapping(address => uint256) public changeSettlementTimelock;
-    mapping(address => bool) public isNewSettlementProposed;
+    mapping(ILERC20 => uint256) public tokenLockTimeframe;
+    mapping(ILERC20 => uint256) public proposedTokenLockTimeframe;
+    mapping(ILERC20 => uint256) public changeSettlementTimelock;
+    mapping(ILERC20 => bool) public isNewSettlementProposed;
 
     ILERC20 public stakingToken;
     ILssStaking public losslessStaking;
@@ -72,13 +72,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 timestamp;
     }
 
-    mapping(address => TokenLockedFunds) private tokenScopedLockedFunds;
+    mapping(ILERC20 => TokenLockedFunds) private tokenScopedLockedFunds;
   
     mapping(address => bool) public dexList;
     mapping(address => bool) public whitelist;
     mapping(address => bool) public blacklist;
 
-    mapping(address => EmergencyMode) private emergencyMode;
+    mapping(ILERC20 => EmergencyMode) private emergencyMode;
 
     struct EmergencyMode {
         bool emergency;
@@ -273,43 +273,43 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     /// @notice This function starts a new proposal to change the SettlementPeriod
-    /// @param token to propose the settlement change period on
+    /// @param _token to propose the settlement change period on
     /// @param _seconds Time frame that the recieved funds will be locked
-    function proposeNewSettlementPeriod(address token, uint256 _seconds) public {
-        require(ILERC20(token).admin() == msg.sender, "LSS: Must be Token Admin");
-        require(changeSettlementTimelock[token] <= block.timestamp, "LSS: Time lock in progress");
-        changeSettlementTimelock[token] = block.timestamp + settlementTimeLock;
-        isNewSettlementProposed[token] = true;
-        proposedTokenLockTimeframe[token] = _seconds;
-        emit NewSettlementPeriodProposed(token, _seconds);
+    function proposeNewSettlementPeriod(ILERC20 _token, uint256 _seconds) public {
+        require(_token.admin() == msg.sender, "LSS: Must be Token Admin");
+        require(changeSettlementTimelock[_token] <= block.timestamp, "LSS: Time lock in progress");
+        changeSettlementTimelock[_token] = block.timestamp + settlementTimeLock;
+        isNewSettlementProposed[_token] = true;
+        proposedTokenLockTimeframe[_token] = _seconds;
+        emit NewSettlementPeriodProposed(address(_token), _seconds);
     }
 
     /// @notice This function executes the new settlement period after the timelock
-    /// @param token to set time settlement period on
-    function executeNewSettlementPeriod(address token) public {
-        require(ILERC20(token).admin() == msg.sender, "LSS: Must be Token Admin");
-        require(isNewSettlementProposed[token] == true, "LSS: New Settlement not proposed");
-        require(changeSettlementTimelock[token] <= block.timestamp, "LSS: Time lock in progress");
-        tokenLockTimeframe[token] = proposedTokenLockTimeframe[token];
-        isNewSettlementProposed[token] = false;
-        proposedTokenLockTimeframe[token] = 0; 
-        emit SettlementPeriodChanged(token, proposedTokenLockTimeframe[token]);
+    /// @param _token to set time settlement period on
+    function executeNewSettlementPeriod(ILERC20 _token) public {
+        require(_token.admin() == msg.sender, "LSS: Must be Token Admin");
+        require(isNewSettlementProposed[_token] == true, "LSS: New Settlement not proposed");
+        require(changeSettlementTimelock[_token] <= block.timestamp, "LSS: Time lock in progress");
+        tokenLockTimeframe[_token] = proposedTokenLockTimeframe[_token];
+        isNewSettlementProposed[_token] = false;
+        proposedTokenLockTimeframe[_token] = 0; 
+        emit SettlementPeriodChanged(address(_token), proposedTokenLockTimeframe[_token]);
     }
 
     /// @notice This function activates the emergency mode
     /// @dev When a report gets generated for a token, it enters an emergency state globally.
     /// The emergency period will be active for one settlement period.
     /// During this time users can only transfer settled tokens
-    /// @param token Token on which the emergency mode must get activated
-    function activateEmergency(address token) external onlyLosslessEnv {
-        emergencyMode[token].emergency = true;
-        emergencyMode[token].emergencyTimestamp = block.timestamp;
+    /// @param _token Token on which the emergency mode must get activated
+    function activateEmergency(ILERC20 _token) external onlyLosslessEnv {
+        emergencyMode[_token].emergency = true;
+        emergencyMode[_token].emergencyTimestamp = block.timestamp;
     }
 
     /// @notice This function deactivates the emergency mode
-    /// @param token Token on which the emergency mode will be deactivated
-    function deactivateEmergency(address token) external onlyLosslessEnv {
-        emergencyMode[token].emergencyTimestamp = 0;
+    /// @param _token Token on which the emergency mode will be deactivated
+    function deactivateEmergency(ILERC20 _token) external onlyLosslessEnv {
+        emergencyMode[_token].emergencyTimestamp = 0;
     }
 
    // --- GUARD ---
@@ -341,13 +341,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     /// @notice This function will return the non-settled tokens amount
-    /// @param token Address corresponding to the token being held
+    /// @param _token Address corresponding to the token being held
     /// @param account Address to get the available amount
     /// @return Returns the amount of locked funds
-    function getLockedAmount(address token, address account) public view returns (uint256) {
+    function getLockedAmount(ILERC20 _token, address account) public view returns (uint256) {
         uint256 lockedAmount;
         
-        LocksQueue storage queue = tokenScopedLockedFunds[token].queue[account];
+        LocksQueue storage queue = tokenScopedLockedFunds[_token].queue[account];
 
         uint i = queue.first;
         while (i <= queue.last) {
@@ -361,11 +361,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     /// @notice This function will calculate the available amount that an address has to transfer. 
-    /// @param token Address corresponding to the token being held
+    /// @param _token Address corresponding to the token being held
     /// @param account Address to get the available amount
-    function getAvailableAmount(address token, address account) public view returns (uint256 amount) {
-        uint256 total = ILERC20(token).balanceOf(account);
-        uint256 locked = getLockedAmount(token, account);
+    function getAvailableAmount(ILERC20 _token, address account) public view returns (uint256 amount) {
+        uint256 total = _token.balanceOf(account);
+        uint256 locked = getLockedAmount(_token, account);
         return total - locked;
     }
 
@@ -376,7 +376,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param recipient Address to add the locks
     function _enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
+        queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[recipient];
         if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
             queue.lockedFunds[queue.last].amount += checkpoint.amount;
         } else {
@@ -389,11 +389,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function retrieves the funds of the reported account
     /// @param _addresses Array of addreses to retrieve the locked funds
-    function retrieveBlacklistedFunds(address[] calldata _addresses, address token, uint256 reportId) public onlyLosslessEnv returns(uint256){
-
+    /// @param _token Token to retrieve the funds from
+    /// @param reportId Report Id related to the incident
+    function retrieveBlacklistedFunds(address[] calldata _addresses, ILERC20 _token, uint256 reportId) public onlyLosslessEnv returns(uint256){
         uint256 totalAmount = losslessGovernance.amountReported(reportId);
         
-        ILERC20(token).transferOutBlacklistedFunds(_addresses);
+        _token.transferOutBlacklistedFunds(_addresses);
                 
         (uint256 reporterReward, uint256 losslessReward, uint256 committeeReward, uint256 stakersReward) = losslessReporting.getRewards();
 
@@ -401,9 +402,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 toLssReporting = totalAmount * reporterReward / 10**2;
         uint256 toLssGovernance = totalAmount - toLssStaking - toLssReporting;
 
-        require(ILERC20(token).transfer(address(losslessStaking), toLssStaking), "LSS: Error on Staking retrieval");
-        require(ILERC20(token).transfer(address(losslessReporting), toLssReporting), "LSS: Error on Reportin retrieval");
-        require(ILERC20(token).transfer(address(losslessGovernance), toLssGovernance), "LSS: Error on Gov retrieval");
+        require(_token.transfer(address(losslessStaking), toLssStaking), "LSS: Error on Staking retrieval");
+        require(_token.transfer(address(losslessReporting), toLssReporting), "LSS: Error on Reportin retrieval");
+        require(_token.transfer(address(losslessGovernance), toLssGovernance), "LSS: Error on Gov retrieval");
 
         return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / 10**2);
     }
@@ -416,9 +417,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param amount Amount to lift
     function _removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
         LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[msg.sender].queue[account];
+        queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[account];
 
-        require(queue.touchedTimestamp + tokenLockTimeframe[msg.sender] <= block.timestamp, "LSS: Transfers limit reached");
+        require(queue.touchedTimestamp + tokenLockTimeframe[ILERC20(msg.sender)] <= block.timestamp, "LSS: Transfers limit reached");
 
         uint256 amountLeft =  amount - availableAmount;
         uint256 i = queue.first;
@@ -442,7 +443,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param recipient Address to lift the locks
     function _removeExpiredLocks (address recipient) private {
         LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[msg.sender].queue[recipient];
+        queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[recipient];
 
         uint i = queue.first;
         ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
@@ -462,9 +463,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param recipient Address recieving the funds
     /// @param amount Amount to be transfered
     function _evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
-        uint256 settledAmount = getAvailableAmount(msg.sender, sender);
+        uint256 settledAmount = getAvailableAmount(ILERC20(msg.sender), sender);
         if (amount > settledAmount) {
-            require(emergencyMode[msg.sender].emergencyTimestamp + tokenLockTimeframe[msg.sender] < block.timestamp,
+            require(emergencyMode[ILERC20(msg.sender)].emergencyTimestamp + tokenLockTimeframe[ILERC20(msg.sender)] < block.timestamp,
                     "LSS: Emergency mode active, cannot transfer unsettled tokens");
             if (dexList[recipient]) {
                 require(amount - settledAmount <= dexTranferThreshold,
@@ -474,7 +475,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             }
         }
 
-        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[msg.sender]);
+        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[ILERC20(msg.sender)]);
         _enqueueLockedFunds(newCheckpoint, recipient);
         _removeExpiredLocks(recipient);
         return true;
@@ -489,7 +490,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         require(!blacklist[sender], "LSS: You cannot operate");
         
-        if (tokenLockTimeframe[msg.sender] != 0) {
+        if (tokenLockTimeframe[ILERC20(msg.sender)] != 0) {
             _evaluateTransfer(sender, recipient, amount);
         }
     }
@@ -504,7 +505,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[msgSender], "LSS: You cannot operate");
         require(!blacklist[sender], "LSS: Sender is blacklisted");
 
-        if (tokenLockTimeframe[msg.sender] != 0) {
+        if (tokenLockTimeframe[ILERC20(msg.sender)] != 0) {
             _evaluateTransfer(sender, recipient, amount);
         }
 
