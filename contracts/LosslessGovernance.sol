@@ -26,7 +26,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     uint256 public walletDisputePeriod;
 
-    uint256 public erroneousCompensation;
+    uint256 public compensationPercentage;
 
     ILssReporting public losslessReporting;
     ILssController public losslessController;
@@ -174,7 +174,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param amount Percentage to return
     function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
         require(0 <= amount && amount <= 100, "LSS: Invalid amount");
-        erroneousCompensation = amount;
+        compensationPercentage = amount;
     }
     
     /// @notice This function returns if the majority of the commitee voted and the resolution of the votes
@@ -389,7 +389,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param addresses Array of addresses to be compensated
     function _compensateAddresses(address[] memory addresses) private {
         uint256 reportingAmount = losslessReporting.reportingAmount();
-        uint256 compensationAmount = (reportingAmount * erroneousCompensation) / 10**2;
+        uint256 compensationAmount = (reportingAmount * compensationPercentage) / 10**2;
 
         
         for(uint256 i; i < addresses.length; i++) {
