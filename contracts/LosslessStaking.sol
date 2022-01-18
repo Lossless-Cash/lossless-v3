@@ -50,6 +50,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     event NewStake(address indexed token, address indexed account, uint256 reportId);
     event StakerClaim(address indexed staker, address indexed token, uint256 indexed reportID, uint256 amount);
     event NewStakingAmount(uint256 indexed newAmount);
+    event NewStakingToken(address indexed newToken);
+    event NewReportingContract(address indexed newContract);
+    event NewGovernanceContract(address indexed newContract);
 
     function initialize(ILssReporting _losslessReporting, ILssController _losslessController) public initializer {
        losslessReporting = ILssReporting(_losslessReporting);
@@ -60,7 +63,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     // --- MODIFIERS ---
 
     modifier onlyLosslessAdmin() {
-        require(losslessController.admin() == msg.sender, "LSS: Must be admin");
+        require(msg.sender == losslessController.admin(), "LSS: Must be admin");
         _;
     }
 
@@ -89,9 +92,10 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
-    function setLssReporting(address _losslessReporting) public onlyLosslessAdmin {
-        require(_losslessReporting != address(0), "LERC20: Cannot be zero address");
+    function setLssReporting(ILssReporting _losslessReporting) public onlyLosslessAdmin {
+        require(address(ILssReporting(_losslessReporting)) != address(0), "LERC20: Cannot be zero address");
         losslessReporting = ILssReporting(_losslessReporting);
+        emit NewReportingContract(address(ILssReporting(_losslessReporting)));
     }
 
     /// @notice This function sets the address of the Lossless Governance Token
@@ -100,6 +104,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
         require(_stakingToken != address(0), "LERC20: Cannot be zero address");
         stakingToken = ILERC20(_stakingToken);
+        emit NewStakingToken(_stakingToken);
     }
 
     /// @notice This function sets the address of the Lossless Governance contract
@@ -108,6 +113,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function setLosslessGovernance(address _losslessGovernance) public onlyLosslessAdmin {
         require(_losslessGovernance != address(0), "LERC20: Cannot be zero address");
         losslessGovernance = ILssGovernance(_losslessGovernance);
+        emit NewGovernanceContract(address(ILssReporting(_losslessGovernance)));
     }
 
     /// @notice This function sets the amount of tokens to be staked when staking
