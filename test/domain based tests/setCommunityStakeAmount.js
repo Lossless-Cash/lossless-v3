@@ -42,7 +42,7 @@ describe(scriptName, () => {
     it('should emit StakingAmountChanged event', async () => {
       await expect(
         env.lssStaking.connect(adr.lssAdmin).setStakingAmount(3),
-      ).to.emit(env.lssStaking, 'StakingAmountChanged').withArgs(3);
+      ).to.emit(env.lssStaking, 'NewStakingAmount').withArgs(3);
     });
   });
 });

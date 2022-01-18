@@ -74,7 +74,7 @@ describe(scriptName, () => {
 
           await expect(
             env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
-          ).to.be.revertedWith('LSS: Report already resolved');
+          ).to.be.revertedWith('LSS: Report already solved');
         });
       });
 
@@ -447,7 +447,7 @@ describe(scriptName, () => {
 
           await expect(
             env.lssGovernance.connect(adr.lssAdmin).resolveReport(2),
-          ).to.be.revertedWith('LSS: Report already resolved');
+          ).to.be.revertedWith('LSS: Report already solved');
         });
       });
 

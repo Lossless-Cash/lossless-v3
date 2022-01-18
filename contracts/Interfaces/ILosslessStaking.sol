@@ -25,5 +25,7 @@ interface ILssStaking {
   function stakerClaim(uint256 reportId) external;
   function losslessClaim(uint256 reportId) external;
 
-  event Staked(address indexed token, address indexed account, uint256 reportId);
+  event Stake(address indexed token, address indexed account, uint256 reportId);
+  event StakerClaim(address indexed staker, address indexed token, uint256 indexed reportID);
+  event NewStakingAmount(uint256 indexed newAmount);
 }

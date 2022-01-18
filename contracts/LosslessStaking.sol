@@ -47,9 +47,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         mapping(uint256 => uint256) report;
     }
 
-    event Staked(address indexed token, address indexed account, uint256 reportId);
-    event StakerClaimed(address indexed staker, address indexed token, uint256 indexed reportID);
-    event StakingAmountChanged(uint256 indexed newAmount);
+    event NewStake(address indexed token, address indexed account, uint256 reportId);
+    event StakerClaim(address indexed staker, address indexed token, uint256 indexed reportID);
+    event NewStakingAmount(uint256 indexed newAmount);
 
     function initialize(address _losslessReporting, address _losslessController) public initializer {
        losslessReporting = ILssReporting(_losslessReporting);
@@ -115,7 +115,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param _stakingAmount Amount to be staked
     function setStakingAmount(uint256 _stakingAmount) public onlyLosslessAdmin {
         stakingAmount = _stakingAmount;
-        emit StakingAmountChanged(_stakingAmount);
+        emit NewStakingAmount(_stakingAmount);
     }
 
     // STAKING
@@ -148,7 +148,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         totalStakedOnReport[reportId] += stakingAmount;
         stakedOnReport[msg.sender].report[reportId] = stakingAmount;
         
-        emit Staked(losslessReporting.reportTokens(reportId), msg.sender, reportId);
+        emit NewStake(losslessReporting.reportTokens(reportId), msg.sender, reportId);
     }
 
     // --- CLAIM ---
@@ -178,7 +178,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, stakerClaimableAmount(reportId));
         stakingToken.transfer(msg.sender, stakedOnReport[msg.sender].report[reportId]);
 
-        emit StakerClaimed(msg.sender, losslessReporting.reportTokens(reportId), reportId);
+        emit StakerClaim(msg.sender, losslessReporting.reportTokens(reportId), reportId);
     }
 
     // --- GETTERS ---
