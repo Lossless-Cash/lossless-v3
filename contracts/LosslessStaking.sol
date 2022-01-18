@@ -133,7 +133,10 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Report to stake
     function stake(uint256 reportId) public notBlacklisted whenNotPaused {
         require(!losslessGovernance.isReportSolved(reportId), "LSS: Report already resolved");
-        require(!stakes[msg.sender].stakeInfoOnReport[reportId].staked, "LSS: already staked");
+
+        StakeInfo storage stakeInfo = stakes[msg.sender].stakeInfoOnReport[reportId];
+
+        require(!stakeInfo.staked, "LSS: already staked");
         require(losslessReporting.reporter(reportId) != msg.sender, "LSS: reporter can not stake");   
 
         uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
@@ -143,9 +146,9 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 stakerCoefficient = reportTimestamp + losslessReporting.reportLifetime() - block.timestamp;
 
         stakers[reportId].push(msg.sender);
-        stakes[msg.sender].stakeInfoOnReport[reportId].timestamp = block.timestamp;
-        stakes[msg.sender].stakeInfoOnReport[reportId].coefficient = stakerCoefficient;
-        stakes[msg.sender].stakeInfoOnReport[reportId].staked = true;
+        stakeInfo.timestamp = block.timestamp;
+        stakeInfo.coefficient = stakerCoefficient;
+        stakeInfo.staked = true;
 
         reportCoefficient[reportId] += stakerCoefficient;
         
@@ -176,10 +179,12 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function is for the stakers to claim their rewards
     /// @param reportId Staked report
     function stakerClaim(uint256 reportId) public whenNotPaused {
-        require(!stakes[msg.sender].stakeInfoOnReport[reportId].payed, "LSS: You already claimed");
+        StakeInfo storage stakeInfo = stakes[msg.sender].stakeInfoOnReport[reportId];
+
+        require(!stakeInfo.payed, "LSS: You already claimed");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively");
 
-        stakes[msg.sender].stakeInfoOnReport[reportId].payed = true;
+        stakeInfo.payed = true;
 
         uint256 amountToClaim = stakerClaimableAmount(reportId);
 
