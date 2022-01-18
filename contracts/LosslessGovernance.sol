@@ -434,8 +434,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @dev Only can be run by the three pilars.
     /// @param reportId Report to propose the wallet
     function rejectWallet(uint256 reportId) public whenNotPaused {
+        ProposedWallet storage proposedWallet = proposedWalletOnReport[reportId];
 
-        require(block.timestamp <= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period closed");
+        require(block.timestamp <= (proposedWallet.timestamp + walletDisputePeriod), "LSS: Dispute period closed");
         require(losslessReporting.reportTimestamps(reportId) != 0, "LSS: Report does not exist");
 
         bool isMember = hasRole(COMMITTEE_ROLE, msg.sender);
@@ -445,34 +446,36 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot reject");
 
         if (isMember) {
-            require(!proposedWalletOnReport[reportId].memberVotesOnProposal[proposedWalletOnReport[reportId].proposal].memberVoted[msg.sender], "LSS: Already Voted");
-            proposedWalletOnReport[reportId].committeeDisagree += 1;
-            proposedWalletOnReport[reportId].memberVotesOnProposal[proposedWalletOnReport[reportId].proposal].memberVoted[msg.sender] = true;
+            require(!proposedWallet.memberVotesOnProposal[proposedWallet.proposal].memberVoted[msg.sender], "LSS: Already Voted");
+            proposedWallet.committeeDisagree += 1;
+            proposedWallet.memberVotesOnProposal[proposedWallet.proposal].memberVoted[msg.sender] = true;
         } else if (isLosslessTeam) {
-            require(!proposedWalletOnReport[reportId].losslessVoted, "LSS: Already Voted");
-            proposedWalletOnReport[reportId].losslessVote = false;
-            proposedWalletOnReport[reportId].losslessVoted = true;
+            require(!proposedWallet.losslessVoted, "LSS: Already Voted");
+            proposedWallet.losslessVote = false;
+            proposedWallet.losslessVoted = true;
         } else {
-            require(!proposedWalletOnReport[reportId].tokenOwnersVoted, "LSS: Already Voted");
-            proposedWalletOnReport[reportId].tokenOwnersVote = false;
-            proposedWalletOnReport[reportId].tokenOwnersVoted = true;
+            require(!proposedWallet.tokenOwnersVoted, "LSS: Already Voted");
+            proposedWallet.tokenOwnersVote = false;
+            proposedWallet.tokenOwnersVoted = true;
         }
 
         _determineProposedWallet(reportId);
 
-        emit WalletRejection(reportId, proposedWalletOnReport[reportId].wallet);
+        emit WalletRejection(reportId, proposedWallet.wallet);
     }
 
     /// @notice This function retrieves the fund to the accepted proposed wallet
     /// @param reportId Report to propose the wallet
     function retrieveFunds(uint256 reportId) public whenNotPaused {
-        require(block.timestamp >= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
-        require(losslessReporting.reportTimestamps(reportId) != 0, "LSS: Report does not exist");
-        require(!proposedWalletOnReport[reportId].status, "LSS: Funds already claimed");
-        require(proposedWalletOnReport[reportId].walletAccepted, "LSS: Wallet rejected");
-        require(proposedWalletOnReport[reportId].wallet == msg.sender, "LSS: Only proposed adr can claim");
+        ProposedWallet storage proposedWallet = proposedWalletOnReport[reportId];
 
-        proposedWalletOnReport[reportId].status = true;
+        require(block.timestamp >= (proposedWallet.timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
+        require(losslessReporting.reportTimestamps(reportId) != 0, "LSS: Report does not exist");
+        require(!proposedWallet.status, "LSS: Funds already claimed");
+        require(proposedWallet.walletAccepted, "LSS: Wallet rejected");
+        require(proposedWallet.wallet == msg.sender, "LSS: Only proposed adr can claim");
+
+        proposedWallet.status = true;
 
         ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, retrievalAmount[reportId]);
 
@@ -483,17 +486,18 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report to propose the wallet
     function _determineProposedWallet(uint256 reportId) private returns(bool){
         
+        ProposedWallet storage proposedWallet = proposedWalletOnReport[reportId];
         uint256 agreementCount;
         
-        if (proposedWalletOnReport[reportId].committeeDisagree < (committeeMembersCount/2)+1 ){
+        if (proposedWallet.committeeDisagree < (committeeMembersCount/2)+1 ){
             agreementCount += 1;
         }
 
-        if (proposedWalletOnReport[reportId].losslessVote) {
+        if (proposedWallet.losslessVote) {
             agreementCount += 1;
         }
 
-        if (proposedWalletOnReport[reportId].tokenOwnersVote) {
+        if (proposedWallet.tokenOwnersVote) {
             agreementCount += 1;
         }
         
@@ -501,16 +505,16 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             return true;
         }
 
-        proposedWalletOnReport[reportId].wallet = address(0);
-        proposedWalletOnReport[reportId].timestamp = block.timestamp;
-        proposedWalletOnReport[reportId].status = false;
-        proposedWalletOnReport[reportId].losslessVote = true;
-        proposedWalletOnReport[reportId].losslessVoted = false;
-        proposedWalletOnReport[reportId].tokenOwnersVote = true;
-        proposedWalletOnReport[reportId].tokenOwnersVoted = false;
-        proposedWalletOnReport[reportId].walletAccepted = false;
-        proposedWalletOnReport[reportId].committeeDisagree = 0;
-        proposedWalletOnReport[reportId].proposal += 1;
+        proposedWallet.wallet = address(0);
+        proposedWallet.timestamp = block.timestamp;
+        proposedWallet.status = false;
+        proposedWallet.losslessVote = true;
+        proposedWallet.losslessVoted = false;
+        proposedWallet.tokenOwnersVote = true;
+        proposedWallet.tokenOwnersVoted = false;
+        proposedWallet.walletAccepted = false;
+        proposedWallet.committeeDisagree = 0;
+        proposedWallet.proposal += 1;
 
         return false;
     }
