@@ -54,6 +54,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function initialize(address _losslessReporting, address _losslessController) public initializer {
        losslessReporting = ILssReporting(_losslessReporting);
        losslessController = ILssController(_losslessController);
+       stakingAmount = 0;
     }
 
     // --- MODIFIERS ---
