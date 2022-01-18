@@ -76,7 +76,7 @@ describe(scriptName, () => {
         .proposeWallet(1, adr.regularUser5.address);
 
       await ethers.provider.send('evm_increaseTime', [
-        Number(time.duration.days(8)),
+        Number(time.duration.days(25)),
       ]);
 
       await expect(
@@ -131,6 +131,17 @@ describe(scriptName, () => {
       await expect(
         env.lssGovernance.connect(adr.regularUser5).retrieveFunds(1),
       ).to.be.revertedWith('LSS: Dispute period not closed');
+    });
+  });
+
+  describe('when the report does not exist', () => {
+    it('should revert', async () => {
+      await env.lssGovernance.connect(adr.lssAdmin)
+        .proposeWallet(1, adr.regularUser5.address);
+
+      await expect(
+        env.lssGovernance.connect(adr.regularUser5).retrieveFunds(11),
+      ).to.be.revertedWith('LSS: Report does not exist');
     });
   });
 });

@@ -416,6 +416,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(msg.sender == losslessController.admin() || 
                 msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin(),
                 "LSS: Role cannot propose");
+        require(losslessReporting.reportTimestamps(reportId) != 0, "LSS: Report does not exist");
         require(reportResolution(reportId), "LSS: Report solved negatively");
         require(wallet != address(0), "LSS: Wallet cannot ber zero adr");
         require(proposedWalletOnReport[reportId].wallet == address(0), "LSS: Wallet already proposed");
@@ -435,6 +436,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function rejectWallet(uint256 reportId) public whenNotPaused {
 
         require(block.timestamp <= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period closed");
+        require(losslessReporting.reportTimestamps(reportId) != 0, "LSS: Report does not exist");
 
         bool isMember = hasRole(COMMITTEE_ROLE, msg.sender);
         bool isLosslessTeam = msg.sender == losslessController.admin();
@@ -465,6 +467,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report to propose the wallet
     function retrieveFunds(uint256 reportId) public whenNotPaused {
         require(block.timestamp >= (proposedWalletOnReport[reportId].timestamp + walletDisputePeriod), "LSS: Dispute period not closed");
+        require(losslessReporting.reportTimestamps(reportId) != 0, "LSS: Report does not exist");
         require(!proposedWalletOnReport[reportId].status, "LSS: Funds already claimed");
         require(proposedWalletOnReport[reportId].walletAccepted, "LSS: Wallet rejected");
         require(proposedWalletOnReport[reportId].wallet == msg.sender, "LSS: Only proposed adr can claim");
