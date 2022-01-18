@@ -193,15 +193,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V3 SETTERS ---
 
-   
-    /// @notice This function sets the address of the Lossless Governance Token
-    /// @dev Only can be called by the Lossless Admin
-    /// @param _stakingToken Address corresponding to the Lossless Governance Token
-/*     function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
-        require(_stakingToken != address(0), "LERC20: Cannot be zero address");
-        stakingToken = ILERC20(_stakingToken);
-    }
- */
     /// @notice This function sets the timelock for tokens to change the settlement period
     /// @dev Only can be called by the Lossless Admin
     /// @param newTimelock Timelock in seconds
