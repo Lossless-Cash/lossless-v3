@@ -282,7 +282,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         tokenLockTimeframe[_token] = proposedTokenLockTimeframe[_token];
         isNewSettlementProposed[_token] = false;
         proposedTokenLockTimeframe[_token] = 0; 
-        emit SettlementPeriodChanged(address(_token), proposedTokenLockTimeframe[_token]);
+        emit SettlementPeriodChanged(address(_token), tokenLockTimeframe[_token]);
     }
 
     /// @notice This function activates the emergency mode
