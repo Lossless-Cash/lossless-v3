@@ -333,12 +333,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param account Address to get the available amount
     /// @return Returns the amount of locked funds
     function getLockedAmount(ILERC20 _token, address account) public view returns (uint256) {
-        uint256 lockedAmount;
+        uint256 lockedAmount = 0;
         
         LocksQueue storage queue = tokenScopedLockedFunds[_token].queue[account];
 
         uint i = queue.first;
-        while (i <= queue.last) {
+        uint256 lastItem = queue.last;
+
+        while (i <= lastItem) {
             ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
             if (checkpoint.timestamp > block.timestamp) {
                 lockedAmount = lockedAmount + checkpoint.amount;
@@ -411,8 +413,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         uint256 amountLeft =  amount - availableAmount;
         uint256 i = queue.first;
+        uint256 lastItem = queue.last;
         
-        while (amountLeft > 0 && i <= queue.last) {
+        while (amountLeft > 0 && i <= lastItem) {
             ReceiveCheckpoint storage checkpoint = queue.lockedFunds[i];
             if (checkpoint.amount > amountLeft) {
                 checkpoint.amount -= amountLeft;
@@ -434,9 +437,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[recipient];
 
         uint i = queue.first;
+        uint256 lastItem = queue.last;
         ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
 
-        while (checkpoint.timestamp <= block.timestamp && i <= queue.last) {
+        while (checkpoint.timestamp <= block.timestamp && i <= lastItem) {
             delete queue.lockedFunds[i];
             i += 1;
             checkpoint = queue.lockedFunds[i];
