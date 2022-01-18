@@ -314,10 +314,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
     function setProtectedAddress(address token, address protectedAddress, ProtectionStrategy strategy) external onlyGuardian whenNotPaused {
-        Protection storage protection = tokenProtections[token].protections[protectedAddresss];
+        Protection storage protection = tokenProtections[token].protections[protectedAddress];
         protection.isProtected = true;
         protection.strategy = strategy;
-        emit ProtectedAddressSet(token, protectedAddresss, address(strategy));
+        emit ProtectedAddressSet(token, protectedAddress, address(strategy));
     }
 
     // @notice Remove the protection from the address.
