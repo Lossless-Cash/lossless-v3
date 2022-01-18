@@ -439,25 +439,19 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(block.timestamp <= (proposedWallet.timestamp + walletDisputePeriod), "LSS: Dispute period closed");
         require(losslessReporting.reportTimestamps(reportId) != 0, "LSS: Report does not exist");
 
-        bool isMember = hasRole(COMMITTEE_ROLE, msg.sender);
-        bool isLosslessTeam = msg.sender == losslessController.admin();
-        bool isTokenOwner = msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin();
-
-        require(isMember || isLosslessTeam || isTokenOwner, "LSS: Role cannot reject");
-
-        if (isMember) {
+        if (hasRole(COMMITTEE_ROLE, msg.sender)) {
             require(!proposedWallet.memberVotesOnProposal[proposedWallet.proposal].memberVoted[msg.sender], "LSS: Already Voted");
             proposedWallet.committeeDisagree += 1;
             proposedWallet.memberVotesOnProposal[proposedWallet.proposal].memberVoted[msg.sender] = true;
-        } else if (isLosslessTeam) {
+        } else if (msg.sender == losslessController.admin()) {
             require(!proposedWallet.losslessVoted, "LSS: Already Voted");
             proposedWallet.losslessVote = false;
             proposedWallet.losslessVoted = true;
-        } else {
+        } else if (msg.sender == ILERC20(losslessReporting.reportTokens(reportId)).admin()) {
             require(!proposedWallet.tokenOwnersVoted, "LSS: Already Voted");
             proposedWallet.tokenOwnersVote = false;
             proposedWallet.tokenOwnersVoted = true;
-        }
+        } else revert ("LSS: Role cannot reject.");
 
         _determineProposedWallet(reportId);
 
