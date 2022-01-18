@@ -48,7 +48,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     }
 
     event NewStake(address indexed token, address indexed account, uint256 reportId);
-    event StakerClaim(address indexed staker, address indexed token, uint256 indexed reportID);
+    event StakerClaim(address indexed staker, address indexed token, uint256 indexed reportID, uint256 amount);
     event NewStakingAmount(uint256 indexed newAmount);
 
     function initialize(address _losslessReporting, address _losslessController) public initializer {
@@ -175,10 +175,12 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         stakes[msg.sender].stakeInfoOnReport[reportId].payed = true;
 
-        ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, stakerClaimableAmount(reportId));
+        uint256 amountToClaim = stakerClaimableAmount(reportId);
+
+        ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, amountToClaim);
         stakingToken.transfer(msg.sender, stakedOnReport[msg.sender].report[reportId]);
 
-        emit StakerClaim(msg.sender, losslessReporting.reportTokens(reportId), reportId);
+        emit StakerClaim(msg.sender, losslessReporting.reportTokens(reportId), reportId, amountToClaim);
     }
 
     // --- GETTERS ---
