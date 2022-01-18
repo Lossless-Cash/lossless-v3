@@ -13,10 +13,10 @@ interface ILssGovernance {
     function committeeMembersCount() external view returns(address);
     function walletDisputePeriod() external view returns(address);
     function setStakingToken() external view returns (address);
-    function stakingToken() external view returns (address);
-    function losslessStaking() external view returns (address);
-    function losslessReporting() external view returns (address);
-    function losslessController() external view returns (address);
+    function stakingToken() external view returns (ILERC20);
+    function losslessStaking() external view returns (ILssStaking);
+    function losslessReporting() external view returns (ILssReporting);
+    function losslessController() external view returns (ILssController);
     function isCommitteeMember(address account) external view returns(bool);
     function getIsVoted(uint256 reportId, uint256 voterIndex) external view returns(bool);
     function getVote(uint256 reportId, uint256 voterIndex) external view returns(bool);
