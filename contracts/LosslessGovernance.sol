@@ -312,7 +312,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report to be resolved
     function resolveReport(uint256 reportId) public whenNotPaused {
 
-        require(!isReportSolved(reportId), "LSS: Report already resolved");
+        require(!isReportSolved(reportId), "LSS: Report already solved");
         
         if (losslessReporting.reportTimestamps(reportId) + losslessReporting.reportLifetime() > block.timestamp) {
             _resolveActive(reportId);
