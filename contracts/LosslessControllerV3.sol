@@ -44,7 +44,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V3 VARIABLES ---
 
     uint256 public dexTranferThreshold;
-    uint256 private constant toPercentage = 1e4;
+    uint256 private constant toPercentage = 1e2;
 
     uint256 public settlementTimeLock;
     mapping(ILERC20 => uint256) public tokenLockTimeframe;

@@ -106,7 +106,7 @@ describe(scriptName, () => {
         20,
       );
 
-      const compensationPercentage = await env.lssGovernance.erroneousCompensation();
+      const compensationPercentage = await env.lssGovernance.compensationPercentage();
 
       expect(
         await env.lssToken.balanceOf(adr.maliciousActor1.address),
