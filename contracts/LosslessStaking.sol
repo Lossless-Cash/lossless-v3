@@ -51,7 +51,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     event StakerClaim(address indexed staker, address indexed token, uint256 indexed reportID, uint256 amount);
     event NewStakingAmount(uint256 indexed newAmount);
 
-    function initialize(address _losslessReporting, address _losslessController) public initializer {
+    function initialize(ILssReporting _losslessReporting, ILssController _losslessController) public initializer {
        losslessReporting = ILssReporting(_losslessReporting);
        losslessController = ILssController(_losslessController);
        stakingAmount = 0;
