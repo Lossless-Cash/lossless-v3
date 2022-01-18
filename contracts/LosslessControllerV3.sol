@@ -78,12 +78,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(address => bool) public whitelist;
     mapping(address => bool) public blacklist;
 
-    mapping(ILERC20 => EmergencyMode) private emergencyMode;
-
-    struct EmergencyMode {
-        bool emergency;
-        uint256 emergencyTimestamp;
-    }
+    mapping(ILERC20 => uint256) private emergencyMode;
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
@@ -302,14 +297,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// During this time users can only transfer settled tokens
     /// @param _token Token on which the emergency mode must get activated
     function activateEmergency(ILERC20 _token) external onlyLosslessEnv {
-        emergencyMode[_token].emergency = true;
-        emergencyMode[_token].emergencyTimestamp = block.timestamp;
+        emergencyMode[_token] = block.timestamp;
     }
 
     /// @notice This function deactivates the emergency mode
     /// @param _token Token on which the emergency mode will be deactivated
     function deactivateEmergency(ILERC20 _token) external onlyLosslessEnv {
-        emergencyMode[_token].emergencyTimestamp = 0;
+        emergencyMode[_token] = 0;
     }
 
    // --- GUARD ---
@@ -465,7 +459,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function _evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
         uint256 settledAmount = getAvailableAmount(ILERC20(msg.sender), sender);
         if (amount > settledAmount) {
-            require(emergencyMode[ILERC20(msg.sender)].emergencyTimestamp + tokenLockTimeframe[ILERC20(msg.sender)] < block.timestamp,
+            require(emergencyMode[ILERC20(msg.sender)] + tokenLockTimeframe[ILERC20(msg.sender)] < block.timestamp,
                     "LSS: Emergency mode active, cannot transfer unsettled tokens");
             if (dexList[recipient]) {
                 require(amount - settledAmount <= dexTranferThreshold,
