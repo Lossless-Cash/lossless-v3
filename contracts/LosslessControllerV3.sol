@@ -504,6 +504,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     }
 
+    // The following before hooks are in place as a placeholder for future products.
+    // Also to preserve legacy LERC20 compatibility
+    
     function beforeMint(address to, uint256 amount) external {}
 
     function beforeApprove(address sender, address spender, uint256 amount) external {}
