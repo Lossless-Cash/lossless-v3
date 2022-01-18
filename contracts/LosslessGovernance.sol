@@ -390,12 +390,14 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function _compensateAddresses(address[] memory addresses) private {
         uint256 reportingAmount = losslessReporting.reportingAmount();
         uint256 compensationAmount = (reportingAmount * erroneousCompensation) / 10**2;
+
         
         for(uint256 i; i < addresses.length; i++) {
             address singleAddress = addresses[i];
+            Compensation storage addressCompensation = compensation[singleAddress]; 
             losslessController.resolvedNegatively(singleAddress);      
-            compensation[singleAddress].amount += compensationAmount;
-            compensation[singleAddress].payed = false;
+            addressCompensation.amount += compensationAmount;
+            addressCompensation.payed = false;
         }
     }
 
