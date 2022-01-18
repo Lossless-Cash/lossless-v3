@@ -105,7 +105,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice Avoids execution from other than the Lossless Admin
     modifier onlyLosslessAdmin() {
-        require(admin == msg.sender, "LSS: Must be admin");
+        require(msg.sender == admin, "LSS: Must be admin");
         _;
     }
 
