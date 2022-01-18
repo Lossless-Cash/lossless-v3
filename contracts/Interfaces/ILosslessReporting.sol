@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./ILosslessERC20.sol";
+import "./ILosslessGovernance.sol";
+import "./ILosslessStaking.sol";
+import "./ILosslessControllerV3.sol";
+
 interface ILssReporting {
   function reporterReward() external returns(uint256);
   function losslessReward() external returns(uint256);
@@ -10,8 +15,8 @@ interface ILssReporting {
   function reportingAmount() external returns(uint256);
   function reportCount() external returns(uint256);
   function stakingToken() external returns(address);
-  function losslessController() external returns(address);
-  function losslessGovernance() external returns(address);
+  function losslessController() external returns(ILssController);
+  function losslessGovernance() external returns(ILssGovernance);
   function reporter(uint256 reportId) external returns(address);
   function reportedAddress(uint256 reportId) external returns(address);
   function secondReportedAddress(uint256 reportId) external returns(address);
@@ -20,13 +25,13 @@ interface ILssReporting {
   function secondReports(uint256 reportId) external returns(bool);
   function getVersion() external pure returns (uint256);
   function getRewards() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
-  function report(address token, address account) external returns (uint256);
+  function report(ILERC20 token, address account) external returns (uint256);
   function reporterClaimableAmount(uint256 reportId) external view returns (uint256);
   
   function pause() external;
   function unpause() external;
-  function setStakingToken(address _stakingToken) external;
-  function setLosslessGovernance(address _losslessGovernance) external;
+  function setStakingToken(ILERC20 _stakingToken) external;
+  function setLosslessGovernance(ILssGovernance _losslessGovernance) external;
   function setReportingAmount(uint256 _reportingAmount) external;
   function setReporterReward(uint256 reward) external;
   function setLosslessReward(uint256 reward) external;

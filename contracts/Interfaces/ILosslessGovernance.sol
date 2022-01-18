@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./ILosslessERC20.sol";
+import "./ILosslessStaking.sol";
+import "./ILosslessReporting.sol";
+import "./ILosslessControllerV3.sol";
+
 interface ILssGovernance {
     function lssTeamVoteIndex() external view returns(address);
     function tokenOwnersVoteIndex() external view returns(address);

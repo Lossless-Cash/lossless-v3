@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./ILosslessERC20.sol";
 import "./ILosslessGovernance.sol";
-import "./ILosslessStaking.sol";
 import "./ILosslessReporting.sol";
 import "./ILosslessControllerV3.sol";
 
