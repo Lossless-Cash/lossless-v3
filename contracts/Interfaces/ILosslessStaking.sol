@@ -28,4 +28,7 @@ interface ILssStaking {
   event Stake(address indexed token, address indexed account, uint256 reportId);
   event StakerClaim(address indexed staker, address indexed token, uint256 indexed reportID);
   event NewStakingAmount(uint256 indexed newAmount);
+  event NewStakingToken(address indexed newToken);
+  event NewReportingContract(address indexed newContract);
+  event NewGovernanceContract(address indexed newContract);
 }
