@@ -32,6 +32,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     ILssGovernance public losslessGovernance;
 
     uint256 public stakingAmount;
+    uint256 private constant toPercentage = 1e2;
+    uint256 private constant betterDecimals = 1e6;
     
     mapping(address => Stake) private stakes;
     mapping(uint256 => address[]) public stakers;
@@ -168,10 +170,10 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     function stakerClaimableAmount(uint256 reportId) public view returns (uint256) {
         (,,, uint256 stakersReward) = losslessReporting.getRewards();
         uint256 amountStakedOnReport = losslessGovernance.amountReported(reportId);
-        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / 10**2;
+        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / toPercentage;
         uint256 stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
-        uint256 coefficientMultiplier = ((amountDistributedToStakers * 10**6) / reportCoefficient[reportId]);
-        uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / 10**6;
+        uint256 coefficientMultiplier = ((amountDistributedToStakers * betterDecimals) / reportCoefficient[reportId]);
+        uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / betterDecimals;
         return stakerAmountToClaim;
     }
 
