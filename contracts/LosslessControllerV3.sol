@@ -242,23 +242,23 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     
     /// @notice This function sets the address of the Lossless Staking contract
     /// @param _adr Address corresponding to the Lossless Staking contract
-    function setStakingContractAddress(address _adr) public onlyLosslessAdmin {
-        require(_adr != address(0), "LERC20: Cannot be zero address");
-        losslessStaking = ILssStaking(_adr);
+    function setStakingContractAddress(ILssStaking _adr) public onlyLosslessAdmin {
+        require(address(_adr) != address(0), "LERC20: Cannot be zero address");
+        losslessStaking = _adr;
     }
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _adr Address corresponding to the Lossless Reporting contract
-    function setReportingContractAddress(address _adr) public onlyLosslessAdmin {
-        require(_adr != address(0), "LERC20: Cannot be zero address");
-        losslessReporting = ILssReporting(_adr);
+    function setReportingContractAddress(ILssReporting _adr) public onlyLosslessAdmin {
+        require(address(_adr) != address(0), "LERC20: Cannot be zero address");
+        losslessReporting = _adr;
     }
 
     /// @notice This function sets the address of the Lossless Governance contract
     /// @param _adr Address corresponding to the Lossless Governance contract
-    function setGovernanceContractAddress(address _adr) public onlyLosslessAdmin {
-        require(_adr != address(0), "LERC20: Cannot be zero address");
-        losslessGovernance = ILssGovernance(_adr);
+    function setGovernanceContractAddress(ILssGovernance _adr) public onlyLosslessAdmin {
+        require(address(_adr) != address(0), "LERC20: Cannot be zero address");
+        losslessGovernance = _adr;
     }
 
     /// @notice This function starts a new proposal to change the SettlementPeriod
