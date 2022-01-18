@@ -44,6 +44,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V3 VARIABLES ---
 
     uint256 public dexTranferThreshold;
+    uint256 private constant toPercentage = 1e4;
 
     uint256 public settlementTimeLock;
     mapping(ILERC20 => uint256) public tokenLockTimeframe;
@@ -388,15 +389,15 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
                 
         (uint256 reporterReward, uint256 losslessReward, uint256 committeeReward, uint256 stakersReward) = losslessReporting.getRewards();
 
-        uint256 toLssStaking = totalAmount * stakersReward / 10**2;
-        uint256 toLssReporting = totalAmount * reporterReward / 10**2;
+        uint256 toLssStaking = totalAmount * stakersReward / toPercentage;
+        uint256 toLssReporting = totalAmount * reporterReward / toPercentage;
         uint256 toLssGovernance = totalAmount - toLssStaking - toLssReporting;
 
         require(_token.transfer(address(losslessStaking), toLssStaking), "LSS: Error on Staking retrieval");
         require(_token.transfer(address(losslessReporting), toLssReporting), "LSS: Error on Reportin retrieval");
         require(_token.transfer(address(losslessGovernance), toLssGovernance), "LSS: Error on Gov retrieval");
 
-        return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / 10**2);
+        return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / toPercentage);
     }
 
 
