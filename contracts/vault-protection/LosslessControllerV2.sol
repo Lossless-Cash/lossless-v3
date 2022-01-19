@@ -16,7 +16,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V2 VARIABLES ---
 
     address public guardian;
-    mapping(address => Protections) private tokenProtections;
+    mapping(ILERC20 => Protections) private tokenProtections;
 
     struct Protection {
         bool isProtected;
@@ -73,11 +73,11 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V2 VIEWS ---
 
     function isAddressProtected(ILERC20 token, address protectedAddress) external view returns (bool) {
-        return tokenProtections[address(token)].protections[protectedAddress].isProtected;
+        return tokenProtections[token].protections[protectedAddress].isProtected;
     }
 
     function getProtectedAddressStrategy(ILERC20 token, address protectedAddress) external view returns (address) {
-        return address(tokenProtections[address(token)].protections[protectedAddress].strategy);
+        return address(tokenProtections[token].protections[protectedAddress].strategy);
     }
 
     // --- ADMINISTRATION ---
@@ -122,7 +122,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
     function setProtectedAddress(ILERC20 token, address protectedAddresss, ProtectionStrategy strategy) external onlyGuardian whenNotPaused {
-        Protection storage protection = tokenProtections[address(token)].protections[protectedAddresss];
+        Protection storage protection = tokenProtections[token].protections[protectedAddresss];
         protection.isProtected = true;
         protection.strategy = strategy;
         emit ProtectedAddressSet(address(token), protectedAddresss, address(strategy));
@@ -132,7 +132,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
     function removeProtectedAddress(ILERC20 token, address protectedAddresss) external onlyGuardian whenNotPaused {
-        delete tokenProtections[address(token)].protections[protectedAddresss];
+        delete tokenProtections[token].protections[protectedAddresss];
         emit RemovedProtectedAddress(address(token), protectedAddresss);
     }
 
@@ -141,16 +141,16 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // @notice If address is protected, transfer validation rules have to be run inside the strategy.
     // @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransfer(address sender, address recipient, uint256 amount) external {
-        if (tokenProtections[msg.sender].protections[sender].isProtected) {
-            tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
+        if (tokenProtections[ILERC20(msg.sender)].protections[sender].isProtected) {
+            tokenProtections[ILERC20(msg.sender)].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
     }
 
     // @notice If address is protected, transfer validation rules have to be run inside the strategy.
     // @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
-        if (tokenProtections[msg.sender].protections[sender].isProtected) {
-            tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
+        if (tokenProtections[ILERC20(msg.sender)].protections[sender].isProtected) {
+            tokenProtections[ILERC20(msg.sender)].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
     }
 
