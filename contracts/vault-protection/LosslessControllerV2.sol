@@ -48,7 +48,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     modifier onlyLosslessAdmin() {
-        require(admin == msg.sender, "LOSSLESS: Must be admin");
+        require(msg.sender == admin, "LOSSLESS: Must be admin");
         _;
     }
 
