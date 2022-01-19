@@ -91,19 +91,19 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     function setAdmin(address newAdmin) external onlyLosslessRecoveryAdmin {
-        require(newAdmin != address(0), "LERC20: Cannot be zero address");
+        require(newAdmin != admin, "LERC20: Cannot set same address");
         emit AdminChange(admin, newAdmin);
         admin = newAdmin;
     }
 
     function setRecoveryAdmin(address newRecoveryAdmin) external onlyLosslessRecoveryAdmin {
-        require(newRecoveryAdmin != address(0), "LERC20: Cannot be zero address");
+        require(newRecoveryAdmin != recoveryAdmin, "LERC20: Cannot set same address");
         emit RecoveryAdminChange(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
     function setPauseAdmin(address newPauseAdmin) external onlyLosslessRecoveryAdmin {
-        require(newPauseAdmin != address(0), "LERC20: Cannot be zero address");
+        require(newPauseAdmin != pauseAdmin, "LERC20: Cannot set same address");
         emit PauseAdminChange(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
@@ -114,6 +114,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // @dev Guardian contract must be trusted as it has some access rights and can modify controller's state.
     function setGuardian(address newGuardian) external onlyLosslessAdmin whenNotPaused {
         require(newGuardian != address(0), "LSS: Cannot be zero address");
+        require(newGuardian != guardian, "LERC20: Cannot set same address");
         emit GuardianSet(guardian, newGuardian);
         guardian = newGuardian;
     }
@@ -154,6 +155,9 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
         }
     }
 
+    // The following before hooks are in place as a placeholder for future products.
+    // Also to preserve legacy LERC20 compatibility
+    
     function beforeApprove(address sender, address spender, uint256 amount) external {}
 
     function beforeIncreaseAllowance(address msgSender, address spender, uint256 addedValue) external {}

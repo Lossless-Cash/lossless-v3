@@ -162,7 +162,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Only can be called by the Recovery admin
     /// @param newAdmin Address corresponding to the new Lossless Admin
     function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
-        require(newAdmin != address(0), "LERC20: Cannot be zero address");
         require(newAdmin != admin, "LERC20: Cannot set same address");
         emit AdminChange(admin, newAdmin);
         admin = newAdmin;
@@ -172,7 +171,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Only can be called by the previous Recovery admin
     /// @param newRecoveryAdmin Address corresponding to the new Lossless Recovery Admin
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
-        require(newRecoveryAdmin != address(0), "LERC20: Cannot be zero address");
         require(newRecoveryAdmin != recoveryAdmin, "LERC20: Cannot set same address");
         emit RecoveryAdminChange(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
@@ -182,7 +180,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Only can be called by the Recovery admin
     /// @param newPauseAdmin Address corresponding to the new Lossless Recovery Admin
     function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
-        require(newPauseAdmin != address(0), "LERC20: Cannot be zero address");
         require(newPauseAdmin != pauseAdmin, "LERC20: Cannot set same address");
         emit PauseAdminChange(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;

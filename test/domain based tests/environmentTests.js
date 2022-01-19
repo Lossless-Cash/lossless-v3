@@ -355,10 +355,10 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LSS: Must be recoveryAdmin');
         });
 
-        it('should revert when setting zero address', async () => {
+        it('should not revert when setting zero address', async () => {
           await expect(
             env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(adr.ZERO_ADDRESS),
-          ).to.be.revertedWith('LERC20: Cannot be zero address');
+          ).to.not.be.reverted;
         });
 
         it('should not revert when recoveryAdmin', async () => {
@@ -383,10 +383,10 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LSS: Must be recoveryAdmin');
         });
 
-        it('should revert when setting zero address', async () => {
+        it('should not revert when setting zero address', async () => {
           await expect(
             env.lssController.connect(adr.lssRecoveryAdmin).setPauseAdmin(adr.ZERO_ADDRESS),
-          ).to.be.revertedWith('LERC20: Cannot be zero address');
+          ).to.not.be.reverted;
         });
 
         it('should not revert when recoveryAdmin', async () => {
@@ -414,7 +414,7 @@ describe(scriptName, () => {
         it('should revert when setting zero address', async () => {
           await expect(
             env.lssController.connect(adr.lssRecoveryAdmin).setRecoveryAdmin(adr.ZERO_ADDRESS),
-          ).to.be.revertedWith('LERC20: Cannot be zero address');
+          ).to.not.be.reverted;
         });
 
         it('should not revert when recoveryAdmin', async () => {
