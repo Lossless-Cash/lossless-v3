@@ -134,6 +134,13 @@ describe('ControllerProtection', () => {
               vars.oneMoreAccount.address,
             ),
           ).to.be.equal(protection.treasuryProtectionStrategy.address);
+
+          await expect(
+            vars.losslessController.getProtectedAddressStrategy(
+              vars.erc20s[0].address,
+              vars.recipient.address,
+            ),
+          ).to.be.revertedWith('LSS: Address not protected');
         });
 
         it('should not affect other tokens', async () => {

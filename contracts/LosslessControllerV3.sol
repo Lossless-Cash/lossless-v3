@@ -142,11 +142,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         // --- V2 VIEWS ---
 
-    function isAddressProtected(address token, address protectedAddress) external view returns (bool) {
+    function isAddressProtected(address token, address protectedAddress) public view returns (bool) {
         return tokenProtections[token].protections[protectedAddress].isProtected;
     }
 
     function getProtectedAddressStrategy(address token, address protectedAddress) external view returns (address) {
+        require(isAddressProtected(token, protectedAddress), "LSS: Address not protected");
         return address(tokenProtections[token].protections[protectedAddress].strategy);
     }
 
