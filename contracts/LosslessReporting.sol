@@ -184,7 +184,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
         require(!losslessController.dexList(account), "LSS: Cannot report Dex");
 
-        uint256 reportId = tokenReports[ILERC20(token)].reports[account];
+        uint256 reportId = tokenReports[token].reports[account];
 
         require(reportId == 0 || 
                 reportTimestamps[reportId] + reportLifetime < block.timestamp || 
@@ -197,16 +197,16 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         tokenReports[ILERC20(token)].reports[account] = reportId;
         reportTimestamps[reportId] = block.timestamp;
-        reportTokens[reportId] = address(ILERC20(token));
+        reportTokens[reportId] = address(token);
 
-        stakingToken.transferFrom(msg.sender, address(this), reportingAmount);
+        require(stakingToken.transferFrom(msg.sender, address(this), reportingAmount), "LSS: Reporting stake failed");
 
         losslessController.addToBlacklist(account);
         reportedAddress[reportId] = account;
         
-        losslessController.activateEmergency(address(ILERC20(token)));
+        losslessController.activateEmergency(token);
 
-        emit ReportSubmission(address(ILERC20(token)), account, reportId);
+        emit ReportSubmission(address(token), account, reportId);
 
         return reportId;
     }
@@ -249,8 +249,8 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         reporterClaimStatus[reportId] = true;
 
-        ILERC20(reportTokens[reportId]).transfer(msg.sender, reporterClaimableAmount(reportId));
-        stakingToken.transfer(msg.sender, reportingAmount);
+        require(ILERC20(reportTokens[reportId]).transfer(msg.sender, reporterClaimableAmount(reportId)), "LSS: Token transfer failed");
+        require(stakingToken.transfer(msg.sender, reportingAmount), "LSS: Reporting stake failed");
     }
 
     // --- CLAIM ---
@@ -267,7 +267,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param adr retribution address
     /// @param amount amount to be retrieved
     function retrieveCompensation(address adr, uint256 amount) public onlyLosslessGov {
-        stakingToken.transfer(adr, amount);
+        require(stakingToken.transfer(adr, amount), "LSS: Compensation retrieve fail");
     }
 
 }

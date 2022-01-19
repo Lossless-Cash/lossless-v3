@@ -361,8 +361,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
             for(uint256 i; i < reportedAddresses.length; i++) {
                 amountReported[reportId] += ILERC20(token).balanceOf(reportedAddresses[i]);
             }
-            retrievalAmount[reportId] = losslessController.retrieveBlacklistedFunds(reportedAddresses, token, reportId);
-            losslessController.deactivateEmergency(token);
+            retrievalAmount[reportId] = losslessController.retrieveBlacklistedFunds(reportedAddresses, ILERC20(token), reportId);
+            losslessController.deactivateEmergency(ILERC20(token));
         }else{
             reportVote.resolution = false;
             _compensateAddresses(reportedAddresses);

@@ -52,7 +52,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(ILERC20 => uint256) public changeSettlementTimelock;
     mapping(ILERC20 => bool) public isNewSettlementProposed;
 
-    ILERC20 public stakingToken;
     ILssStaking public losslessStaking;
     ILssReporting public losslessReporting;
     ILssGovernance public losslessGovernance;
@@ -81,9 +80,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     mapping(ILERC20 => uint256) private emergencyMode;
 
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
+    event AdminChange(address indexed previousAdmin, address indexed newAdmin);
+    event RecoveryAdminChange(address indexed previousAdmin, address indexed newAdmin);
+    event PauseAdminChange(address indexed previousAdmin, address indexed newAdmin);
 
     // --- V2 EVENTS ---
 
@@ -93,8 +92,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V3 EVENTS ---
 
-    event NewSettlementPeriodProposed(address token, uint256 _seconds);
-    event SettlementPeriodChanged(address token, uint256 proposedTokenLockTimeframe);
+    event NewSettlementPeriodProposal(address indexed token, uint256 _seconds);
+    event SettlementPeriodChange(address indexed token, uint256 proposedTokenLockTimeframe);
 
     // --- MODIFIERS ---
 
@@ -167,7 +166,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
         require(newAdmin != address(0), "LERC20: Cannot be zero address");
         require(newAdmin != admin, "LERC20: Cannot set same address");
-        emit AdminChanged(admin, newAdmin);
+        emit AdminChange(admin, newAdmin);
         admin = newAdmin;
     }
 
@@ -177,7 +176,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
         require(newRecoveryAdmin != address(0), "LERC20: Cannot be zero address");
         require(newRecoveryAdmin != recoveryAdmin, "LERC20: Cannot set same address");
-        emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
+        emit RecoveryAdminChange(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
@@ -187,7 +186,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
         require(newPauseAdmin != address(0), "LERC20: Cannot be zero address");
         require(newPauseAdmin != pauseAdmin, "LERC20: Cannot set same address");
-        emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
+        emit PauseAdminChange(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
 
@@ -271,7 +270,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         changeSettlementTimelock[_token] = block.timestamp + settlementTimeLock;
         isNewSettlementProposed[_token] = true;
         proposedTokenLockTimeframe[_token] = _seconds;
-        emit NewSettlementPeriodProposed(address(_token), _seconds);
+        emit NewSettlementPeriodProposal(address(_token), _seconds);
     }
 
     /// @notice This function executes the new settlement period after the timelock
@@ -283,7 +282,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         tokenLockTimeframe[_token] = proposedTokenLockTimeframe[_token];
         isNewSettlementProposed[_token] = false;
         proposedTokenLockTimeframe[_token] = 0; 
-        emit SettlementPeriodChanged(address(_token), tokenLockTimeframe[_token]);
+        emit SettlementPeriodChange(address(_token), tokenLockTimeframe[_token]);
     }
 
     /// @notice This function activates the emergency mode
@@ -393,9 +392,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         uint256 toLssReporting = totalAmount * reporterReward / toPercentage;
         uint256 toLssGovernance = totalAmount - toLssStaking - toLssReporting;
 
-        require(_token.transfer(address(losslessStaking), toLssStaking), "LSS: Error on Staking retrieval");
-        require(_token.transfer(address(losslessReporting), toLssReporting), "LSS: Error on Reportin retrieval");
-        require(_token.transfer(address(losslessGovernance), toLssGovernance), "LSS: Error on Gov retrieval");
+        require(_token.transfer(address(losslessStaking), toLssStaking), "LSS: Staking retrieval failed");
+        require(_token.transfer(address(losslessReporting), toLssReporting), "LSS: Reporting retrieval failed");
+        require(_token.transfer(address(losslessGovernance), toLssGovernance), "LSS: Governance retrieval failed");
 
         return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / toPercentage);
     }

@@ -370,7 +370,7 @@ describe(scriptName, () => {
         it('should emit event', async () => {
           await expect(
             env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(adr.regularUser1.address),
-          ).to.emit(env.lssController, 'AdminChanged').withArgs(
+          ).to.emit(env.lssController, 'AdminChange').withArgs(
             adr.lssAdmin.address, adr.regularUser1.address,
           );
         });
@@ -398,7 +398,7 @@ describe(scriptName, () => {
         it('should emit event', async () => {
           await expect(
             env.lssController.connect(adr.lssRecoveryAdmin).setPauseAdmin(adr.regularUser1.address),
-          ).to.emit(env.lssController, 'PauseAdminChanged').withArgs(
+          ).to.emit(env.lssController, 'PauseAdminChange').withArgs(
             adr.lssPauseAdmin.address, adr.regularUser1.address,
           );
         });
@@ -426,7 +426,7 @@ describe(scriptName, () => {
         it('should emit event', async () => {
           await expect(
             env.lssController.connect(adr.lssRecoveryAdmin).setRecoveryAdmin(adr.regularUser1.address),
-          ).to.emit(env.lssController, 'RecoveryAdminChanged').withArgs(
+          ).to.emit(env.lssController, 'RecoveryAdminChange').withArgs(
             adr.lssRecoveryAdmin.address, adr.regularUser1.address,
           );
         });
