@@ -37,8 +37,8 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V2 EVENTS ---
 
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
-    event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
-    event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
+    event ProtectedAddressSet(ILERC20 indexed token, address indexed protectedAddress, address indexed strategy);
+    event RemovedProtectedAddress(ILERC20 indexed token, address indexed protectedAddress);
 
     // --- MODIFIERS ---
 
@@ -125,7 +125,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
         Protection storage protection = tokenProtections[token].protections[protectedAddresss];
         protection.isProtected = true;
         protection.strategy = strategy;
-        emit ProtectedAddressSet(address(token), protectedAddresss, address(strategy));
+        emit ProtectedAddressSet(token, protectedAddresss, address(strategy));
     }
 
     // @notice Remove the protection from the address.
@@ -133,7 +133,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // @dev This call is initiated from a strategy, but guardian proxies it.
     function removeProtectedAddress(ILERC20 token, address protectedAddresss) external onlyGuardian whenNotPaused {
         delete tokenProtections[token].protections[protectedAddresss];
-        emit RemovedProtectedAddress(address(token), protectedAddresss);
+        emit RemovedProtectedAddress(token, protectedAddresss);
     }
 
     // --- BEFORE HOOKS ---

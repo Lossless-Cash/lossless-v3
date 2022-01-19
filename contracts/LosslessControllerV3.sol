@@ -313,7 +313,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         Protection storage protection = tokenProtections[token].protections[protectedAddress];
         protection.isProtected = true;
         protection.strategy = strategy;
-        emit ProtectedAddressSet(ILERC20(token), protectedAddress, address(strategy));
+        emit ProtectedAddressSet(token, protectedAddress, address(strategy));
     }
 
     // @notice Remove the protection from the address.
@@ -322,7 +322,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function removeProtectedAddress(ILERC20 token, address protectedAddress) external onlyGuardian whenNotPaused {
         require(isAddressProtected(token, protectedAddress), "LSS: Address not protected");
         delete tokenProtections[token].protections[protectedAddress];
-        emit RemovedProtectedAddress(ILERC20(token), protectedAddress);
+        emit RemovedProtectedAddress(token, protectedAddress);
     }
 
     /// @notice This function will return the non-settled tokens amount
