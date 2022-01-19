@@ -10,10 +10,8 @@ import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessGovernance.sol";
 import "./Interfaces/ILosslessStaking.sol";
 import "./Interfaces/ILosslessReporting.sol";
+import "./Interfaces/IProtectionStrategy.sol";
 
-interface ProtectionStrategy {
-    function isTransferAllowed(address token, address sender, address recipient, uint256 amount) external;
-}
 
 /// @title Lossless Controller Contract
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
