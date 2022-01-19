@@ -5,9 +5,8 @@ import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-interface ProtectionStrategy {
-    function isTransferAllowed(address token, address sender, address recipient, uint256 amount) external;
-}
+import "../Interfaces/ILosslessERC20.sol";
+import "../Interfaces/IProtectionStrategy.sol";
 
 contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgradeable {
     address public pauseAdmin;
@@ -73,12 +72,12 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V2 VIEWS ---
 
-    function isAddressProtected(address token, address protectedAddress) external view returns (bool) {
-        return tokenProtections[token].protections[protectedAddress].isProtected;
+    function isAddressProtected(ILERC20 token, address protectedAddress) external view returns (bool) {
+        return tokenProtections[address(token)].protections[protectedAddress].isProtected;
     }
 
-    function getProtectedAddressStrategy(address token, address protectedAddress) external view returns (address) {
-        return address(tokenProtections[token].protections[protectedAddress].strategy);
+    function getProtectedAddressStrategy(ILERC20 token, address protectedAddress) external view returns (address) {
+        return address(tokenProtections[address(token)].protections[protectedAddress].strategy);
     }
 
     // --- ADMINISTRATION ---
@@ -122,19 +121,19 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
     // @notice Sets protection for an address with the choosen strategy.
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
-    function setProtectedAddress(address token, address protectedAddresss, ProtectionStrategy strategy) external onlyGuardian whenNotPaused {
-        Protection storage protection = tokenProtections[token].protections[protectedAddresss];
+    function setProtectedAddress(ILERC20 token, address protectedAddresss, ProtectionStrategy strategy) external onlyGuardian whenNotPaused {
+        Protection storage protection = tokenProtections[address(token)].protections[protectedAddresss];
         protection.isProtected = true;
         protection.strategy = strategy;
-        emit ProtectedAddressSet(token, protectedAddresss, address(strategy));
+        emit ProtectedAddressSet(address(token), protectedAddresss, address(strategy));
     }
 
     // @notice Remove the protection from the address.
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
-    function removeProtectedAddress(address token, address protectedAddresss) external onlyGuardian whenNotPaused {
-        delete tokenProtections[token].protections[protectedAddresss];
-        emit RemovedProtectedAddress(token, protectedAddresss);
+    function removeProtectedAddress(ILERC20 token, address protectedAddresss) external onlyGuardian whenNotPaused {
+        delete tokenProtections[address(token)].protections[protectedAddresss];
+        emit RemovedProtectedAddress(address(token), protectedAddresss);
     }
 
     // --- BEFORE HOOKS ---
