@@ -274,7 +274,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _token to set time settlement period on
     function executeNewSettlementPeriod(ILERC20 _token) public {
         require(_token.admin() == msg.sender, "LSS: Must be Token Admin");
-        require(proposedTokenLockTimeframe[_token] == 0, "LSS: New Settlement not proposed");
+        require(proposedTokenLockTimeframe[_token] != 0, "LSS: New Settlement not proposed");
         require(changeSettlementTimelock[_token] <= block.timestamp, "LSS: Time lock in progress");
         tokenLockTimeframe[_token] = proposedTokenLockTimeframe[_token];
         proposedTokenLockTimeframe[_token] = 0; 
@@ -319,9 +319,10 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // @notice Remove the protection from the address.
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
-    function removeProtectedAddress(address token, address protectedAddresss) external onlyGuardian whenNotPaused {
-        delete tokenProtections[token].protections[protectedAddresss];
-        emit RemovedProtectedAddress(ILERC20(token), protectedAddresss);
+    function removeProtectedAddress(address token, address protectedAddress) external onlyGuardian whenNotPaused {
+        require(isAddressProtected(token, protectedAddress), "LSS: Address not protected");
+        delete tokenProtections[token].protections[protectedAddress];
+        emit RemovedProtectedAddress(ILERC20(token), protectedAddress);
     }
 
     /// @notice This function will return the non-settled tokens amount

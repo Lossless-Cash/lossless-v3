@@ -780,13 +780,6 @@ describe('LosslessGuardian', () => {
           ),
         ).to.be.equal(true);
 
-        await protection.guardian
-          .connect(vars.anotherAccount)
-          .removeProtectedAddresses(
-            vars.erc20s[1].address,
-            vars.anotherAccount.address,
-          );
-
         expect(
           await vars.losslessController.isAddressProtected(
             vars.erc20s[0].address,
@@ -872,12 +865,6 @@ describe('LosslessGuardian', () => {
             vars.erc20s[2].address,
             vars.anotherAccount.address,
             true,
-          );
-        await protection.guardian
-          .connect(vars.admin)
-          .removeProtectedAddresses(
-            vars.erc20s[1].address,
-            vars.anotherAccount.address,
           );
 
         expect(

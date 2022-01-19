@@ -401,7 +401,7 @@ describe(scriptName, () => {
     describe('when settlement period is inactive', () => {
       beforeEach(async () => {
         await env.lssController.connect(adr.lerc20Admin)
-          .proposeNewSettlementPeriod(lerc20Token.address, 0);
+          .proposeNewSettlementPeriod(lerc20Token.address, 1);
 
         await ethers.provider.send('evm_increaseTime', [
           Number(time.duration.hours(13)),

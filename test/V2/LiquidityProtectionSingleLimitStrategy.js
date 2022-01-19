@@ -547,16 +547,41 @@ describe('LiquidityProtectionSingleLimitStrategy', () => {
       });
 
       it('should emit RemovedProtectedAddress events', async () => {
-        await expect(
-          await protection.liquidityProtectionSingleLimitStrategy
-            .connect(vars.guardianAdmin)
-            .removeLimits(vars.erc20s[0].address, [
-              vars.oneMoreAccount.address,
-              vars.initialHolder.address,
-            ]),
-        )
-          .to.emit(vars.losslessController, 'RemovedProtectedAddress')
-          .withArgs(vars.erc20s[0].address, vars.oneMoreAccount.address);
+        const timestampBefore = await ethers.provider.getBlock();
+
+        await protection.guardian
+          .connect(vars.lssAdmin)
+          .verifyAddress(
+            vars.erc20s[0].address,
+            vars.initialHolder.address,
+            true,
+          );
+        await protection.guardian
+          .connect(vars.lssAdmin)
+          .verifyAddress(
+            vars.erc20s[0].address,
+            vars.oneMoreAccount.address,
+            true,
+          );
+        await protection.liquidityProtectionSingleLimitStrategy
+          .connect(vars.guardianAdmin)
+          .setLimit(
+            vars.erc20s[0].address,
+            vars.oneMoreAccount.address,
+            30,
+            10,
+            timestampBefore.timestamp,
+          );
+
+        await protection.liquidityProtectionSingleLimitStrategy
+          .connect(vars.guardianAdmin)
+          .setLimit(
+            vars.erc20s[0].address,
+            vars.initialHolder.address,
+            30,
+            10,
+            timestampBefore.timestamp,
+          );
 
         await expect(
           await protection.liquidityProtectionSingleLimitStrategy
@@ -567,7 +592,7 @@ describe('LiquidityProtectionSingleLimitStrategy', () => {
             ]),
         )
           .to.emit(vars.losslessController, 'RemovedProtectedAddress')
-          .withArgs(vars.erc20s[0].address, vars.initialHolder.address);
+          .withArgs(vars.erc20s[0].address, vars.oneMoreAccount.address);
       });
 
       it('should not affect other tokens', async () => {
