@@ -471,7 +471,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         proposedWallet.status = true;
 
-        ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, retrievalAmount[reportId]);
+        require(ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, retrievalAmount[reportId]), 
+        "LSS: Funds retrieve failed");
 
         emit FundsRetrieval(reportId, msg.sender, retrievalAmount[reportId]);
     }
@@ -544,7 +545,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         reportVotes[reportId].committeeMemberClaimed[msg.sender] = true;
 
-        ILERC20(token).transfer(msg.sender, compensationPerMember);
+        require(ILERC20(token).transfer(msg.sender, compensationPerMember), "LSS: Reward transfer failed");
 
         emit CommitteeMemberClaim(reportId, msg.sender, compensationPerMember);
     }
@@ -558,7 +559,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         uint256 amountToClaim = amountReported[reportId] * losslessReporting.losslessReward() / 10**2;
         losslessPayed[reportId] = true;
-        ILERC20(losslessReporting.reportTokens(reportId)).transfer(losslessController.admin(), amountToClaim);
+        require(ILERC20(losslessReporting.reportTokens(reportId)).transfer(losslessController.admin(), amountToClaim), 
+        "LSS: Reward transfer failed");
 
         emit LosslessClaim(losslessReporting.reportTokens(reportId), reportId, amountToClaim);
     }
