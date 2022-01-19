@@ -28,7 +28,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V2 VARIABLES ---
 
     address public guardian;
-    mapping(address => Protections) private tokenProtections;
+    mapping(ILERC20 => Protections) private tokenProtections;
 
     struct Protection {
         bool isProtected;
@@ -139,11 +139,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         // --- V2 VIEWS ---
 
-    function isAddressProtected(address token, address protectedAddress) public view returns (bool) {
+    function isAddressProtected(ILERC20 token, address protectedAddress) public view returns (bool) {
         return tokenProtections[token].protections[protectedAddress].isProtected;
     }
 
-    function getProtectedAddressStrategy(address token, address protectedAddress) external view returns (address) {
+    function getProtectedAddressStrategy(ILERC20 token, address protectedAddress) external view returns (address) {
         require(isAddressProtected(token, protectedAddress), "LSS: Address not protected");
         return address(tokenProtections[token].protections[protectedAddress].strategy);
     }
@@ -309,7 +309,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // @notice Sets protection for an address with the choosen strategy.
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
-    function setProtectedAddress(address token, address protectedAddress, ProtectionStrategy strategy) external onlyGuardian whenNotPaused {
+    function setProtectedAddress(ILERC20 token, address protectedAddress, ProtectionStrategy strategy) external onlyGuardian whenNotPaused {
         Protection storage protection = tokenProtections[token].protections[protectedAddress];
         protection.isProtected = true;
         protection.strategy = strategy;
@@ -319,7 +319,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // @notice Remove the protection from the address.
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
-    function removeProtectedAddress(address token, address protectedAddress) external onlyGuardian whenNotPaused {
+    function removeProtectedAddress(ILERC20 token, address protectedAddress) external onlyGuardian whenNotPaused {
         require(isAddressProtected(token, protectedAddress), "LSS: Address not protected");
         delete tokenProtections[token].protections[protectedAddress];
         emit RemovedProtectedAddress(ILERC20(token), protectedAddress);
@@ -476,8 +476,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransfer(address sender, address recipient, uint256 amount) external {
-        if (tokenProtections[msg.sender].protections[sender].isProtected) {
-            tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
+        if (tokenProtections[ILERC20(msg.sender)].protections[sender].isProtected) {
+            tokenProtections[ILERC20(msg.sender)].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
         require(!blacklist[sender], "LSS: You cannot operate");
@@ -490,8 +490,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
-        if (tokenProtections[msg.sender].protections[sender].isProtected) {
-            tokenProtections[msg.sender].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
+        if (tokenProtections[ILERC20(msg.sender)].protections[sender].isProtected) {
+            tokenProtections[ILERC20(msg.sender)].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
         require(!blacklist[msgSender], "LSS: You cannot operate");

@@ -29,9 +29,9 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- EVENTS ---
 
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
+    event AdminChange(address indexed previousAdmin, address indexed newAdmin);
+    event RecoveryAdminChange(address indexed previousAdmin, address indexed newAdmin);
+    event PauseAdminChange(address indexed previousAdmin, address indexed newAdmin);
 
 
     // --- V2 EVENTS ---
@@ -92,19 +92,19 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     function setAdmin(address newAdmin) external onlyLosslessRecoveryAdmin {
         require(newAdmin != address(0), "LERC20: Cannot be zero address");
-        emit AdminChanged(admin, newAdmin);
+        emit AdminChange(admin, newAdmin);
         admin = newAdmin;
     }
 
     function setRecoveryAdmin(address newRecoveryAdmin) external onlyLosslessRecoveryAdmin {
         require(newRecoveryAdmin != address(0), "LERC20: Cannot be zero address");
-        emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
+        emit RecoveryAdminChange(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
     function setPauseAdmin(address newPauseAdmin) external onlyLosslessRecoveryAdmin {
         require(newPauseAdmin != address(0), "LERC20: Cannot be zero address");
-        emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
+        emit PauseAdminChange(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
 
