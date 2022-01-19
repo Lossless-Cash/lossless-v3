@@ -39,8 +39,8 @@ interface ILssGovernance {
     function claimCommitteeReward(uint256 reportId) external;
     function setCompensationAmount(uint256 amount) external;
 
-    event NewCommitteeMembers(address[] indexed members);
-    event CommitteeMembersRemoval(address[] indexed members);
+    event NewCommitteeMembers(address[] members);
+    event CommitteeMembersRemoval(address[] members);
     event LosslessTeamPositiveVote(uint256 indexed reportId);
     event LosslessTeamNegativeVote(uint256 indexed reportId);
     event TokenOwnersPositiveVote(uint256 indexed reportId);

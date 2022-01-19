@@ -77,8 +77,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     address[] private reportedAddresses;
 
-    event NewCommitteeMembers(address[] indexed members);
-    event CommitteeMembersRemoval(address[] indexed members);
+    event NewCommitteeMembers(address[] members);
+    event CommitteeMembersRemoval(address[] members);
     event LosslessTeamPositiveVote(uint256 indexed reportId);
     event LosslessTeamNegativeVote(uint256 indexed reportId);
     event TokenOwnersPositiveVote(uint256 indexed reportId);
