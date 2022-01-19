@@ -370,8 +370,8 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
             queue.lockedFunds[queue.last].amount += checkpoint.amount;
         } else {
-            queue.last += 1;
             queue.lockedFunds[queue.last] = checkpoint;
+            queue.last += 1;
         }
     }
 
@@ -438,12 +438,15 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         uint i = queue.first;
         uint256 lastItem = queue.last;
+
         ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
+
 
         while (checkpoint.timestamp <= block.timestamp && i <= lastItem) {
             delete queue.lockedFunds[i];
             i += 1;
             checkpoint = queue.lockedFunds[i];
+            queue.first += 1;
         }
     }
 

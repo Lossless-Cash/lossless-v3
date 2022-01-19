@@ -72,4 +72,82 @@ describe(scriptName, () => {
       ).to.be.revertedWith('LSS: Time lock in progress');
     });
   });
+
+  describe('when setting a lower settlement timelock', () => {
+    it('should not revert', async () => {
+      await env.lssController.connect(adr.lerc20Admin)
+        .proposeNewSettlementPeriod(lerc20Token.address, 10 * 60);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.hours(13)),
+      ]);
+
+      await expect(
+        env.lssController.connect(adr.lerc20Admin)
+          .executeNewSettlementPeriod(lerc20Token.address),
+      ).to.not.be.reverted;
+
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(1)),
+      ]);
+
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 200);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(10)),
+      ]);
+
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 300);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssController.connect(adr.lerc20Admin)
+        .proposeNewSettlementPeriod(lerc20Token.address, 1 * 60);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.hours(13)),
+      ]);
+
+      await expect(
+        env.lssController.connect(adr.lerc20Admin)
+          .executeNewSettlementPeriod(lerc20Token.address),
+      ).to.not.be.reverted;
+
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 200);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.seconds(30)),
+      ]);
+
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 100);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.seconds(5)),
+      ]);
+
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 300);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 300);
+    });
+  });
 });
