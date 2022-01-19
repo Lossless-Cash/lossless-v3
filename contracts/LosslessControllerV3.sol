@@ -48,7 +48,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     mapping(ILERC20 => uint256) public tokenLockTimeframe;
     mapping(ILERC20 => uint256) public proposedTokenLockTimeframe;
     mapping(ILERC20 => uint256) public changeSettlementTimelock;
-    mapping(ILERC20 => bool) public isNewSettlementProposed;
 
     ILssStaking public losslessStaking;
     ILssReporting public losslessReporting;
@@ -267,7 +266,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(_token.admin() == msg.sender, "LSS: Must be Token Admin");
         require(changeSettlementTimelock[_token] <= block.timestamp, "LSS: Time lock in progress");
         changeSettlementTimelock[_token] = block.timestamp + settlementTimeLock;
-        isNewSettlementProposed[_token] = true;
         proposedTokenLockTimeframe[_token] = _seconds;
         emit NewSettlementPeriodProposal(address(_token), _seconds);
     }
@@ -276,10 +274,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _token to set time settlement period on
     function executeNewSettlementPeriod(ILERC20 _token) public {
         require(_token.admin() == msg.sender, "LSS: Must be Token Admin");
-        require(isNewSettlementProposed[_token] == true, "LSS: New Settlement not proposed");
+        require(proposedTokenLockTimeframe[_token] == 0, "LSS: New Settlement not proposed");
         require(changeSettlementTimelock[_token] <= block.timestamp, "LSS: Time lock in progress");
         tokenLockTimeframe[_token] = proposedTokenLockTimeframe[_token];
-        isNewSettlementProposed[_token] = false;
         proposedTokenLockTimeframe[_token] = 0; 
         emit SettlementPeriodChange(address(_token), tokenLockTimeframe[_token]);
     }
