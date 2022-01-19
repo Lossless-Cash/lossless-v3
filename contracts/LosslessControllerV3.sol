@@ -84,13 +84,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // --- V2 EVENTS ---
 
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
-    event ProtectedAddressSet(address indexed token, address indexed protectedAddress, address indexed strategy);
-    event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
+    event ProtectedAddressSet(ILERC20 indexed token, address indexed protectedAddress, address indexed strategy);
+    event RemovedProtectedAddress(ILERC20 indexed token, address indexed protectedAddress);
 
     // --- V3 EVENTS ---
 
-    event NewSettlementPeriodProposal(address indexed token, uint256 _seconds);
-    event SettlementPeriodChange(address indexed token, uint256 proposedTokenLockTimeframe);
+    event NewSettlementPeriodProposal(ILERC20 indexed token, uint256 _seconds);
+    event SettlementPeriodChange(ILERC20 indexed token, uint256 proposedTokenLockTimeframe);
 
     // --- MODIFIERS ---
 
@@ -267,7 +267,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(changeSettlementTimelock[_token] <= block.timestamp, "LSS: Time lock in progress");
         changeSettlementTimelock[_token] = block.timestamp + settlementTimeLock;
         proposedTokenLockTimeframe[_token] = _seconds;
-        emit NewSettlementPeriodProposal(address(_token), _seconds);
+        emit NewSettlementPeriodProposal(_token, _seconds);
     }
 
     /// @notice This function executes the new settlement period after the timelock
@@ -278,7 +278,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(changeSettlementTimelock[_token] <= block.timestamp, "LSS: Time lock in progress");
         tokenLockTimeframe[_token] = proposedTokenLockTimeframe[_token];
         proposedTokenLockTimeframe[_token] = 0; 
-        emit SettlementPeriodChange(address(_token), tokenLockTimeframe[_token]);
+        emit SettlementPeriodChange(_token, tokenLockTimeframe[_token]);
     }
 
     /// @notice This function activates the emergency mode
@@ -313,7 +313,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         Protection storage protection = tokenProtections[token].protections[protectedAddress];
         protection.isProtected = true;
         protection.strategy = strategy;
-        emit ProtectedAddressSet(token, protectedAddress, address(strategy));
+        emit ProtectedAddressSet(ILERC20(token), protectedAddress, address(strategy));
     }
 
     // @notice Remove the protection from the address.
@@ -321,7 +321,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // @dev This call is initiated from a strategy, but guardian proxies it.
     function removeProtectedAddress(address token, address protectedAddresss) external onlyGuardian whenNotPaused {
         delete tokenProtections[token].protections[protectedAddresss];
-        emit RemovedProtectedAddress(token, protectedAddresss);
+        emit RemovedProtectedAddress(ILERC20(token), protectedAddresss);
     }
 
     /// @notice This function will return the non-settled tokens amount
