@@ -49,6 +49,16 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     event ReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
     event SecondReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
     event NewReportingAmount(uint256 indexed newAmount);
+    event NewStakingToken(ILERC20 indexed token);
+    event NewGovernanceContract(ILssGovernance indexed adr);
+    event NewReporterReward(uint256 indexed newValue);
+    event NewLosslessReward(uint256 indexed newValue);
+    event NewStakersReward(uint256 indexed newValue);
+    event NewCommitteeReward(uint256 indexed newValue);
+    event NewReportLifetime(uint256 indexed newValue);
+    event ReporterClaim(address indexed reporter, uint256 indexed reportId, uint256 indexed amount);
+    event CompensationRetrieve(address indexed adr, uint256 indexed amount);
+
 
     // --- MODIFIERS ---
 
@@ -104,16 +114,20 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingToken Address corresponding to the Lossless Governance Token
     function setStakingToken(ILERC20 _stakingToken) public onlyLosslessAdmin {
-        require(address(ILERC20(_stakingToken)) != address(0), "LERC20: Cannot be zero address");
+        require(address(_stakingToken) != address(0), "LSS: Cannot be zero address");
+        require(_stakingToken != stakingToken, "LSS: Cannot be same address");
         stakingToken = ILERC20(_stakingToken);
+        emit NewStakingToken(stakingToken);
     }
 
     /// @notice This function sets the address of the Lossless Governance smart contract
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessGovernance Address corresponding to the Lossless Governance smart contract
     function setLosslessGovernance(ILssGovernance _losslessGovernance) public onlyLosslessAdmin {
-        require(address(ILssGovernance(_losslessGovernance)) != address(0), "LERC20: Cannot be zero address");
+        require(address(_losslessGovernance) != address(0), "LSS: Cannot be zero address");
+        require(_losslessGovernance != losslessGovernance, "LSS: Cannot be same address");
         losslessGovernance = ILssGovernance(_losslessGovernance);
+        emit NewGovernanceContract(losslessGovernance);
     }
 
     /// @notice This function sets the amount of tokens to be staked when reporting
@@ -127,31 +141,41 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the default reporter reward
     /// @param reward Percentage rewarded to the reporter when a report gets resolved positively
     function setReporterReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
+        require(reward != reporterReward, "LSS: Already set to that amount");
         reporterReward = reward;
+        emit NewReporterReward(reward);
     }
 
     /// @notice This function sets the default Lossless Reward
     /// @param reward Percentage attributed to Lossless when a report gets resolved positively
     function setLosslessReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
+        require(reward != reporterReward, "LSS: Already set to that amount");
         losslessReward = reward;
+        emit NewLosslessReward(reward);
     }
 
     /// @notice This function sets the default Stakers Reward
     /// @param reward Percentage attributed to Stakers when a report gets resolved positively
     function setStakersReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
+        require(reward != reporterReward, "LSS: Already set to that amount");
         stakersReward = reward;
+        emit NewStakersReward(reward);
     }
 
     /// @notice This function sets the default Committee Reward
     /// @param reward Percentage attributed to committee when a report gets resolved positively
     function setCommitteeReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
+        require(reward != reporterReward, "LSS: Already set to that amount");
         committeeReward = reward;
+        emit NewCommitteeReward(reward);
     }
 
     /// @notice This function sets the default lifetime of the reports
     /// @param lifetime Time frame of which a report is active
     function setReportLifetime(uint256 lifetime) public onlyLosslessAdmin {
+        require(lifetime != reportLifetime, "LSS: Already set to that amount");
         reportLifetime = lifetime;
+        emit NewReportLifetime(reportLifetime);
     }
 
     // --- GETTERS ---
@@ -249,8 +273,11 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         reporterClaimStatus[reportId] = true;
 
-        require(ILERC20(reportTokens[reportId]).transfer(msg.sender, reporterClaimableAmount(reportId)), "LSS: Token transfer failed");
+        uint256 amountToClaim = reporterClaimableAmount(reportId);
+
+        require(ILERC20(reportTokens[reportId]).transfer(msg.sender, amountToClaim), "LSS: Token transfer failed");
         require(stakingToken.transfer(msg.sender, reportingAmount), "LSS: Reporting stake failed");
+        emit ReporterClaim(msg.sender, reportId, amountToClaim);
     }
 
     // --- CLAIM ---
@@ -268,6 +295,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @param amount amount to be retrieved
     function retrieveCompensation(address adr, uint256 amount) public onlyLosslessGov {
         require(stakingToken.transfer(adr, amount), "LSS: Compensation retrieve fail");
+        emit CompensationRetrieve(adr, amount);
     }
 
 }

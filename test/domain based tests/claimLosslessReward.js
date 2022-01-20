@@ -54,9 +54,7 @@ describe(scriptName, () => {
       adr.member3.address,
       adr.member4.address,
       adr.member5.address]);
-
-    await env.lssReporting.connect(adr.lssAdmin).setLosslessReward(10);
-
+      
     await env.lssToken
       .connect(adr.lssInitialHolder)
       .transfer(adr.reporter1.address, env.stakingAmount);
