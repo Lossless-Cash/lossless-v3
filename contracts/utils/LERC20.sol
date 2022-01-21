@@ -115,6 +115,7 @@ contract LERC20 is Context, ILERC20 {
 
     function proposeLosslessTurnOff() override external onlyRecoveryAdmin {
         require(losslessTurnOffTimestamp != type(uint256).max, "LERC20: TurnOff already proposed");
+        require(isLosslessOn, "LERC20: Lossless already off");
         losslessTurnOffTimestamp = block.timestamp + timelockPeriod;
         emit LosslessTurnOffProposal(losslessTurnOffTimestamp);
     }
