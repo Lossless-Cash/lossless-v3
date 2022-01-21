@@ -14,7 +14,6 @@ interface ILERC20 {
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
-    function getAdmin() external view returns (address);
     
     function transferOutBlacklistedFunds(address[] calldata from) external;
     function setLosslessAdmin(address newAdmin) external;
@@ -26,10 +25,10 @@ interface ILERC20 {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChangeProposed(address indexed candidate);
-    event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event LosslessTurnOffProposed(uint256 turnOffDate);
-    event LosslessTurnedOff();
-    event LosslessTurnedOn();
+    event NewAdmin(address indexed previousAdmin, address indexed newAdmin);
+    event NewRecoveryAdminProposal(address indexed candidate);
+    event NewRecoveryAdmin(address indexed previousAdmin, address indexed newAdmin);
+    event LosslessTurnOffProposal(uint256 turnOffDate);
+    event LosslessOff();
+    event LosslessOn();
 }

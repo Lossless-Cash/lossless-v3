@@ -82,7 +82,7 @@ contract LosslessGuardian {
 
     // @notice Token admin sets up another admin that is responsible for managing protection.
     function setProtectionAdmin(address token, address admin) external onlyVerifiedToken(token) {
-        require(LERC20(token).getAdmin() == msg.sender, "LOSSLESS: Not token admin");
+        require(LERC20(token).admin() == msg.sender, "LOSSLESS: Not token admin");
         protectionAdmin[token] = admin;
         emit ProtectionAdminSet(token, admin);
     }
