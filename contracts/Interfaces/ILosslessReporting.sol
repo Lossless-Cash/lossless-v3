@@ -17,16 +17,16 @@ interface ILssReporting {
   function stakingToken() external returns(address);
   function losslessController() external returns(ILssController);
   function losslessGovernance() external returns(ILssGovernance);
-  function reporter(uint256 reportId) external returns(address);
-  function reportedAddress(uint256 reportId) external returns(address);
-  function secondReportedAddress(uint256 reportId) external returns(address);
-  function reportTimestamps(uint256 reportId) external view returns(uint256);
-  function reportTokens(uint256 reportId) external returns(address);
-  function secondReports(uint256 reportId) external returns(bool);
   function getVersion() external pure returns (uint256);
   function getRewards() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
   function report(ILERC20 token, address account) external returns (uint256);
   function reporterClaimableAmount(uint256 reportId) external view returns (uint256);
+  function getReportInfo(uint256 reportId) external view returns(address reporter,
+        address reportedAddress,
+        address secondReportedAddress,
+        uint256 reportTimestamps,
+        address reportTokens,
+        bool secondReports);
   
   function pause() external;
   function unpause() external;

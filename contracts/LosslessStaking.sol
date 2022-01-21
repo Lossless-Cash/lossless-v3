@@ -138,10 +138,12 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         StakeInfo storage stakeInfo = stakes[msg.sender].stakeInfoOnReport[reportId];
 
-        require(!stakeInfo.staked, "LSS: already staked");
-        require(losslessReporting.reporter(reportId) != msg.sender, "LSS: reporter can not stake");   
+        (address reporter,,, uint256 reportTimestamps, address reportTokens,) = losslessReporting.getReportInfo(reportId);
 
-        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
+        require(!stakeInfo.staked, "LSS: already staked");
+        require(reporter != msg.sender, "LSS: reporter can not stake");   
+
+        uint256 reportTimestamp = reportTimestamps;
 
         require(reportId > 0 && (reportTimestamp + losslessReporting.reportLifetime()) > block.timestamp, "LSS: report does not exists");
 
@@ -160,7 +162,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         totalStakedOnReport[reportId] += stakingAmount;
         stakedOnReport[msg.sender].report[reportId] = stakingAmount;
         
-        emit NewStake(losslessReporting.reportTokens(reportId), msg.sender, reportId);
+        emit NewStake(reportTokens, msg.sender, reportId);
     }
 
     // --- CLAIM ---
@@ -191,12 +193,14 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         uint256 amountToClaim = stakerClaimableAmount(reportId);
 
-        require(ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, amountToClaim),
+        (,,,, address reportTokens,) = losslessReporting.getReportInfo(reportId);
+
+        require(ILERC20(reportTokens).transfer(msg.sender, amountToClaim),
         "LSS: Reward transfer failed");
         require(stakingToken.transfer(msg.sender, stakedOnReport[msg.sender].report[reportId]),
         "LSS: Staking transfer failed");
 
-        emit StakerClaim(msg.sender, losslessReporting.reportTokens(reportId), reportId, amountToClaim);
+        emit StakerClaim(msg.sender, reportTokens, reportId, amountToClaim);
     }
 
     // --- GETTERS ---

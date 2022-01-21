@@ -38,13 +38,25 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
     mapping(uint256 => bool)  private reporterClaimStatus;
 
-    mapping(uint256 => address) public reporter;
+
+    struct Report {
+        address reporter;
+        address reportedAddress;
+        address secondReportedAddress;
+        uint256 reportTimestamps;
+        address reportTokens;
+        bool secondReports;
+    }
+
+    mapping(uint256 => Report) reportInfo;
+
+/*     mapping(uint256 => address) public reporter;
     mapping(uint256 => address) public reportedAddress;
     mapping(uint256 => address) public secondReportedAddress;
     mapping(uint256 => uint256) public reportTimestamps;
     mapping(uint256 => address) public reportTokens;
     mapping(uint256 => bool) public secondReports;
-
+ */
 
     event ReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
     event SecondReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
@@ -194,6 +206,26 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     function getRewards() external view returns (uint256 _reporter, uint256 _lossless, uint256 _committee, uint256 _stakers) {
         return (reporterReward, losslessReward, committeeReward, stakersReward);
     }
+    
+    /// @notice This function will return the admin of the repoted token
+    /// @param reportId Report Id to get admin
+    /// @return reporter
+    /// @return reportedAddress
+    /// @return secondReportedAddress
+    /// @return reportTimestamps
+    /// @return reportTokens
+    /// @return secondReports 
+    function getReportInfo(uint256 reportId) external view returns(address reporter,
+        address reportedAddress,
+        address secondReportedAddress,
+        uint256 reportTimestamps,
+        address reportTokens,
+        bool secondReports) {
+
+        Report storage report = reportInfo[reportId];
+
+        return (report.reporter, report.reportedAddress, report.secondReportedAddress, report.reportTimestamps, report.reportTokens, report.secondReports);
+    }
 
     // --- REPORTS ---
 
@@ -211,22 +243,22 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         uint256 reportId = tokenReports[token].reports[account];
 
         require(reportId == 0 || 
-                reportTimestamps[reportId] + reportLifetime < block.timestamp || 
+                reportInfo[reportId].reportTimestamps + reportLifetime < block.timestamp || 
                 losslessGovernance.isReportSolved(reportId) && 
                 !losslessGovernance.reportResolution(reportId), "LSS: Report already exists");
 
         reportCount += 1;
         reportId = reportCount;
-        reporter[reportId] = msg.sender;
+        reportInfo[reportId].reporter = msg.sender;
 
         tokenReports[ILERC20(token)].reports[account] = reportId;
-        reportTimestamps[reportId] = block.timestamp;
-        reportTokens[reportId] = address(token);
+        reportInfo[reportId].reportTimestamps = block.timestamp;
+        reportInfo[reportId].reportTokens = address(token);
 
         require(stakingToken.transferFrom(msg.sender, address(this), reportingAmount), "LSS: Reporting stake failed");
 
         losslessController.addToBlacklist(account);
-        reportedAddress[reportId] = account;
+        reportInfo[reportId].reportedAddress = account;
         
         losslessController.activateEmergency(token);
 
@@ -248,18 +280,18 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
         require(!losslessController.whitelist(account), "LSS: Cannot report LSS protocol");
         require(!losslessController.dexList(account), "LSS: Cannot report Dex");
 
-        uint256 reportTimestamp = reportTimestamps[reportId];
-        address token = reportTokens[reportId];
+        uint256 reportTimestamp = reportInfo[reportId].reportTimestamps;
+        address token = reportInfo[reportId].reportTokens;
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
-        require(secondReports[reportId] == false, "LSS: Another already submitted");
-        require(msg.sender == reporter[reportId], "LSS: invalid reporter");
+        require(reportInfo[reportId].secondReports == false, "LSS: Another already submitted");
+        require(msg.sender == reportInfo[reportId].reporter, "LSS: invalid reporter");
 
-        secondReports[reportId] = true;
+        reportInfo[reportId].secondReports = true;
         tokenReports[ILERC20(token)].reports[account] = reportId;
 
         losslessController.addToBlacklist(account);
-        secondReportedAddress[reportId] = account;
+        reportInfo[reportId].secondReportedAddress = account;
 
         emit SecondReportSubmission(token, account, reportId);
     }
@@ -267,7 +299,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function is for the reporter to claim their rewards
     /// @param reportId Staked report
     function reporterClaim(uint256 reportId) public whenNotPaused {
-        require(reporter[reportId] == msg.sender, "LSS: Only reporter");
+        require(reportInfo[reportId].reporter == msg.sender, "LSS: Only reporter");
         require(!reporterClaimStatus[reportId], "LSS: You already claimed");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively");
 
@@ -275,7 +307,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
 
         uint256 amountToClaim = reporterClaimableAmount(reportId);
 
-        require(ILERC20(reportTokens[reportId]).transfer(msg.sender, amountToClaim), "LSS: Token transfer failed");
+        require(ILERC20(reportInfo[reportId].reportTokens).transfer(msg.sender, amountToClaim), "LSS: Token transfer failed");
         require(stakingToken.transfer(msg.sender, reportingAmount), "LSS: Reporting stake failed");
         emit ReporterClaim(msg.sender, reportId, amountToClaim);
     }
