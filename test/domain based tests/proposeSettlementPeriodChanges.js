@@ -47,11 +47,6 @@ describe(scriptName, () => {
           env.lssController.connect(adr.lerc20Admin)
             .proposeNewSettlementPeriod(lerc20Token.address, 5 * 60),
         ).to.not.be.reverted;
-
-        expect(
-          await env.lssController.connect(adr.lerc20Admin)
-            .proposedTokenLockTimeframe(lerc20Token.address),
-        ).to.be.equal(5 * 60);
       });
 
       it('should emit event', async () => {
@@ -97,12 +92,6 @@ describe(scriptName, () => {
 
         await env.lssController.connect(adr.lerc20Admin)
           .executeNewSettlementPeriod(lerc20Token.address);
-      });
-
-      it('should set the new settlement period', async () => {
-        expect(
-          await env.lssController.tokenLockTimeframe(lerc20Token.address),
-        ).to.be.equal(5 * 60);
       });
 
       describe('when transfering to a dex', () => {

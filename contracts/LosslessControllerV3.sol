@@ -41,14 +41,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V3 VARIABLES ---
 
-    uint256 public dexTranferThreshold;
-    uint256 private constant toPercentage = 1e2;
-
-    uint256 public settlementTimeLock;
-    mapping(ILERC20 => uint256) public tokenLockTimeframe;
-    mapping(ILERC20 => uint256) public proposedTokenLockTimeframe;
-    mapping(ILERC20 => uint256) public changeSettlementTimelock;
-
     ILssStaking public losslessStaking;
     ILssReporting public losslessReporting;
     ILssGovernance public losslessGovernance;
@@ -64,18 +56,29 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         mapping(address => LocksQueue) queue;
     }
 
+    mapping(ILERC20 => TokenLockedFunds) private tokenScopedLockedFunds;
+    
     struct ReceiveCheckpoint {
         uint256 amount;
         uint256 timestamp;
     }
+    
+    uint256 private constant toPercentage = 1e2;
+    uint256 public dexTranferThreshold;
+    uint256 public settlementTimeLock;
 
-    mapping(ILERC20 => TokenLockedFunds) private tokenScopedLockedFunds;
-  
     mapping(address => bool) public dexList;
     mapping(address => bool) public whitelist;
     mapping(address => bool) public blacklist;
 
-    mapping(ILERC20 => uint256) private emergencyMode;
+    struct TokenConfig {
+        uint256 tokenLockTimeframe;
+        uint256 proposedTokenLockTimeframe;
+        uint256 changeSettlementTimelock;
+        uint256 emergencyMode;
+    }
+
+    mapping(ILERC20 => TokenConfig) tokenConfig;
 
     event AdminChange(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChange(address indexed previousAdmin, address indexed newAdmin);
@@ -260,22 +263,28 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _token to propose the settlement change period on
     /// @param _seconds Time frame that the recieved funds will be locked
     function proposeNewSettlementPeriod(ILERC20 _token, uint256 _seconds) public {
+
+        TokenConfig storage config = tokenConfig[_token];
+
         require(_token.admin() == msg.sender, "LSS: Must be Token Admin");
-        require(changeSettlementTimelock[_token] <= block.timestamp, "LSS: Time lock in progress");
-        changeSettlementTimelock[_token] = block.timestamp + settlementTimeLock;
-        proposedTokenLockTimeframe[_token] = _seconds;
+        require(config.changeSettlementTimelock <= block.timestamp, "LSS: Time lock in progress");
+        config.changeSettlementTimelock = block.timestamp + settlementTimeLock;
+        config.proposedTokenLockTimeframe = _seconds;
         emit NewSettlementPeriodProposal(_token, _seconds);
     }
 
     /// @notice This function executes the new settlement period after the timelock
     /// @param _token to set time settlement period on
     function executeNewSettlementPeriod(ILERC20 _token) public {
+
+        TokenConfig storage config = tokenConfig[_token];
+
         require(_token.admin() == msg.sender, "LSS: Must be Token Admin");
-        require(proposedTokenLockTimeframe[_token] != 0, "LSS: New Settlement not proposed");
-        require(changeSettlementTimelock[_token] <= block.timestamp, "LSS: Time lock in progress");
-        tokenLockTimeframe[_token] = proposedTokenLockTimeframe[_token];
-        proposedTokenLockTimeframe[_token] = 0; 
-        emit SettlementPeriodChange(_token, tokenLockTimeframe[_token]);
+        require(config.proposedTokenLockTimeframe != 0, "LSS: New Settlement not proposed");
+        require(config.changeSettlementTimelock <= block.timestamp, "LSS: Time lock in progress");
+        config.tokenLockTimeframe = config.proposedTokenLockTimeframe;
+        config.proposedTokenLockTimeframe = 0; 
+        emit SettlementPeriodChange(_token, config.tokenLockTimeframe);
     }
 
     /// @notice This function activates the emergency mode
@@ -284,13 +293,13 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// During this time users can only transfer settled tokens
     /// @param _token Token on which the emergency mode must get activated
     function activateEmergency(ILERC20 _token) external onlyLosslessEnv {
-        emergencyMode[_token] = block.timestamp;
+        tokenConfig[_token].emergencyMode = block.timestamp;
     }
 
     /// @notice This function deactivates the emergency mode
     /// @param _token Token on which the emergency mode will be deactivated
     function deactivateEmergency(ILERC20 _token) external onlyLosslessEnv {
-        emergencyMode[_token] = 0;
+        tokenConfig[_token].emergencyMode = 0;
     }
 
    // --- GUARD ---
@@ -403,7 +412,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[account];
 
-        require(queue.touchedTimestamp + tokenLockTimeframe[ILERC20(msg.sender)] <= block.timestamp, "LSS: Transfers limit reached");
+        require(queue.touchedTimestamp + tokenConfig[ILERC20(msg.sender)].tokenLockTimeframe <= block.timestamp, "LSS: Transfers limit reached");
 
         uint256 amountLeft =  amount - availableAmount;
         uint256 i = queue.first;
@@ -453,8 +462,11 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param amount Amount to be transfered
     function _evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
         uint256 settledAmount = getAvailableAmount(ILERC20(msg.sender), sender);
+        
+        TokenConfig storage config = tokenConfig[ILERC20(msg.sender)];
+
         if (amount > settledAmount) {
-            require(emergencyMode[ILERC20(msg.sender)] + tokenLockTimeframe[ILERC20(msg.sender)] < block.timestamp,
+            require(config.emergencyMode + config.tokenLockTimeframe < block.timestamp,
                     "LSS: Emergency mode active, cannot transfer unsettled tokens");
             if (dexList[recipient]) {
                 require(amount - settledAmount <= dexTranferThreshold,
@@ -464,7 +476,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
             }
         }
 
-        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + tokenLockTimeframe[ILERC20(msg.sender)]);
+        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + config.tokenLockTimeframe);
         _enqueueLockedFunds(newCheckpoint, recipient);
         _removeExpiredLocks(recipient);
         return true;
@@ -479,7 +491,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
         require(!blacklist[sender], "LSS: You cannot operate");
         
-        if (tokenLockTimeframe[ILERC20(msg.sender)] != 0) {
+        if (tokenConfig[ILERC20(msg.sender)].tokenLockTimeframe != 0) {
             _evaluateTransfer(sender, recipient, amount);
         }
     }
@@ -494,7 +506,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(!blacklist[msgSender], "LSS: You cannot operate");
         require(!blacklist[sender], "LSS: Sender is blacklisted");
 
-        if (tokenLockTimeframe[ILERC20(msg.sender)] != 0) {
+        if (tokenConfig[ILERC20(msg.sender)].tokenLockTimeframe != 0) {
             _evaluateTransfer(sender, recipient, amount);
         }
 

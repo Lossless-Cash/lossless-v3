@@ -25,10 +25,6 @@ interface ILssController {
     function losslessReporting() external view returns (ILssReporting);
     function dexTranferThreshold() external view returns (uint256);
     function settlementTimeLock() external view returns (uint256);
-    function tokenLockTimeframe(ILERC20 _token) external view returns (uint256);
-    function proposedTokenLockTimeframe(ILERC20 _token) external view returns (uint256);
-    function changeSettlementTimelock(ILERC20 _token) external view returns (uint256);
-    function isNewSettlementProposed(ILERC20 _token) external view returns (bool);
     
     function pause() external;
     function unpause() external;
