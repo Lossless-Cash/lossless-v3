@@ -26,4 +26,10 @@ interface ILERC20 {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
+    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
+    event RecoveryAdminChangeProposed(address indexed candidate);
+    event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
+    event LosslessTurnOffProposed(uint256 turnOffDate);
+    event LosslessTurnedOff();
+    event LosslessTurnedOn();
 }

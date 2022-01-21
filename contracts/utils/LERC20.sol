@@ -13,21 +13,13 @@ contract LERC20 is Context, ILERC20 {
     string private _symbol;
 
     address public recoveryAdmin;
-    address private recoveryAdminCanditate;
+    address private recoveryAdminCandidate;
     bytes32 private recoveryAdminKeyHash;
     address override public admin;
     uint256 public timelockPeriod;
     uint256 public losslessTurnOffTimestamp;
-    bool public isLosslessTurnOffProposed;
     bool public isLosslessOn = true;
     ILssController public lossless;
-
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChangeProposed(address indexed candidate);
-    event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event LosslessTurnOffProposed(uint256 turnOffDate);
-    event LosslessTurnedOff();
-    event LosslessTurnedOn();
 
     constructor(uint256 totalSupply_, string memory name_, string memory symbol_, address admin_, address recoveryAdmin_, uint256 timelockPeriod_, address lossless_) {
         _mint(_msgSender(), totalSupply_);
@@ -102,34 +94,33 @@ contract LERC20 is Context, ILERC20 {
 
     function transferRecoveryAdminOwnership(address candidate, bytes32 keyHash) override  external onlyRecoveryAdmin {
         require(candidate != address(0), "LERC20: Cannot be zero address");
-        recoveryAdminCanditate = candidate;
+        recoveryAdminCandidate = candidate;
         recoveryAdminKeyHash = keyHash;
         emit RecoveryAdminChangeProposed(candidate);
     }
 
     function acceptRecoveryAdminOwnership(bytes memory key) override external {
-        require(_msgSender() == recoveryAdminCanditate, "LERC20: Must be canditate");
+        require(_msgSender() == recoveryAdminCandidate, "LERC20: Must be canditate");
         require(keccak256(key) == recoveryAdminKeyHash, "LERC20: Invalid key");
-        emit RecoveryAdminChanged(recoveryAdmin, recoveryAdminCanditate);
-        recoveryAdmin = recoveryAdminCanditate;
+        emit RecoveryAdminChanged(recoveryAdmin, recoveryAdminCandidate);
+        recoveryAdmin = recoveryAdminCandidate;
     }
 
     function proposeLosslessTurnOff() override external onlyRecoveryAdmin {
         losslessTurnOffTimestamp = block.timestamp + timelockPeriod;
-        isLosslessTurnOffProposed = true;
         emit LosslessTurnOffProposed(losslessTurnOffTimestamp);
     }
 
     function executeLosslessTurnOff() override external onlyRecoveryAdmin {
-        require(isLosslessTurnOffProposed, "LERC20: TurnOff not proposed");
+        require(losslessTurnOffTimestamp == type(uint256).max, "LERC20: TurnOff not proposed");
         require(losslessTurnOffTimestamp <= block.timestamp, "LERC20: Time lock in progress");
         isLosslessOn = false;
-        isLosslessTurnOffProposed = false;
+        losslessTurnOffTimestamp = type(uint256).max;
         emit LosslessTurnedOff();
     }
 
     function executeLosslessTurnOn() override external onlyRecoveryAdmin {
-        isLosslessTurnOffProposed = false;
+        losslessTurnOffTimestamp = type(uint256).max;
         isLosslessOn = true;
         emit LosslessTurnedOn();
     }
