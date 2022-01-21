@@ -94,6 +94,20 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     event NewSettlementPeriodProposal(ILERC20 indexed token, uint256 _seconds);
     event SettlementPeriodChange(ILERC20 indexed token, uint256 proposedTokenLockTimeframe);
+    event NewSettlementTimelock(uint256 indexed timelock);
+    event NewDexThreshold(uint256 indexed newThreshold);
+    event NewDex(address indexed dexAddress);
+    event DexRemoval(address indexed dexAddress);
+    event NewWhitelistedAddress(address indexed whitelistAdr);
+    event WhitelistedAddressRemoval(address indexed whitelistAdr);
+    event NewBlacklistedAddress(address indexed blacklistedAddres);
+    event AccountBlacklistRemoval(address indexed adr);
+    event NewStakingContract(ILssStaking indexed newAdr);
+    event NewReportingContract(ILssReporting indexed newAdr);
+    event NewGovernanceContract(ILssGovernance indexed newAdr);
+    event EmergencyActive(ILERC20 indexed token);
+    event EmergencyDeactivation(ILERC20 indexed token);
+
 
     // --- MODIFIERS ---
 
@@ -195,14 +209,18 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Only can be called by the Lossless Admin
     /// @param newTimelock Timelock in seconds
     function setSettlementTimeLock(uint256 newTimelock) public onlyLosslessAdmin {
+        require(newTimelock != settlementTimeLock, "LSS: Cannot set same value");
         settlementTimeLock = newTimelock;
+        emit NewSettlementTimelock(settlementTimeLock);
     }
 
     /// @notice This function sets the transfer threshold for Dexes
     /// @dev Only can be called by the Lossless Admin
     /// @param newThreshold Timelock in seconds
     function setDexTransferThreshold(uint256 newThreshold) public onlyLosslessAdmin {
+        require(newThreshold != dexTranferThreshold, "LSS: Cannot set same value");
         dexTranferThreshold = newThreshold;
+        emit NewDexThreshold(dexTranferThreshold);
     }
     
     /// @notice This function removes or adds an array of dex addresses from the whitelst
@@ -211,6 +229,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setDexList(address[] calldata _dexList, bool value) public onlyLosslessAdmin {
         for(uint256 i; i < _dexList.length; i++) {
             dexList[_dexList[i]] = value;
+
+            if (value) {
+                emit NewDex(_dexList[i]);
+            } else {
+                emit DexRemoval(_dexList[i]);
+            }
         }
     }
 
@@ -220,6 +244,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setWhitelist(address[] calldata _addrList, bool value) public onlyLosslessAdmin {
         for(uint256 i; i < _addrList.length; i++) {
             whitelist[_addrList[i]] = value;
+
+            if (value) {
+                emit NewWhitelistedAddress(_addrList[i]);
+            } else {
+                emit WhitelistedAddressRemoval(_addrList[i]);
+            }
         }
     }
 
@@ -229,6 +259,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _adr Address corresponding to be added to the blacklist mapping
     function addToBlacklist(address _adr) public onlyLosslessEnv {
         blacklist[_adr] = true;
+        emit NewBlacklistedAddress(_adr);
     }
 
     /// @notice This function removes an address from the blacklist
@@ -236,27 +267,34 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _adr Address corresponding to be removed from the blacklist mapping
     function resolvedNegatively(address _adr) public onlyLosslessEnv {
         blacklist[_adr] = false;
+        emit AccountBlacklistRemoval(_adr);
     }
     
     /// @notice This function sets the address of the Lossless Staking contract
     /// @param _adr Address corresponding to the Lossless Staking contract
     function setStakingContractAddress(ILssStaking _adr) public onlyLosslessAdmin {
         require(address(_adr) != address(0), "LERC20: Cannot be zero address");
+        require(_adr != losslessStaking, "LSS: Cannot set same value");
         losslessStaking = _adr;
+        emit NewStakingContract(_adr);
     }
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _adr Address corresponding to the Lossless Reporting contract
     function setReportingContractAddress(ILssReporting _adr) public onlyLosslessAdmin {
         require(address(_adr) != address(0), "LERC20: Cannot be zero address");
+        require(_adr != losslessReporting, "LSS: Cannot set same value");
         losslessReporting = _adr;
+        emit NewReportingContract(_adr);
     }
 
     /// @notice This function sets the address of the Lossless Governance contract
     /// @param _adr Address corresponding to the Lossless Governance contract
     function setGovernanceContractAddress(ILssGovernance _adr) public onlyLosslessAdmin {
         require(address(_adr) != address(0), "LERC20: Cannot be zero address");
+        require(_adr != losslessGovernance, "LSS: Cannot set same value");
         losslessGovernance = _adr;
+        emit NewGovernanceContract(_adr);
     }
 
     /// @notice This function starts a new proposal to change the SettlementPeriod
@@ -294,12 +332,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _token Token on which the emergency mode must get activated
     function activateEmergency(ILERC20 _token) external onlyLosslessEnv {
         tokenConfig[_token].emergencyMode = block.timestamp;
+        emit EmergencyActive(_token);
     }
 
     /// @notice This function deactivates the emergency mode
     /// @param _token Token on which the emergency mode will be deactivated
     function deactivateEmergency(ILERC20 _token) external onlyLosslessEnv {
         tokenConfig[_token].emergencyMode = 0;
+        emit EmergencyDeactivation(_token);
     }
 
    // --- GUARD ---

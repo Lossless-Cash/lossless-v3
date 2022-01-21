@@ -61,4 +61,17 @@ interface ILssController {
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
     event NewSettlementPeriodProposal(address indexed token, uint256 _seconds);
     event SettlementPeriodChanged(address indexed token, uint256 proposedTokenLockTimeframe);
+    event NewSettlementTimelock(uint256 indexed timelock);
+    event NewDexThreshold(uint256 indexed newThreshold);
+    event NewDex(address indexed dexAddress);
+    event DexRemoval(address indexed dexAddress);
+    event NewWhitelistedAddress(address indexed whitelistAdr);
+    event WhitelistedAddressRemoval(address indexed whitelistAdr);
+    event NewBlacklistedAddress(address indexed blacklistedAddres);
+    event AccountBlacklistRemoval(address indexed adr);
+    event NewStakingContract(ILssStaking indexed newAdr);
+    event NewReportingContract(ILssReporting indexed newAdr);
+    event NewGovernanceContract(ILssGovernance indexed newAdr);
+    event EmergencyActive(ILERC20 indexed token);
+    event EmergencyDeactivation(ILERC20 indexed token);
 }
