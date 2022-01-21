@@ -149,7 +149,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the default Lossless Reward
     /// @param reward Percentage attributed to Lossless when a report gets resolved positively
     function setLosslessReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
-        require(reward != reporterReward, "LSS: Already set to that amount");
+        require(reward != losslessReward, "LSS: Already set to that amount");
         losslessReward = reward;
         emit NewLosslessReward(reward);
     }
@@ -157,7 +157,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the default Stakers Reward
     /// @param reward Percentage attributed to Stakers when a report gets resolved positively
     function setStakersReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
-        require(reward != reporterReward, "LSS: Already set to that amount");
+        require(reward != stakersReward, "LSS: Already set to that amount");
         stakersReward = reward;
         emit NewStakersReward(reward);
     }
@@ -165,7 +165,7 @@ contract LosslessReporting is Initializable, ContextUpgradeable, PausableUpgrade
     /// @notice This function sets the default Committee Reward
     /// @param reward Percentage attributed to committee when a report gets resolved positively
     function setCommitteeReward(uint256 reward) public onlyLosslessAdmin cannotExceedHundred {
-        require(reward != reporterReward, "LSS: Already set to that amount");
+        require(reward != committeeReward, "LSS: Already set to that amount");
         committeeReward = reward;
         emit NewCommitteeReward(reward);
     }

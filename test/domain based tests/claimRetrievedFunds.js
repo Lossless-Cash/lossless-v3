@@ -20,7 +20,7 @@ const stakerReward = 0.02;
 
 const toRetrieve = reportedAmount * (1 - (losslessReward + committeeReward + reporterReward + stakerReward));
 
-describe.only(scriptName, () => {
+describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,

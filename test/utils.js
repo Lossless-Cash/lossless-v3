@@ -187,30 +187,26 @@ const setupEnvironment = async (
   true);
   await lssController.connect(lssAdmin).setDexTransferThreshold(20);
   await lssController.connect(lssAdmin).setSettlementTimeLock(12 * 3600);
-  
+
   await lssStaking.connect(lssAdmin).setStakingAmount(stakingAmount);
   await lssStaking.connect(lssAdmin).setStakingToken(lssToken.address);
   await lssStaking
     .connect(lssAdmin)
     .setLosslessGovernance(lssGovernance.address);
 
- await lssReporting
+  await lssReporting
     .connect(lssAdmin)
     .setReportLifetime(Number(reportLifetime));
-   await lssReporting.connect(lssAdmin).setReportingAmount(reportingAmount);
+  await lssReporting.connect(lssAdmin).setReportingAmount(reportingAmount);
   await lssReporting.connect(lssAdmin).setStakingToken(lssToken.address);
 
   await lssReporting
     .connect(lssAdmin)
     .setLosslessGovernance(lssGovernance.address);
   await lssReporting.connect(lssAdmin).setReporterReward(2);
-  console.log("set reporter");
   await lssReporting.connect(lssAdmin).setLosslessReward(10);
-  console.log("set lss");
   await lssReporting.connect(lssAdmin).setStakersReward(2);
-  console.log("set staker");
   await lssReporting.connect(lssAdmin).setCommitteeReward(2);
-  console.log("set committee");
 
   return {
     lssController,
