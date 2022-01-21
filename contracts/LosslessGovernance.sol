@@ -44,10 +44,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         bool losslessPayed;
     }
     mapping(uint256 => Vote) public reportVotes;
-/* 
-    mapping(uint256 => uint256) public amountReported;
-    mapping(uint256 => uint256) private retrievalAmount;
-    mapping(uint256 => bool) public losslessPayed; */
 
     struct ProposedWallet {
         uint16 proposal;

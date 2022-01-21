@@ -24,6 +24,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 coefficient;
         bool staked;
         bool payed;
+        uint256 totalStakedOnReport;
     }
 
     ILERC20 public stakingToken;
@@ -36,12 +37,8 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     uint256 private constant betterDecimals = 1e6;
     
     mapping(address => Stake) private stakes;
-    mapping(uint256 => address[]) public stakers;
-
-    mapping(uint256 => uint256) public totalStakedOnReport;
 
     mapping(uint256 => uint256) public reportCoefficient;
-
 
     mapping(address => PerReportAmount) stakedOnReport;
 
@@ -149,7 +146,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
         uint256 stakerCoefficient = reportTimestamp + losslessReporting.reportLifetime() - block.timestamp;
 
-        stakers[reportId].push(msg.sender);
         stakeInfo.timestamp = block.timestamp;
         stakeInfo.coefficient = stakerCoefficient;
         stakeInfo.staked = true;
@@ -159,7 +155,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         require(stakingToken.transferFrom(msg.sender, address(this), stakingAmount),
         "LSS: Staking transfer failed");
 
-        totalStakedOnReport[reportId] += stakingAmount;
+        stakeInfo.totalStakedOnReport += stakingAmount;
         stakedOnReport[msg.sender].report[reportId] = stakingAmount;
         
         emit NewStake(reportTokens, msg.sender, reportId);
