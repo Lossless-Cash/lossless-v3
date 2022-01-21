@@ -40,19 +40,19 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         bool[3] voted;
         bool resolved;
         bool resolution;
+        uint256 amountReported;
+        bool losslessPayed;
     }
-
     mapping(uint256 => Vote) public reportVotes;
+/* 
     mapping(uint256 => uint256) public amountReported;
     mapping(uint256 => uint256) private retrievalAmount;
-
-    mapping(uint256 => ProposedWallet) public proposedWalletOnReport;
-
-    mapping(uint256 => bool) public losslessPayed;
+    mapping(uint256 => bool) public losslessPayed; */
 
     struct ProposedWallet {
         uint16 proposal;
         address wallet;
+        uint256 retrievalAmount;
         uint256 timestamp;
         bool status;
         bool losslessVote;
@@ -63,6 +63,8 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         uint16 committeeDisagree;
         mapping (uint16 => MemberVotesOnProposal) memberVotesOnProposal;
     }
+
+    mapping(uint256 => ProposedWallet) public proposedWalletOnReport;
 
     struct Compensation {
         uint256 amount;
@@ -199,6 +201,12 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         } else {
             return (false, false);
         }
+    }
+
+    /// @notice This function returns the amount reported on a report    
+    /// @param reportId Report id to check
+    function getAmountReported(uint256 reportId) external view returns(uint256) {
+        return reportVotes[reportId].amountReported;
     }
 
     /// @notice This function adds committee members    
@@ -364,9 +372,9 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         if (agreeCount > (voteCount - agreeCount)){
             reportVote.resolution = true;
             for(uint256 i; i < reportedAddresses.length; i++) {
-                amountReported[reportId] += ILERC20(token).balanceOf(reportedAddresses[i]);
+                reportVote.amountReported += ILERC20(token).balanceOf(reportedAddresses[i]);
             }
-            retrievalAmount[reportId] = losslessController.retrieveBlacklistedFunds(reportedAddresses, ILERC20(token), reportId);
+            proposedWalletOnReport[reportId].retrievalAmount = losslessController.retrieveBlacklistedFunds(reportedAddresses, ILERC20(token), reportId);
             losslessController.deactivateEmergency(ILERC20(token));
         }else{
             reportVote.resolution = false;
@@ -408,7 +416,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     }
 
     function isReportActive(uint256 reportId) public view returns(bool) {
-
         (,,,uint256 reportTimestamps,,) = losslessReporting.getReportInfo(reportId);
         return reportTimestamps != 0 && reportTimestamps + losslessReporting.reportLifetime() > block.timestamp;
     }
@@ -484,10 +491,10 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
         proposedWallet.status = true;
 
-        require(ILERC20(reportTokens).transfer(msg.sender, retrievalAmount[reportId]), 
+        require(ILERC20(reportTokens).transfer(msg.sender, proposedWallet.retrievalAmount), 
         "LSS: Funds retrieve failed");
 
-        emit FundsRetrieval(reportId, msg.sender, retrievalAmount[reportId]);
+        emit FundsRetrieval(reportId, msg.sender, proposedWallet.retrievalAmount);
     }
 
     /// @notice This function determins if the refund wallet was accepted
@@ -554,7 +561,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
         uint256 committeeReward = losslessReporting.committeeReward();
 
-        uint256 compensationPerMember = (amountReported[reportId] * committeeReward /  10**2) / numberOfMembersVote;
+        uint256 compensationPerMember = (reportVotes[reportId].amountReported * committeeReward /  10**2) / numberOfMembersVote;
 
         reportVotes[reportId].committeeMemberClaimed[msg.sender] = true;
 
@@ -568,12 +575,15 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId report worked on
     function losslessClaim(uint256 reportId) public whenNotPaused onlyLosslessAdmin {
         require(reportResolution(reportId), "LSS: Report solved negatively");   
-        require(!losslessPayed[reportId], "LSS: Already claimed");
+
+        Vote storage reportVote = reportVotes[reportId];
+
+        require(!reportVote.losslessPayed, "LSS: Already claimed");
 
         (,,,,address reportTokens,) = losslessReporting.getReportInfo(reportId);
 
-        uint256 amountToClaim = amountReported[reportId] * losslessReporting.losslessReward() / 10**2;
-        losslessPayed[reportId] = true;
+        uint256 amountToClaim = reportVote.amountReported * losslessReporting.losslessReward() / 10**2;
+        reportVote.losslessPayed = true;
         require(ILERC20(reportTokens).transfer(losslessController.admin(), amountToClaim), 
         "LSS: Reward transfer failed");
 

@@ -21,8 +21,8 @@ interface ILssGovernance {
     function getVote(uint256 reportId, uint256 voterIndex) external view returns(bool);
     function isReportSolved(uint256 reportId) external view returns(bool);
     function reportResolution(uint256 reportId) external view returns(bool);
-    function amountReported(uint256 reportId) external view returns (uint256);
     function erroneousCompensation() external view returns (uint256);
+    function getAmountReported(uint256 reportId) external view returns(uint256);
     
     function setDisputePeriod(uint256 timeFrame) external;
     function addCommitteeMembers(address[] memory members) external;

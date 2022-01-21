@@ -376,7 +376,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _token Token to retrieve the funds from
     /// @param reportId Report Id related to the incident
     function retrieveBlacklistedFunds(address[] calldata _addresses, ILERC20 _token, uint256 reportId) public onlyLosslessEnv returns(uint256){
-        uint256 totalAmount = losslessGovernance.amountReported(reportId);
+        uint256 totalAmount = losslessGovernance.getAmountReported(reportId);
         
         _token.transferOutBlacklistedFunds(_addresses);
                 
