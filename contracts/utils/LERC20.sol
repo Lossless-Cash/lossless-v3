@@ -76,7 +76,7 @@ contract LERC20 is Context, ILERC20 {
     // --- LOSSLESS management ---
     function transferOutBlacklistedFunds(address[] calldata from) override external {
         require(_msgSender() == address(lossless), "LERC20: Only lossless contract");
-        
+
         uint256 fromLength = from.length;
         uint256 totalAmount = 0;
         
@@ -93,6 +93,7 @@ contract LERC20 is Context, ILERC20 {
 
     function setLosslessAdmin(address newAdmin) override external onlyRecoveryAdmin {
         require(newAdmin != address(0), "LERC20: Cannot be zero address");
+        require(newAdmin != admin, "LERC20: Cannot set same address");
         emit NewAdmin(admin, newAdmin);
         admin = newAdmin;
     }
