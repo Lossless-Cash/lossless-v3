@@ -110,6 +110,7 @@ contract LERC20 is Context, ILERC20 {
         require(keccak256(key) == recoveryAdminKeyHash, "LERC20: Invalid key");
         emit NewRecoveryAdmin(recoveryAdmin, recoveryAdminCandidate);
         recoveryAdmin = recoveryAdminCandidate;
+        recoveryAdminCandidate = address(0);
     }
 
     function proposeLosslessTurnOff() override external onlyRecoveryAdmin {
