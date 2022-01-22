@@ -248,6 +248,12 @@ contract LERC20 is Context, IERC20 {
 
         _totalSupply += amount;
         _balances[account] += amount;
+
+        // Cannot overflow because the sum of all user
+        // balances can't exceed the max uint256 value.
+        unchecked { 
+            _balances[account] += amount;
+        }
         emit Transfer(address(0), account, amount);
     }
 
