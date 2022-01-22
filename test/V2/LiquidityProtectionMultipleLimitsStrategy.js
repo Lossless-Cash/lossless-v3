@@ -169,7 +169,7 @@ describe('LiquidityProtectionMultipleLimitsStrategy', () => {
         ).to.be.equal(2);
       });
 
-      it('should emit ProtectedAddressSet events', async () => {
+      it('should emit NewProtectedAddress events', async () => {
         const timestampBefore = await ethers.provider.getBlock();
         await expect(
           protection.liquidityProtectionMultipleLimitsStrategy
@@ -182,7 +182,7 @@ describe('LiquidityProtectionMultipleLimitsStrategy', () => {
               [timestampBefore.timestamp, timestampBefore.timestamp],
             ),
         )
-          .to.emit(vars.losslessController, 'ProtectedAddressSet')
+          .to.emit(vars.losslessController, 'NewProtectedAddress')
           .withArgs(
             vars.erc20s[0].address,
             vars.oneMoreAccount.address,
@@ -200,7 +200,7 @@ describe('LiquidityProtectionMultipleLimitsStrategy', () => {
               [timestampBefore.timestamp, timestampBefore.timestamp],
             ),
         )
-          .to.emit(vars.losslessController, 'ProtectedAddressSet')
+          .to.emit(vars.losslessController, 'NewProtectedAddress')
           .withArgs(
             vars.erc20s[0].address,
             vars.initialHolder.address,
@@ -375,7 +375,7 @@ describe('LiquidityProtectionMultipleLimitsStrategy', () => {
         ).to.be.equal(2);
       });
 
-      it('should emit ProtectedAddressSet events', async () => {
+      it('should emit NewProtectedAddress events', async () => {
         const timestampBefore = await ethers.provider.getBlock();
         await expect(
           protection.liquidityProtectionMultipleLimitsStrategy
@@ -388,7 +388,7 @@ describe('LiquidityProtectionMultipleLimitsStrategy', () => {
               [timestampBefore.timestamp, timestampBefore.timestamp],
             ),
         )
-          .to.emit(vars.losslessController, 'ProtectedAddressSet')
+          .to.emit(vars.losslessController, 'NewProtectedAddress')
           .withArgs(
             vars.erc20s[0].address,
             vars.oneMoreAccount.address,

@@ -163,7 +163,7 @@ describe('LiquidityProtectionSingleLimitStrategy', () => {
         ).to.be.equal(true);
       });
 
-      it('should emit ProtectedAddressSet events', async () => {
+      it('should emit NewProtectedAddress events', async () => {
         const timeNumBefore = await ethers.provider.getBlock();
         await expect(
           protection.liquidityProtectionSingleLimitStrategy
@@ -176,7 +176,7 @@ describe('LiquidityProtectionSingleLimitStrategy', () => {
               timeNumBefore.timestamp,
             ),
         )
-          .to.emit(vars.losslessController, 'ProtectedAddressSet')
+          .to.emit(vars.losslessController, 'NewProtectedAddress')
           .withArgs(
             vars.erc20s[0].address,
             vars.oneMoreAccount.address,
@@ -194,7 +194,7 @@ describe('LiquidityProtectionSingleLimitStrategy', () => {
               timeNumBefore.timestamp,
             ),
         )
-          .to.emit(vars.losslessController, 'ProtectedAddressSet')
+          .to.emit(vars.losslessController, 'NewProtectedAddress')
           .withArgs(
             vars.erc20s[0].address,
             vars.initialHolder.address,
@@ -336,7 +336,7 @@ describe('LiquidityProtectionSingleLimitStrategy', () => {
         ).to.be.equal(true);
       });
 
-      it('should emit ProtectedAddressSet events', async () => {
+      it('should emit NewProtectedAddress events', async () => {
         const timeNumBefore = await ethers.provider.getBlock();
         await expect(
           protection.liquidityProtectionSingleLimitStrategy
@@ -349,7 +349,7 @@ describe('LiquidityProtectionSingleLimitStrategy', () => {
               timeNumBefore.timestamp,
             ),
         )
-          .to.emit(vars.losslessController, 'ProtectedAddressSet')
+          .to.emit(vars.losslessController, 'NewProtectedAddress')
           .withArgs(
             vars.erc20s[0].address,
             vars.oneMoreAccount.address,

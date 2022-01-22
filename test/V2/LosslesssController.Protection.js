@@ -42,7 +42,7 @@ describe('ControllerProtection', () => {
               .connect(vars.lssAdmin)
               .setGuardian(protection.guardian.address),
           )
-            .to.emit(vars.losslessController, 'GuardianSet')
+            .to.emit(vars.losslessController, 'NewGuardian')
             .withArgs(constants.ZERO_ADDRESS, protection.guardian.address);
         });
         it('should succeed', async () => {
@@ -61,7 +61,7 @@ describe('ControllerProtection', () => {
               .connect(vars.lssAdmin)
               .setGuardian(protection.guardian.address),
           )
-            .to.emit(vars.losslessController, 'GuardianSet')
+            .to.emit(vars.losslessController, 'NewGuardian')
             .withArgs(constants.ZERO_ADDRESS, protection.guardian.address);
         });
       });
@@ -179,7 +179,7 @@ describe('ControllerProtection', () => {
           ).to.be.equal(false);
         });
 
-        it('should emit ProtectedAddressSet event', async () => {
+        it('should emit NewProtectedAddress event', async () => {
           await expect(
             vars.losslessController
               .connect(vars.anotherAccount)
@@ -189,7 +189,7 @@ describe('ControllerProtection', () => {
                 protection.treasuryProtectionStrategy.address,
               ),
           )
-            .to.emit(vars.losslessController, 'ProtectedAddressSet')
+            .to.emit(vars.losslessController, 'NewProtectedAddress')
             .withArgs(
               vars.erc20s[0].address,
               vars.oneMoreAccount.address,
