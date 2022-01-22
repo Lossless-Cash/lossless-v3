@@ -14,7 +14,7 @@ interface ILssReporting {
   function reportLifetime() external view returns(uint256);
   function reportingAmount() external returns(uint256);
   function reportCount() external returns(uint256);
-  function stakingToken() external returns(address);
+  function stakingToken() external returns(ILERC20);
   function losslessController() external returns(ILssController);
   function losslessGovernance() external returns(ILssGovernance);
   function getVersion() external pure returns (uint256);
@@ -45,4 +45,13 @@ interface ILssReporting {
   event ReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
   event SecondReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
   event NewReportingAmount(uint256 indexed newAmount);
+  event NewStakingToken(ILERC20 indexed token);
+  event NewGovernanceContract(ILssGovernance indexed adr);
+  event NewReporterReward(uint256 indexed newValue);
+  event NewLosslessReward(uint256 indexed newValue);
+  event NewStakersReward(uint256 indexed newValue);
+  event NewCommitteeReward(uint256 indexed newValue);
+  event NewReportLifetime(uint256 indexed newValue);
+  event ReporterClaim(address indexed reporter, uint256 indexed reportId, uint256 indexed amount);
+  event CompensationRetrieve(address indexed adr, uint256 indexed amount);
 }
