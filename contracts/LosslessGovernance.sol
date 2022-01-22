@@ -181,7 +181,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     function _getCommitteeMajorityReachedResult(uint256 reportId) private view returns(bool isMajorityReached, bool result) {        
         Vote storage reportVote = reportVotes[reportId];
         uint256 committeeLength = reportVote.committeeVotes.length;
-        uint256 committeeQuorum = (committeeMembersCount/2) + 1; 
+        uint256 committeeQuorum = (committeeMembersCount >> 2) + 1; 
 
         uint256 agreeCount;
         for(uint256 i = 0; i < committeeLength; i++) {
@@ -500,7 +500,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         ProposedWallet storage proposedWallet = proposedWalletOnReport[reportId];
         uint256 agreementCount;
         
-        if (proposedWallet.committeeDisagree < (committeeMembersCount/2)+1 ){
+        if (proposedWallet.committeeDisagree < (committeeMembersCount >> 2)+1 ){
             agreementCount += 1;
         }
 
