@@ -10,10 +10,11 @@ import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessControllerV3.sol";
 import "./Interfaces/ILosslessGovernance.sol";
 import "./Interfaces/ILosslessReporting.sol";
+import "./Interfaces/ILosslessStaking.sol";
 
 /// @title Lossless Staking Contract
 /// @notice The Staking contract is in charge of handling the staking done on reports
-contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
+contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, PausableUpgradeable {
 
     struct Stake {
         mapping(uint256 => StakeInfo) stakeInfoOnReport;
@@ -27,12 +28,12 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
         uint256 totalStakedOnReport;
     }
 
-    ILERC20 public stakingToken;
-    ILssReporting public losslessReporting;
-    ILssController public losslessController;
-    ILssGovernance public losslessGovernance;
+    ILERC20 override public stakingToken;
+    ILssReporting override public losslessReporting;
+    ILssController override public losslessController;
+    ILssGovernance override public losslessGovernance;
 
-    uint256 public stakingAmount;
+    uint256 public override stakingAmount;
     uint256 private constant toPercentage = 1e2;
     uint256 private constant betterDecimals = 1e6;
     
@@ -45,13 +46,6 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     struct PerReportAmount {
         mapping(uint256 => uint256) report;
     }
-
-    event NewStake(address indexed token, address indexed account, uint256 reportId);
-    event StakerClaim(address indexed staker, address indexed token, uint256 indexed reportID, uint256 amount);
-    event NewStakingAmount(uint256 indexed newAmount);
-    event NewStakingToken(address indexed newToken);
-    event NewReportingContract(address indexed newContract);
-    event NewGovernanceContract(address indexed newContract);
 
     function initialize(ILssReporting _losslessReporting, ILssController _losslessController) public initializer {
        losslessReporting = ILssReporting(_losslessReporting);
@@ -79,19 +73,19 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     // --- SETTERS ---
 
     /// @notice This function pauses the contract
-    function pause() public onlyLosslessPauseAdmin {
+    function pause() override public onlyLosslessPauseAdmin {
         _pause();
     }    
 
     /// @notice This function unpauses the contract
-    function unpause() public onlyLosslessPauseAdmin {
+    function unpause() override public onlyLosslessPauseAdmin {
         _unpause();
     }
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
-    function setLssReporting(ILssReporting _losslessReporting) public onlyLosslessAdmin {
+    function setLssReporting(ILssReporting _losslessReporting) override public onlyLosslessAdmin {
         require(address(ILssReporting(_losslessReporting)) != address(0), "LERC20: Cannot be zero address");
         losslessReporting = ILssReporting(_losslessReporting);
         emit NewReportingContract(address(ILssReporting(_losslessReporting)));
@@ -100,7 +94,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingToken Address corresponding to the Lossless Governance Token
-    function setStakingToken(ILERC20 _stakingToken) public onlyLosslessAdmin {
+    function setStakingToken(ILERC20 _stakingToken) override public onlyLosslessAdmin {
         require(address(ILERC20(_stakingToken)) != address(0), "LERC20: Cannot be zero address");
         stakingToken = ILERC20(_stakingToken);
         emit NewStakingToken(address(ILERC20(_stakingToken)));
@@ -109,7 +103,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function sets the address of the Lossless Governance contract
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessGovernance Address corresponding to the Lossless Governance contract
-    function setLosslessGovernance(ILssGovernance _losslessGovernance) public onlyLosslessAdmin {
+    function setLosslessGovernance(ILssGovernance _losslessGovernance) override public onlyLosslessAdmin {
         require(address(ILssGovernance(_losslessGovernance)) != address(0), "LERC20: Cannot be zero address");
         losslessGovernance = ILssGovernance(_losslessGovernance);
         emit NewGovernanceContract(address(ILssGovernance(_losslessGovernance)));
@@ -118,7 +112,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function sets the amount of tokens to be staked when staking
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingAmount Amount to be staked
-    function setStakingAmount(uint256 _stakingAmount) public onlyLosslessAdmin {
+    function setStakingAmount(uint256 _stakingAmount) override public onlyLosslessAdmin {
         stakingAmount = _stakingAmount;
         emit NewStakingAmount(_stakingAmount);
     }
@@ -130,7 +124,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// The reporter cannot stake as it'll have a fixed percentage reward.
     /// A reported address cannot stake.
     /// @param reportId Report to stake
-    function stake(uint256 reportId) public notBlacklisted whenNotPaused {
+    function stake(uint256 reportId) override public notBlacklisted whenNotPaused {
         require(!losslessGovernance.isReportSolved(reportId), "LSS: Report already resolved");
 
         StakeInfo storage stakeInfo = stakes[msg.sender].stakeInfoOnReport[reportId];
@@ -166,7 +160,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @notice This function returns the claimable amount by the stakers
     /// @dev It takes into consideration the staker coefficient in order to return the percentage rewarded.
     /// @param reportId Staked report
-    function stakerClaimableAmount(uint256 reportId) public view returns (uint256) {
+    function stakerClaimableAmount(uint256 reportId) override public view returns (uint256) {
         (,,, uint256 stakersReward) = losslessReporting.getRewards();
         uint256 amountStakedOnReport = losslessGovernance.getAmountReported(reportId);
         uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / toPercentage;
@@ -179,7 +173,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function is for the stakers to claim their rewards
     /// @param reportId Staked report
-    function stakerClaim(uint256 reportId) public whenNotPaused {
+    function stakerClaim(uint256 reportId) override public whenNotPaused {
         StakeInfo storage stakeInfo = stakes[msg.sender].stakeInfoOnReport[reportId];
 
         require(!stakeInfo.payed, "LSS: You already claimed");
@@ -203,7 +197,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
 
     /// @notice This function returns the contract version
     /// @return Returns the Smart Contract version
-    function getVersion() public pure returns (uint256) {
+    function getVersion() override public pure returns (uint256) {
         return 1;
     }
 
@@ -212,7 +206,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Report being staked
     /// @param account Address to consult
     /// @return True if the account is already staking
-    function getIsAccountStaked(uint256 reportId, address account) public view returns(bool) {
+    function getIsAccountStaked(uint256 reportId, address account) override public view returns(bool) {
         return stakes[account].stakeInfoOnReport[reportId].staked;
     }
 
@@ -220,7 +214,7 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @param reportId Report where the address staked
     /// @param _address Staking address
     /// @return The coefficient calculated for the staker
-    function getStakerCoefficient(uint256 reportId, address _address) public view returns (uint256) {
+    function getStakerCoefficient(uint256 reportId, address _address) override public view returns (uint256) {
         return stakes[_address].stakeInfoOnReport[reportId].coefficient;
     }
 
