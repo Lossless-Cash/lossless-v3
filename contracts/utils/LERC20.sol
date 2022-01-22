@@ -166,16 +166,15 @@ contract LERC20 is Context, ILERC20 {
     }
 
     function approve(address spender, uint256 amount) public virtual override lssAprove(spender, amount) returns (bool) {
-        require((amount == 0) || (_allowances[_msgSender()][spender] == 0), "LERC20: Cannot change non zero allowance");
         _approve(_msgSender(), spender, amount);
         return true;
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override lssTransferFrom(sender, recipient, amount) returns (bool) {
+    uint256 currentAllowance = _allowances[sender][_msgSender()];
+        require(currentAllowance >= amount, "LERC20: transfer amount exceeds allowance");
         _transfer(sender, recipient, amount);
 
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "LERC20: transfer amount exceeds allowance");
         _approve(sender, _msgSender(), currentAllowance - amount);
 
         return true;
