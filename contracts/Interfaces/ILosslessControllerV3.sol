@@ -5,17 +5,14 @@ import "./ILosslessERC20.sol";
 import "./ILosslessGovernance.sol";
 import "./ILosslessStaking.sol";
 import "./ILosslessReporting.sol";
+import "./IProtectionStrategy.sol";
 
 interface ILssController {
     function getLockedAmount(ILERC20 _token, address _account) external view returns (uint256);
     function getAvailableAmount(ILERC20 _token, address _account) external view returns (uint256 amount);
     function retrieveBlacklistedFunds(address[] calldata _addresses, ILERC20 _token, uint256 _reportId) external returns(uint256);
-    function reportLifetime() external returns (uint256);
-    function stakeAmount() external view returns (uint256);
-    function reportingAmount() external returns (uint256);
     function whitelist(address _adr) external view returns (bool);
     function dexList(address _dexAddress) external returns (bool);
-    function getReporterPayoutStatus(address _reporter, uint256 _reportId) external view returns (bool _payed);
     function blacklist(address _adr) external view returns (bool);
     function admin() external view returns (address);
     function pauseAdmin() external view returns (address);
@@ -23,6 +20,7 @@ interface ILssController {
     function guardian() external view returns (address);
     function losslessStaking() external view returns (ILssStaking);
     function losslessReporting() external view returns (ILssReporting);
+    function losslessGovernance() external view returns (ILssGovernance);
     function dexTranferThreshold() external view returns (uint256);
     function settlementTimeLock() external view returns (uint256);
     
@@ -32,8 +30,7 @@ interface ILssController {
     function setRecoveryAdmin(address _newRecoveryAdmin) external;
     function setPauseAdmin(address _newPauseAdmin) external;
     function setSettlementTimeLock(uint256 _newTimelock) external;
-    function setDexTrasnferThreshold(uint256 _newThreshold) external;
-    function setReporterPayoutStatus(address _reporter, bool _status, uint256 _reportId) external; 
+    function setDexTransferThreshold(uint256 _newThreshold) external;
     function setDexList(address[] calldata _dexList, bool value) external;
     function setWhitelist(address[] calldata _addrList, bool value) external;
     function addToBlacklist(address _adr) external;
@@ -52,6 +49,9 @@ interface ILssController {
     function beforeApprove(address _sender, address _spender, uint256 _amount) external;
     function beforeIncreaseAllowance(address _msgSender, address _spender, uint256 _addedValue) external;
     function beforeDecreaseAllowance(address _msgSender, address _spender, uint256 _subtractedValue) external;
+    function beforeMint(address to, uint256 amount) external;
+    function beforeBurn(address account, uint256 amount) external;
+    function setProtectedAddress(ILERC20 token, address protectedAddress, ProtectionStrategy strategy) external;
 
     event AdminChange(address indexed previousAdmin, address indexed newAdmin);
     event RecoveryAdminChange(address indexed previousAdmin, address indexed newAdmin);
@@ -60,7 +60,7 @@ interface ILssController {
     event NewProtectedAddress(address indexed token, address indexed protectedAddress, address indexed strategy);
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
     event NewSettlementPeriodProposal(address indexed token, uint256 _seconds);
-    event SettlementPeriodChanged(address indexed token, uint256 proposedTokenLockTimeframe);
+    event SettlementPeriodChange(address indexed token, uint256 proposedTokenLockTimeframe);
     event NewSettlementTimelock(uint256 indexed timelock);
     event NewDexThreshold(uint256 indexed newThreshold);
     event NewDex(address indexed dexAddress);

@@ -15,19 +15,19 @@ import "./Interfaces/IProtectionStrategy.sol";
 
 /// @title Lossless Controller Contract
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
-contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgradeable {
+contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeable, PausableUpgradeable {
     
     // IMPORTANT!: For future reference, when adding new variables for following versions of the controller. 
     // All the previous ones should be kept in place and not change locations, types or names.
     // If thye're modified this would cause issues with the memory slots.
 
-    address public pauseAdmin;
-    address public admin;
-    address public recoveryAdmin;
+    address override public pauseAdmin;
+    address override public admin;
+    address override public recoveryAdmin;
 
     // --- V2 VARIABLES ---
 
-    address public guardian;
+    address override public guardian;
     mapping(ILERC20 => Protections) private tokenProtections;
 
     struct Protection {
@@ -41,9 +41,9 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- V3 VARIABLES ---
 
-    ILssStaking public losslessStaking;
-    ILssReporting public losslessReporting;
-    ILssGovernance public losslessGovernance;
+    ILssStaking override public losslessStaking;
+    ILssReporting override public losslessReporting;
+    ILssGovernance override public losslessGovernance;
 
     struct LocksQueue {
         mapping(uint256 => ReceiveCheckpoint) lockedFunds;
@@ -64,12 +64,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
     
     uint256 private constant toPercentage = 1e2;
-    uint256 public dexTranferThreshold;
-    uint256 public settlementTimeLock;
+    uint256 override public dexTranferThreshold;
+    uint256 override public settlementTimeLock;
 
-    mapping(address => bool) public dexList;
-    mapping(address => bool) public whitelist;
-    mapping(address => bool) public blacklist;
+    mapping(address => bool) override public dexList;
+    mapping(address => bool) override public whitelist;
+    mapping(address => bool) override public blacklist;
 
     struct TokenConfig {
         uint256 tokenLockTimeframe;
@@ -79,35 +79,6 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     mapping(ILERC20 => TokenConfig) tokenConfig;
-
-    event AdminChange(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChange(address indexed previousAdmin, address indexed newAdmin);
-    event PauseAdminChange(address indexed previousAdmin, address indexed newAdmin);
-
-    // --- V2 EVENTS ---
-
-    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
-    event ProtectedAddressSet(ILERC20 indexed token, address indexed protectedAddress, address indexed strategy);
-    event RemovedProtectedAddress(ILERC20 indexed token, address indexed protectedAddress);
-
-    // --- V3 EVENTS ---
-
-    event NewSettlementPeriodProposal(ILERC20 indexed token, uint256 _seconds);
-    event SettlementPeriodChange(ILERC20 indexed token, uint256 proposedTokenLockTimeframe);
-    event NewSettlementTimelock(uint256 indexed timelock);
-    event NewDexThreshold(uint256 indexed newThreshold);
-    event NewDex(address indexed dexAddress);
-    event DexRemoval(address indexed dexAddress);
-    event NewWhitelistedAddress(address indexed whitelistAdr);
-    event WhitelistedAddressRemoval(address indexed whitelistAdr);
-    event NewBlacklistedAddress(address indexed blacklistedAddres);
-    event AccountBlacklistRemoval(address indexed adr);
-    event NewStakingContract(ILssStaking indexed newAdr);
-    event NewReportingContract(ILssReporting indexed newAdr);
-    event NewGovernanceContract(ILssGovernance indexed newAdr);
-    event EmergencyActive(ILERC20 indexed token);
-    event EmergencyDeactivation(ILERC20 indexed token);
-
 
     // --- MODIFIERS ---
 
@@ -167,18 +138,18 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- ADMINISTRATION ---
 
-    function pause() public onlyPauseAdmin  {
+    function pause() override public onlyPauseAdmin  {
         _pause();
     }    
     
-    function unpause() public onlyPauseAdmin {
+    function unpause() override public onlyPauseAdmin {
         _unpause();
     }
 
     /// @notice This function sets a new admin
     /// @dev Only can be called by the Recovery admin
     /// @param newAdmin Address corresponding to the new Lossless Admin
-    function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
+    function setAdmin(address newAdmin) override public onlyLosslessRecoveryAdmin {
         require(newAdmin != admin, "LERC20: Cannot set same address");
         emit AdminChange(admin, newAdmin);
         admin = newAdmin;
@@ -187,7 +158,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets a new recovery admin
     /// @dev Only can be called by the previous Recovery admin
     /// @param newRecoveryAdmin Address corresponding to the new Lossless Recovery Admin
-    function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
+    function setRecoveryAdmin(address newRecoveryAdmin) override public onlyLosslessRecoveryAdmin {
         require(newRecoveryAdmin != recoveryAdmin, "LERC20: Cannot set same address");
         emit RecoveryAdminChange(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
@@ -196,7 +167,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets a new pause admin
     /// @dev Only can be called by the Recovery admin
     /// @param newPauseAdmin Address corresponding to the new Lossless Recovery Admin
-    function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
+    function setPauseAdmin(address newPauseAdmin) override public onlyLosslessRecoveryAdmin {
         require(newPauseAdmin != pauseAdmin, "LERC20: Cannot set same address");
         emit PauseAdminChange(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
@@ -208,7 +179,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the timelock for tokens to change the settlement period
     /// @dev Only can be called by the Lossless Admin
     /// @param newTimelock Timelock in seconds
-    function setSettlementTimeLock(uint256 newTimelock) public onlyLosslessAdmin {
+    function setSettlementTimeLock(uint256 newTimelock) override public onlyLosslessAdmin {
         require(newTimelock != settlementTimeLock, "LSS: Cannot set same value");
         settlementTimeLock = newTimelock;
         emit NewSettlementTimelock(settlementTimeLock);
@@ -217,7 +188,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function sets the transfer threshold for Dexes
     /// @dev Only can be called by the Lossless Admin
     /// @param newThreshold Timelock in seconds
-    function setDexTransferThreshold(uint256 newThreshold) public onlyLosslessAdmin {
+    function setDexTransferThreshold(uint256 newThreshold) override public onlyLosslessAdmin {
         require(newThreshold != dexTranferThreshold, "LSS: Cannot set same value");
         dexTranferThreshold = newThreshold;
         emit NewDexThreshold(dexTranferThreshold);
@@ -226,7 +197,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function removes or adds an array of dex addresses from the whitelst
     /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
     /// @param _dexList List of dex addresses to add or remove
-    function setDexList(address[] calldata _dexList, bool value) public onlyLosslessAdmin {
+    function setDexList(address[] calldata _dexList, bool value) override public onlyLosslessAdmin {
         for(uint256 i; i < _dexList.length; i++) {
             dexList[_dexList[i]] = value;
 
@@ -241,7 +212,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function removes or adds an array of addresses from the whitelst
     /// @dev Only can be called by the Lossless Admin, only Lossless addresses 
     /// @param _addrList List of addresses to add or remove
-    function setWhitelist(address[] calldata _addrList, bool value) public onlyLosslessAdmin {
+    function setWhitelist(address[] calldata _addrList, bool value) override public onlyLosslessAdmin {
         for(uint256 i; i < _addrList.length; i++) {
             whitelist[_addrList[i]] = value;
 
@@ -257,7 +228,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @dev Only can be called by the Lossless Admin, and from other Lossless Contracts
     /// The address gets blacklisted whenever a report is created on them.
     /// @param _adr Address corresponding to be added to the blacklist mapping
-    function addToBlacklist(address _adr) public onlyLosslessEnv {
+    function addToBlacklist(address _adr) override public onlyLosslessEnv {
         blacklist[_adr] = true;
         emit NewBlacklistedAddress(_adr);
     }
@@ -265,14 +236,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function removes an address from the blacklist
     /// @dev Can only be called from other Lossless Contracts, used mainly in Lossless Governance
     /// @param _adr Address corresponding to be removed from the blacklist mapping
-    function resolvedNegatively(address _adr) public onlyLosslessEnv {
+    function resolvedNegatively(address _adr) override public onlyLosslessEnv {
         blacklist[_adr] = false;
         emit AccountBlacklistRemoval(_adr);
     }
     
     /// @notice This function sets the address of the Lossless Staking contract
     /// @param _adr Address corresponding to the Lossless Staking contract
-    function setStakingContractAddress(ILssStaking _adr) public onlyLosslessAdmin {
+    function setStakingContractAddress(ILssStaking _adr) override public onlyLosslessAdmin {
         require(address(_adr) != address(0), "LERC20: Cannot be zero address");
         require(_adr != losslessStaking, "LSS: Cannot set same value");
         losslessStaking = _adr;
@@ -281,7 +252,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @param _adr Address corresponding to the Lossless Reporting contract
-    function setReportingContractAddress(ILssReporting _adr) public onlyLosslessAdmin {
+    function setReportingContractAddress(ILssReporting _adr) override public onlyLosslessAdmin {
         require(address(_adr) != address(0), "LERC20: Cannot be zero address");
         require(_adr != losslessReporting, "LSS: Cannot set same value");
         losslessReporting = _adr;
@@ -290,7 +261,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice This function sets the address of the Lossless Governance contract
     /// @param _adr Address corresponding to the Lossless Governance contract
-    function setGovernanceContractAddress(ILssGovernance _adr) public onlyLosslessAdmin {
+    function setGovernanceContractAddress(ILssGovernance _adr) override public onlyLosslessAdmin {
         require(address(_adr) != address(0), "LERC20: Cannot be zero address");
         require(_adr != losslessGovernance, "LSS: Cannot set same value");
         losslessGovernance = _adr;
@@ -300,7 +271,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function starts a new proposal to change the SettlementPeriod
     /// @param _token to propose the settlement change period on
     /// @param _seconds Time frame that the recieved funds will be locked
-    function proposeNewSettlementPeriod(ILERC20 _token, uint256 _seconds) public {
+    function proposeNewSettlementPeriod(ILERC20 _token, uint256 _seconds) override public {
 
         TokenConfig storage config = tokenConfig[_token];
 
@@ -308,12 +279,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(config.changeSettlementTimelock <= block.timestamp, "LSS: Time lock in progress");
         config.changeSettlementTimelock = block.timestamp + settlementTimeLock;
         config.proposedTokenLockTimeframe = _seconds;
-        emit NewSettlementPeriodProposal(_token, _seconds);
+        emit NewSettlementPeriodProposal(address(_token), _seconds);
     }
 
     /// @notice This function executes the new settlement period after the timelock
     /// @param _token to set time settlement period on
-    function executeNewSettlementPeriod(ILERC20 _token) public {
+    function executeNewSettlementPeriod(ILERC20 _token) override public {
 
         TokenConfig storage config = tokenConfig[_token];
 
@@ -322,7 +293,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
         require(config.changeSettlementTimelock <= block.timestamp, "LSS: Time lock in progress");
         config.tokenLockTimeframe = config.proposedTokenLockTimeframe;
         config.proposedTokenLockTimeframe = 0; 
-        emit SettlementPeriodChange(_token, config.tokenLockTimeframe);
+        emit SettlementPeriodChange(address(_token), config.tokenLockTimeframe);
     }
 
     /// @notice This function activates the emergency mode
@@ -330,14 +301,14 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// The emergency period will be active for one settlement period.
     /// During this time users can only transfer settled tokens
     /// @param _token Token on which the emergency mode must get activated
-    function activateEmergency(ILERC20 _token) external onlyLosslessEnv {
+    function activateEmergency(ILERC20 _token) override external onlyLosslessEnv {
         tokenConfig[_token].emergencyMode = block.timestamp;
         emit EmergencyActive(_token);
     }
 
     /// @notice This function deactivates the emergency mode
     /// @param _token Token on which the emergency mode will be deactivated
-    function deactivateEmergency(ILERC20 _token) external onlyLosslessEnv {
+    function deactivateEmergency(ILERC20 _token) override external onlyLosslessEnv {
         tokenConfig[_token].emergencyMode = 0;
         emit EmergencyDeactivation(_token);
     }
@@ -346,36 +317,36 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     // @notice Set a guardian contract.
     // @dev Guardian contract must be trusted as it has some access rights and can modify controller's state.
-    function setGuardian(address newGuardian) external onlyLosslessAdmin whenNotPaused {
+    function setGuardian(address newGuardian) override external onlyLosslessAdmin whenNotPaused {
         require(newGuardian != address(0), "LSS: Cannot be zero address");
-        emit GuardianSet(guardian, newGuardian);
+        emit NewGuardian(guardian, newGuardian);
         guardian = newGuardian;
     }
 
     // @notice Sets protection for an address with the choosen strategy.
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
-    function setProtectedAddress(ILERC20 token, address protectedAddress, ProtectionStrategy strategy) external onlyGuardian whenNotPaused {
+    function setProtectedAddress(ILERC20 token, address protectedAddress, ProtectionStrategy strategy) override external onlyGuardian whenNotPaused {
         Protection storage protection = tokenProtections[token].protections[protectedAddress];
         protection.isProtected = true;
         protection.strategy = strategy;
-        emit ProtectedAddressSet(token, protectedAddress, address(strategy));
+        emit NewProtectedAddress(address(token), protectedAddress, address(strategy));
     }
 
     // @notice Remove the protection from the address.
     // @dev Strategies are verified in the guardian contract.
     // @dev This call is initiated from a strategy, but guardian proxies it.
-    function removeProtectedAddress(ILERC20 token, address protectedAddress) external onlyGuardian whenNotPaused {
+    function removeProtectedAddress(ILERC20 token, address protectedAddress) override external onlyGuardian whenNotPaused {
         require(isAddressProtected(token, protectedAddress), "LSS: Address not protected");
         delete tokenProtections[token].protections[protectedAddress];
-        emit RemovedProtectedAddress(token, protectedAddress);
+        emit RemovedProtectedAddress(address(token), protectedAddress);
     }
 
     /// @notice This function will return the non-settled tokens amount
     /// @param _token Address corresponding to the token being held
     /// @param account Address to get the available amount
     /// @return Returns the amount of locked funds
-    function getLockedAmount(ILERC20 _token, address account) public view returns (uint256) {
+    function getLockedAmount(ILERC20 _token, address account) override public view returns (uint256) {
         uint256 lockedAmount = 0;
         
         LocksQueue storage queue = tokenScopedLockedFunds[_token].queue[account];
@@ -396,7 +367,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @notice This function will calculate the available amount that an address has to transfer. 
     /// @param _token Address corresponding to the token being held
     /// @param account Address to get the available amount
-    function getAvailableAmount(ILERC20 _token, address account) public view returns (uint256 amount) {
+    function getAvailableAmount(ILERC20 _token, address account) override public view returns (uint256 amount) {
         uint256 total = _token.balanceOf(account);
         uint256 locked = getLockedAmount(_token, account);
         return total - locked;
@@ -424,7 +395,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     /// @param _addresses Array of addreses to retrieve the locked funds
     /// @param _token Token to retrieve the funds from
     /// @param reportId Report Id related to the incident
-    function retrieveBlacklistedFunds(address[] calldata _addresses, ILERC20 _token, uint256 reportId) public onlyLosslessEnv returns(uint256){
+    function retrieveBlacklistedFunds(address[] calldata _addresses, ILERC20 _token, uint256 reportId) override public onlyLosslessEnv returns(uint256){
         uint256 totalAmount = losslessGovernance.getAmountReported(reportId);
         
         _token.transferOutBlacklistedFunds(_addresses);
@@ -524,7 +495,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
-    function beforeTransfer(address sender, address recipient, uint256 amount) external {
+    function beforeTransfer(address sender, address recipient, uint256 amount) override external {
         if (tokenProtections[ILERC20(msg.sender)].protections[sender].isProtected) {
             tokenProtections[ILERC20(msg.sender)].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
@@ -538,7 +509,7 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
 
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
-    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
+    function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) override external {
         if (tokenProtections[ILERC20(msg.sender)].protections[sender].isProtected) {
             tokenProtections[ILERC20(msg.sender)].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
@@ -555,15 +526,15 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     // The following before hooks are in place as a placeholder for future products.
     // Also to preserve legacy LERC20 compatibility
     
-    function beforeMint(address to, uint256 amount) external {}
+    function beforeMint(address to, uint256 amount) override external {}
 
-    function beforeApprove(address sender, address spender, uint256 amount) external {}
+    function beforeApprove(address sender, address spender, uint256 amount) override external {}
 
-    function beforeBurn(address account, uint256 amount) external {}
+    function beforeBurn(address account, uint256 amount) override external {}
 
-    function beforeIncreaseAllowance(address msgSender, address spender, uint256 addedValue) external {}
+    function beforeIncreaseAllowance(address msgSender, address spender, uint256 addedValue) override external {}
 
-    function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external {}
+    function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) override external {}
 
 
     // --- AFTER HOOKS ---
