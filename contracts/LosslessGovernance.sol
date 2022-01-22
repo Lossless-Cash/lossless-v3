@@ -88,7 +88,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     event WalletRejection(uint256 indexed reportId, address indexed wallet);
     event FundsRetrieval(uint256 indexed reportId, address indexed wallet, uint256 indexed amount);
     event CompensationRetrieval(address indexed wallet, uint256 indexed amount);
-    event LosslessClaim(address indexed token, uint256 indexed reportID, uint256 indexed amount);
+    event LosslessClaim(ILERC20 indexed token, uint256 indexed reportID, uint256 indexed amount);
     event CommitteeMemberClaim(uint256 indexed reportID, address indexed member, uint256 indexed amount);
     event CommitteeMajorityReach(uint256 indexed reportId, bool indexed result);
     event NewDisputePeriod(uint256 indexed newPeriod);
@@ -583,7 +583,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
         require(ILERC20(reportTokens).transfer(losslessController.admin(), amountToClaim), 
         "LSS: Reward transfer failed");
 
-        emit LosslessClaim(reportTokens, reportId, amountToClaim);
+        emit LosslessClaim(ILERC20(reportTokens), reportId, amountToClaim);
     }
 
 }
