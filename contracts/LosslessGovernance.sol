@@ -10,27 +10,27 @@ import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessControllerV3.sol";
 import "./Interfaces/ILosslessStaking.sol";
 import "./Interfaces/ILosslessReporting.sol";
-
+import "./Interfaces/ILosslessGovernance.sol";
 
 /// @title Lossless Governance Contract
 /// @notice The governance contract is in charge of handling the voting process over the reports and their resolution
-contract LosslessGovernance is Initializable, AccessControlUpgradeable, PausableUpgradeable {
+contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgradeable, PausableUpgradeable {
 
-    uint256 public constant lssTeamVoteIndex = 0;
-    uint256 public constant tokenOwnersVoteIndex = 1;
-    uint256 public constant committeeVoteIndex = 2;
+    uint256 override public constant lssTeamVoteIndex = 0;
+    uint256 override public constant tokenOwnersVoteIndex = 1;
+    uint256 override public constant committeeVoteIndex = 2;
 
     bytes32 public constant COMMITTEE_ROLE = keccak256("COMMITTEE_ROLE");
 
-    uint256 public committeeMembersCount;
+    uint256 override public committeeMembersCount;
 
-    uint256 public walletDisputePeriod;
+    uint256 override public walletDisputePeriod;
 
     uint256 public compensationPercentage;
 
-    ILssReporting public losslessReporting;
-    ILssController public losslessController;
-    ILssStaking public losslessStaking;
+    ILssReporting override public losslessReporting;
+    ILssController override public losslessController;
+    ILssStaking override public losslessStaking;
 
     struct Vote {
         mapping(address => bool) committeeMemberVoted;
@@ -75,24 +75,6 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     address[] private reportedAddresses;
 
-    event NewCommitteeMembers(address[] members);
-    event CommitteeMembersRemoval(address[] members);
-    event LosslessTeamPositiveVote(uint256 indexed reportId);
-    event LosslessTeamNegativeVote(uint256 indexed reportId);
-    event TokenOwnersPositiveVote(uint256 indexed reportId);
-    event TokenOwnersNegativeVote(uint256 indexed reportId);
-    event CommitteeMemberPositiveVote(uint256 indexed reportId, address indexed member);
-    event CommitteeMemberNegativeVote(uint256 indexed reportId, address indexed member);
-    event ReportResolve(uint256 indexed reportId, bool indexed resolution);
-    event WalletProposal(uint256 indexed reportId, address indexed wallet);
-    event WalletRejection(uint256 indexed reportId, address indexed wallet);
-    event FundsRetrieval(uint256 indexed reportId, address indexed wallet, uint256 indexed amount);
-    event CompensationRetrieval(address indexed wallet, uint256 indexed amount);
-    event LosslessClaim(ILERC20 indexed token, uint256 indexed reportID, uint256 indexed amount);
-    event CommitteeMemberClaim(uint256 indexed reportID, address indexed member, uint256 indexed amount);
-    event CommitteeMajorityReach(uint256 indexed reportId, bool indexed result);
-    event NewDisputePeriod(uint256 indexed newPeriod);
-
     function initialize(ILssReporting _losslessReporting, ILssController _losslessController, ILssStaking _losslessStaking) public initializer {
         losslessReporting = ILssReporting(_losslessReporting);
         losslessController = ILssController(_losslessController);
@@ -127,7 +109,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @notice This function determines if an address belongs to the Committee
     /// @param account Address to be verified
     /// @return True if the address is a committee member
-    function isCommitteeMember(address account) public view returns(bool) {
+    function isCommitteeMember(address account) override public view returns(bool) {
         return hasRole(COMMITTEE_ROLE, account);
     }
 
@@ -135,7 +117,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report number to be checked
     /// @param voterIndex Voter Index to be checked
     /// @return True if it has been voted
-    function getIsVoted(uint256 reportId, uint256 voterIndex) public view returns(bool) {
+    function getIsVoted(uint256 reportId, uint256 voterIndex) override public view returns(bool) {
         return reportVotes[reportId].voted[voterIndex];
     }
 
@@ -143,34 +125,34 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @param reportId Report number to be checked
     /// @param voterIndex Voter Index to be checked
     /// @return True if it has voted
-    function getVote(uint256 reportId, uint256 voterIndex) public view returns(bool) {
+    function getVote(uint256 reportId, uint256 voterIndex) override public view returns(bool) {
         return reportVotes[reportId].votes[voterIndex];
     }
 
     /// @notice This function returns if report has been resolved    
     /// @param reportId Report number to be checked
     /// @return True if it has been solved
-    function isReportSolved(uint256 reportId) public view returns(bool){
+    function isReportSolved(uint256 reportId) override public view returns(bool){
         return reportVotes[reportId].resolved;
     }
 
     /// @notice This function returns report resolution     
     /// @param reportId Report number to be checked
     /// @return True if it has been resolved positively
-    function reportResolution(uint256 reportId) public view returns(bool){
+    function reportResolution(uint256 reportId) override public view returns(bool){
         return reportVotes[reportId].resolution;
     }
 
     /// @notice This function sets the wallet dispute period
     /// @param timeFrame Time in seconds for the dispute period
-    function setDisputePeriod(uint256 timeFrame) public onlyLosslessAdmin whenNotPaused {
+    function setDisputePeriod(uint256 timeFrame) override public onlyLosslessAdmin whenNotPaused {
         walletDisputePeriod = timeFrame;
         emit NewDisputePeriod(walletDisputePeriod);
     }
 
     /// @notice This function sets the amount of tokens given to the erroneously reported address
     /// @param amount Percentage to return
-    function setCompensationAmount(uint256 amount) public onlyLosslessAdmin {
+    function setCompensationAmount(uint256 amount) override public onlyLosslessAdmin {
         require(0 <= amount && amount <= 100, "LSS: Invalid amount");
         compensationPercentage = amount;
     }
@@ -201,13 +183,13 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     /// @notice This function returns the amount reported on a report    
     /// @param reportId Report id to check
-    function getAmountReported(uint256 reportId) external view returns(uint256) {
+    function getAmountReported(uint256 reportId) override external view returns(uint256) {
         return reportVotes[reportId].amountReported;
     }
 
     /// @notice This function adds committee members    
     /// @param members Array of members to be added
-    function addCommitteeMembers(address[] memory members) public onlyLosslessAdmin whenNotPaused {
+    function addCommitteeMembers(address[] memory members) override public onlyLosslessAdmin whenNotPaused {
         committeeMembersCount += members.length;
 
         for (uint256 i = 0; i < members.length; ++i) {
@@ -220,7 +202,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     /// @notice This function removes Committee members    
     /// @param members Array of members to be added
-    function removeCommitteeMembers(address[] memory members) public onlyLosslessAdmin whenNotPaused {  
+    function removeCommitteeMembers(address[] memory members) override public onlyLosslessAdmin whenNotPaused {  
         require(committeeMembersCount != 0, "LSS: committee has no members");
 
         committeeMembersCount -= members.length;
@@ -237,7 +219,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @dev Only can be run by the Lossless Admin
     /// @param reportId Report to cast the vote
     /// @param vote Resolution
-    function losslessVote(uint256 reportId, bool vote) public onlyLosslessAdmin whenNotPaused {
+    function losslessVote(uint256 reportId, bool vote) override public onlyLosslessAdmin whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved");
         require(isReportActive(reportId), "LSS: report is not valid");
         
@@ -259,7 +241,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @dev Only can be run by the Token admin
     /// @param reportId Report to cast the vote
     /// @param vote Resolution
-    function tokenOwnersVote(uint256 reportId, bool vote) public whenNotPaused {
+    function tokenOwnersVote(uint256 reportId, bool vote) override public whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved");
         require(isReportActive(reportId), "LSS: report is not valid");
 
@@ -285,7 +267,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @dev Only can be run by a committee member
     /// @param reportId Report to cast the vote
     /// @param vote Resolution
-    function committeeMemberVote(uint256 reportId, bool vote) public whenNotPaused {
+    function committeeMemberVote(uint256 reportId, bool vote) override public whenNotPaused {
         require(!isReportSolved(reportId), "LSS: Report already solved");
         require(isCommitteeMember(msg.sender), "LSS: Must be a committee member");
         require(isReportActive(reportId), "LSS: report is not valid");
@@ -317,7 +299,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// When the report gets resolved, if it's resolved negatively, the reported address gets removed from the blacklist
     /// If the report is solved positively, the funds of the reported account get retrieved in order to be distributed among stakers and the reporter.
     /// @param reportId Report to be resolved
-    function resolveReport(uint256 reportId) public whenNotPaused {
+    function resolveReport(uint256 reportId) override public whenNotPaused {
 
         require(!isReportSolved(reportId), "LSS: Report already solved");
 
@@ -422,7 +404,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @dev Only can be run by lossless team or token owners.
     /// @param reportId Report to propose the wallet
     /// @param wallet proposed address
-    function proposeWallet(uint256 reportId, address wallet) public whenNotPaused {
+    function proposeWallet(uint256 reportId, address wallet) override public whenNotPaused {
         (,,,uint256 reportTimestamps, address reportTokens,) = losslessReporting.getReportInfo(reportId);
 
         require(msg.sender == losslessController.admin() || 
@@ -445,7 +427,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     /// @notice This function is used to reject the wallet proposal
     /// @dev Only can be run by the three pilars.
     /// @param reportId Report to propose the wallet
-    function rejectWallet(uint256 reportId) public whenNotPaused {
+    function rejectWallet(uint256 reportId) override public whenNotPaused {
         (,,,uint256 reportTimestamps,address reportTokens,) = losslessReporting.getReportInfo(reportId);
 
         ProposedWallet storage proposedWallet = proposedWalletOnReport[reportId];
@@ -474,7 +456,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     /// @notice This function retrieves the fund to the accepted proposed wallet
     /// @param reportId Report to propose the wallet
-    function retrieveFunds(uint256 reportId) public whenNotPaused {
+    function retrieveFunds(uint256 reportId) override public whenNotPaused {
         (,,,uint256 reportTimestamps,address reportTokens,) = losslessReporting.getReportInfo(reportId);
 
         ProposedWallet storage proposedWallet = proposedWalletOnReport[reportId];
@@ -531,7 +513,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
     }
 
     /// @notice This lets an erroneously reported account to retrieve compensation
-    function retrieveCompensation() public whenNotPaused {
+    function retrieveCompensation() override public whenNotPaused {
         require(!compensation[msg.sender].payed, "LSS: Already retrieved");
         require(compensation[msg.sender].amount > 0, "LSS: No retribution assigned");
         
@@ -565,7 +547,7 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     ///@notice This function is for committee members to claim their rewards
     ///@param reportId report ID to claim reward from
-    function claimCommitteeReward(uint256 reportId) public whenNotPaused {
+    function claimCommitteeReward(uint256 reportId) override public whenNotPaused {
         require(reportResolution(reportId), "LSS: Report solved negatively");
         require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
         require(!reportVotes[reportId].committeeMemberClaimed[msg.sender], "LSS: Already claimed");

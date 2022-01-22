@@ -12,7 +12,6 @@ interface ILssGovernance {
     function committeeVoteIndex() external view returns(uint256);
     function committeeMembersCount() external view returns(uint256);
     function walletDisputePeriod() external view returns(uint256);
-    function stakingToken() external view returns (ILERC20);
     function losslessStaking() external view returns (ILssStaking);
     function losslessReporting() external view returns (ILssReporting);
     function losslessController() external view returns (ILssController);
@@ -21,7 +20,6 @@ interface ILssGovernance {
     function getVote(uint256 reportId, uint256 voterIndex) external view returns(bool);
     function isReportSolved(uint256 reportId) external view returns(bool);
     function reportResolution(uint256 reportId) external view returns(bool);
-    function erroneousCompensation() external view returns (uint256);
     function getAmountReported(uint256 reportId) external view returns(uint256);
     
     function setDisputePeriod(uint256 timeFrame) external;
@@ -49,10 +47,11 @@ interface ILssGovernance {
     event ReportResolve(uint256 indexed reportId, bool indexed resolution);
     event WalletProposal(uint256 indexed reportId, address indexed wallet);
     event WalletRejected(uint256 indexed reportId, address indexed wallet);
-    event FundsRetrieval(uint256 indexed reportId, address indexed wallet);
-    event CompensationRetrieval(address indexed wallet);
-    event LosslessClaim(address indexed token, uint256 indexed reportID);
     event CommitteeMemberClaim(uint256 indexed reportID, address indexed member, uint256 indexed amount);
     event CommitteeMajorityReach(uint256 indexed reportId, bool indexed result);
     event NewDisputePeriod(uint256 indexed newPeriod);
+    event WalletRejection(uint256 indexed reportId, address indexed wallet);
+    event FundsRetrieval(uint256 indexed reportId, address indexed wallet, uint256 indexed amount);
+    event CompensationRetrieval(address indexed wallet, uint256 indexed amount);
+    event LosslessClaim(ILERC20 indexed token, uint256 indexed reportID, uint256 indexed amount);
 }
