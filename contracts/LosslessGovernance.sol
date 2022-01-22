@@ -545,6 +545,24 @@ contract LosslessGovernance is Initializable, AccessControlUpgradeable, Pausable
 
     }
 
+    /// @notice This lets an erroneously reported account to retrieve compensation
+    function retrieveCompensationForContract(address token) public whenNotPaused {
+        require(!compensation[token].payed, "LSS: Already retrieved");
+        require(compensation[token].amount > 0, "LSS: No retribution assigned");
+        
+        address tokenAdmin = ILERC20(token).admin();
+
+        require(msg.sender == tokenAdmin, "LSS: Must be token admin");
+        
+        compensation[token].payed = true;
+
+        losslessReporting.retrieveCompensation(tokenAdmin, compensation[token].amount);
+
+        emit CompensationRetrieval(tokenAdmin, compensation[token].amount);
+
+        compensation[token].amount = 0;
+    }
+
     ///@notice This function is for committee members to claim their rewards
     ///@param reportId report ID to claim reward from
     function claimCommitteeReward(uint256 reportId) public whenNotPaused {

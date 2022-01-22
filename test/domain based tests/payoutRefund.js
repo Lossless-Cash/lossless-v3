@@ -28,6 +28,14 @@ describe(scriptName, () => {
       adr.lerc20BackupAdmin.address,
       Number(time.duration.days(1)),
       env.lssController.address);
+    reportedToken = await setupToken(2000000,
+      'Reported Token',
+      'REPORT',
+      adr.lerc20InitialHolder,
+      adr.regularUser5.address,
+      adr.lerc20BackupAdmin.address,
+      Number(time.duration.days(1)),
+      env.lssController.address);
 
     await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
     await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
@@ -39,10 +47,11 @@ describe(scriptName, () => {
       adr.member4.address]);
 
     await env.lssToken.connect(adr.lssInitialHolder)
-      .transfer(adr.reporter1.address, env.stakingAmount * 2);
+      .transfer(adr.reporter1.address, env.stakingAmount * 3);
     await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.maliciousActor1.address, 1000);
+    await lerc20Token.connect(adr.lerc20InitialHolder).transfer(reportedToken.address, 1000);
 
-    await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount * 2);
+    await env.lssToken.connect(adr.reporter1).approve(env.lssReporting.address, env.stakingAmount * 3);
 
     await ethers.provider.send('evm_increaseTime', [
       Number(time.duration.minutes(5)),
@@ -50,6 +59,8 @@ describe(scriptName, () => {
 
     await env.lssReporting.connect(adr.reporter1)
       .report(lerc20Token.address, adr.maliciousActor1.address);
+    await env.lssReporting.connect(adr.reporter1)
+      .report(lerc20Token.address, reportedToken.address);
   });
 
   describe('when everyone votes negatively', () => {
@@ -223,14 +234,14 @@ describe(scriptName, () => {
       await env.lssReporting.connect(adr.reporter1)
         .report(lerc20Token.address, adr.maliciousActor1.address);
 
-      await env.lssGovernance.connect(adr.lssAdmin).losslessVote(2, false);
-      await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(2, false);
-      await env.lssGovernance.connect(adr.member1).committeeMemberVote(2, false);
-      await env.lssGovernance.connect(adr.member2).committeeMemberVote(2, false);
-      await env.lssGovernance.connect(adr.member3).committeeMemberVote(2, false);
-      await env.lssGovernance.connect(adr.member4).committeeMemberVote(2, false);
+      await env.lssGovernance.connect(adr.lssAdmin).losslessVote(3, false);
+      await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(3, false);
+      await env.lssGovernance.connect(adr.member1).committeeMemberVote(3, false);
+      await env.lssGovernance.connect(adr.member2).committeeMemberVote(3, false);
+      await env.lssGovernance.connect(adr.member3).committeeMemberVote(3, false);
+      await env.lssGovernance.connect(adr.member4).committeeMemberVote(3, false);
 
-      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(2);
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(3);
     });
 
     it('should let the address retrieve compensation twice', async () => {
@@ -240,6 +251,159 @@ describe(scriptName, () => {
         adr.maliciousActor1.address,
         20,
       );
+    });
+  });
+
+  describe('when a contract gets reported erroneously', () => {
+    beforeEach(async () => {
+      await env.lssGovernance.connect(adr.lssAdmin).losslessVote(2, false);
+      await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(2, false);
+      await env.lssGovernance.connect(adr.member1).committeeMemberVote(2, false);
+      await env.lssGovernance.connect(adr.member2).committeeMemberVote(2, false);
+      await env.lssGovernance.connect(adr.member3).committeeMemberVote(2, false);
+      await env.lssGovernance.connect(adr.member4).committeeMemberVote(2, false);
+    });
+
+    it('should let reported address retrieve compensation', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker2.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker3.address, env.stakingAmount * 2);
+
+      await env.lssToken.connect(adr.staker1)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker2)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker3)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssStaking.connect(adr.staker1).stake(2);
+      await env.lssStaking.connect(adr.staker2).stake(2);
+      await env.lssStaking.connect(adr.staker3).stake(2);
+
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(2);
+
+      expect(
+        await env.lssGovernance.isReportSolved(2),
+      ).to.be.equal(true);
+
+      expect(
+        await env.lssGovernance.reportResolution(2),
+      ).to.be.equal(false);
+
+      await expect(
+        env.lssGovernance.connect(adr.regularUser5).retrieveCompensationForContract(reportedToken.address),
+      ).to.emit(env.lssGovernance, 'CompensationRetrieval').withArgs(
+        adr.regularUser5.address,
+        20,
+      );
+
+      const compensationPercentage = await env.lssGovernance.compensationPercentage();
+
+      expect(
+        await env.lssToken.balanceOf(adr.regularUser5.address),
+      ).to.be.equal((env.reportingAmount * compensationPercentage) / 100);
+    });
+
+    it('should revert if tries to retrieve twice', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker2.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker3.address, env.stakingAmount * 2);
+
+      await env.lssToken.connect(adr.staker1)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker2)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker3)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssStaking.connect(adr.staker1).stake(2);
+      await env.lssStaking.connect(adr.staker2).stake(2);
+      await env.lssStaking.connect(adr.staker3).stake(2);
+
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(2);
+
+      expect(
+        await env.lssGovernance.isReportSolved(2),
+      ).to.be.equal(true);
+
+      expect(
+        await env.lssGovernance.reportResolution(2),
+      ).to.be.equal(false);
+
+      await expect(
+        env.lssGovernance.connect(adr.regularUser5).retrieveCompensationForContract(reportedToken.address),
+      ).to.emit(env.lssGovernance, 'CompensationRetrieval').withArgs(
+        adr.regularUser5.address,
+        20,
+      );
+
+      await expect(
+        env.lssGovernance.connect(adr.regularUser5).retrieveCompensationForContract(reportedToken.address),
+      ).to.be.revertedWith('LSS: Already retrieved');
+    });
+
+    it('should revert if other than the afflicted tries to retrieve', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker2.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker3.address, env.stakingAmount * 2);
+
+      await env.lssToken.connect(adr.staker1)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker2)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker3)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssStaking.connect(adr.staker1).stake(2);
+      await env.lssStaking.connect(adr.staker2).stake(2);
+      await env.lssStaking.connect(adr.staker3).stake(2);
+
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(2);
+
+      expect(
+        await env.lssGovernance.isReportSolved(2),
+      ).to.be.equal(true);
+
+      expect(
+        await env.lssGovernance.reportResolution(2),
+      ).to.be.equal(false);
+
+      await expect(
+        env.lssGovernance.connect(adr.regularUser1).retrieveCompensationForContract(reportedToken.address),
+      ).to.be.revertedWith('LSS: Must be token admin');
     });
   });
 });
