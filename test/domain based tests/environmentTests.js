@@ -33,19 +33,52 @@ describe(scriptName, () => {
           );
       });
 
+      it('should revert when setting the reporting to the same amount', async () => {
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReportingAmount(env.reportingAmount),
+        ).to.be.revertedWith('LSS: Already set to that amount');
+      });
+
+      it('should set the reportLifetime', async () => {
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReportLifetime(5),
+        ).to.emit(env.lssReporting, 'NewReportLifetime').withArgs(5);
+      });
+
+      it('should revert when setting the reportLifetime to the same amount', async () => {
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReportLifetime(Number(env.reportLifetime)),
+        ).to.be.revertedWith('LSS: Already set to that amount');
+      });
+
       it('should not revert when setting the rewards', async () => {
         await expect(
           env.lssReporting.connect(adr.lssAdmin).setLosslessReward(50),
-        ).to.not.be.reverted;
+        ).to.emit(env.lssReporting, 'NewLosslessReward').withArgs(50);
         await expect(
           env.lssReporting.connect(adr.lssAdmin).setStakersReward(45),
-        ).to.not.be.reverted;
+        ).to.emit(env.lssReporting, 'NewStakersReward').withArgs(45);
         await expect(
           env.lssReporting.connect(adr.lssAdmin).setCommitteeReward(1),
-        ).to.not.be.reverted;
+        ).to.emit(env.lssReporting, 'NewCommitteeReward').withArgs(1);
         await expect(
           env.lssReporting.connect(adr.lssAdmin).setReporterReward(4),
-        ).to.not.be.reverted;
+        ).to.emit(env.lssReporting, 'NewReporterReward').withArgs(4);
+      });
+
+      it('should revert when setting the rewards to the same amount', async () => {
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setLosslessReward(10),
+        ).to.be.revertedWith('LSS: Already set to that amount');
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setStakersReward(2),
+        ).to.be.revertedWith('LSS: Already set to that amount');
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setCommitteeReward(2),
+        ).to.be.revertedWith('LSS: Already set to that amount');
+        await expect(
+          env.lssReporting.connect(adr.lssAdmin).setReporterReward(2),
+        ).to.be.revertedWith('LSS: Already set to that amount');
       });
 
       it('should get the rewards correctly', async () => {
@@ -143,6 +176,58 @@ describe(scriptName, () => {
           });
         });
       });
+
+      describe('when setting up the Staking token', () => {
+        it('should revert when not admin', async () => {
+          await expect(
+            env.lssReporting.connect(adr.regularUser1).setStakingToken(env.lssToken.address),
+          ).to.be.revertedWith('LSS: Must be admin');
+        });
+
+        it('should revert when setting up as zero address', async () => {
+          await expect(
+            env.lssReporting.connect(adr.lssAdmin).setStakingToken(adr.ZERO_ADDRESS),
+          ).to.be.revertedWith('LSS: Cannot be zero address');
+        });
+
+        it('should revert when setting the same address', async () => {
+          await expect(
+            env.lssReporting.connect(adr.lssAdmin).setStakingToken(env.lssToken.address),
+          ).to.be.revertedWith('LSS: Cannot be same address');
+        });
+
+        it('should not revert when admin', async () => {
+          await expect(
+            env.lssReporting.connect(adr.lssAdmin).setStakingToken(adr.regularUser1.address),
+          ).to.emit(env.lssReporting, 'NewStakingToken').withArgs(adr.regularUser1.address);
+        });
+      });
+
+      describe('when setting up the Governance address', () => {
+        it('should revert when non admin', async () => {
+          await expect(
+            env.lssReporting.connect(adr.regularUser1).setLosslessGovernance(adr.regularUser1.address),
+          ).to.be.revertedWith('LSS: Must be admin');
+        });
+
+        it('should revert when setting zero address', async () => {
+          await expect(
+            env.lssReporting.connect(adr.lssAdmin).setLosslessGovernance(adr.ZERO_ADDRESS),
+          ).to.be.revertedWith('LSS: Cannot be zero address');
+        });
+
+        it('should revert when setting the same address', async () => {
+          await expect(
+            env.lssReporting.connect(adr.lssAdmin).setLosslessGovernance(env.lssGovernance.address),
+          ).to.be.revertedWith('LSS: Cannot be same address');
+        });
+
+        it('should not revert and emit event', async () => {
+          await expect(
+            env.lssReporting.connect(adr.lssAdmin).setLosslessGovernance(adr.regularUser1.address),
+          ).to.emit(env.lssReporting, 'NewGovernanceContract').withArgs(adr.regularUser1.address);
+        });
+      });
     });
 
     describe('when setting up Lossless Staking Contract', () => {
@@ -199,9 +284,9 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LERC20: Cannot be zero address');
         });
 
-        it('should not revert when not admin', async () => {
+        it('should not revert when admin', async () => {
           await expect(
-            env.lssStaking.connect(adr.lssAdmin).setStakingToken(env.lssToken.address),
+            env.lssStaking.connect(adr.lssAdmin).setStakingToken(adr.regularUser1.address),
           ).to.not.be.reverted;
         });
       });
@@ -853,7 +938,7 @@ describe(scriptName, () => {
         ).to.be.equal(Number(env.reportLifetime));
       });
 
-      it('should set the report Lossless Staking address correctly', async () => {
+      it('should set the report Lossless Controller address correctly', async () => {
         expect(
           await env.lssReporting.losslessController(),
         ).to.be.equal(env.lssController.address);

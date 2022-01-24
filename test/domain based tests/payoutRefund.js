@@ -211,6 +211,48 @@ describe(scriptName, () => {
         env.lssGovernance.connect(adr.regularUser1).retrieveCompensation(),
       ).to.be.revertedWith('LSS: No retribution assigned');
     });
+
+    it('should revert if called by other than the governance contract', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker2.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker3.address, env.stakingAmount * 2);
+
+      await env.lssToken.connect(adr.staker1)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker2)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker3)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssStaking.connect(adr.staker1).stake(1);
+      await env.lssStaking.connect(adr.staker2).stake(1);
+      await env.lssStaking.connect(adr.staker3).stake(1);
+
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+      expect(
+        await env.lssGovernance.isReportSolved(1),
+      ).to.be.equal(true);
+
+      expect(
+        await env.lssGovernance.reportResolution(1),
+      ).to.be.equal(false);
+
+      await expect(
+        env.lssReporting.connect(adr.regularUser1).retrieveCompensation(adr.regularUser1.address, 200),
+      ).to.be.revertedWith('LSS: Lss SC only');
+    });
   });
 
   describe('when erroneusly reported twice', () => {
@@ -364,7 +406,7 @@ describe(scriptName, () => {
       ).to.be.revertedWith('LSS: Already retrieved');
     });
 
-    it('should revert if other than the afflicted tries to retrieve', async () => {
+    it('should revert if other than the admin of the afflicted contract tries to retrieve', async () => {
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
       ]);
