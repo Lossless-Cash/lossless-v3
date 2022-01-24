@@ -367,6 +367,12 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
 
+      it('should revert when setting Staking contract to the same address', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setStakingContractAddress(env.lssStaking.address),
+        ).to.be.revertedWith('LSS: Cannot set same value');
+      });
+
       it('should revert when setting Staking contract by non admin', async () => {
         await expect(
           env.lssController.connect(adr.regularUser1).setStakingContractAddress(adr.ZERO_ADDRESS),
@@ -377,6 +383,12 @@ describe(scriptName, () => {
         await expect(
           env.lssController.connect(adr.lssAdmin).setReportingContractAddress(adr.ZERO_ADDRESS),
         ).to.be.revertedWith('LERC20: Cannot be zero address');
+      });
+
+      it('should revert when setting Report contract to the same address', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setReportingContractAddress(env.lssReporting.address),
+        ).to.be.revertedWith('LSS: Cannot set same value');
       });
 
       it('should revert when setting Report contract by non admin', async () => {
@@ -391,6 +403,13 @@ describe(scriptName, () => {
         ).to.be.revertedWith('LERC20: Cannot be zero address');
       });
 
+      it('should revert when setting Governance contract to the same address', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setGovernanceContractAddress(env.lssGovernance.address),
+        ).to.be.revertedWith('LSS: Cannot set same value');
+      });
+
+
       it('should revert when setting Governance contract by non admin', async () => {
         await expect(
           env.lssController.connect(adr.regularUser1).setGovernanceContractAddress(adr.ZERO_ADDRESS),
@@ -401,6 +420,16 @@ describe(scriptName, () => {
         await expect(
           env.lssController.connect(adr.regularUser1).setDexTransferThreshold(20),
         ).to.be.revertedWith('LSS: Must be admin');
+      });
+
+      it('should revert when setting to the same amount', async () => {
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setDexTransferThreshold(5),
+        ).to.emit(env.lssController, 'NewDexThreshold').withArgs(5);
+
+        await expect(
+          env.lssController.connect(adr.lssAdmin).setDexTransferThreshold(5),
+        ).to.be.revertedWith('LSS: Cannot set same value');
       });
 
       it('should revert when trying to add to blacklist from other than Lossless Contracts', async () => {
@@ -440,6 +469,12 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LSS: Must be recoveryAdmin');
         });
 
+        it('should revert when setting the same address', async () => {
+          await expect(
+            env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(adr.lssAdmin.address),
+          ).to.be.revertedWith('LERC20: Cannot set same address');
+        });
+
         it('should not revert when setting zero address', async () => {
           await expect(
             env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(adr.ZERO_ADDRESS),
@@ -466,6 +501,12 @@ describe(scriptName, () => {
           await expect(
             env.lssController.connect(adr.regularUser1).setPauseAdmin(adr.regularUser2.address),
           ).to.be.revertedWith('LSS: Must be recoveryAdmin');
+        });
+
+        it('should revert when setting the same address', async () => {
+          await expect(
+            env.lssController.connect(adr.lssRecoveryAdmin).setPauseAdmin(adr.lssPauseAdmin.address),
+          ).to.be.revertedWith('LERC20: Cannot set same address');
         });
 
         it('should not revert when setting zero address', async () => {
@@ -496,7 +537,13 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LSS: Must be recoveryAdmin');
         });
 
-        it('should revert when setting zero address', async () => {
+        it('should revert when not setting the same address', async () => {
+          await expect(
+            env.lssController.connect(adr.lssRecoveryAdmin).setRecoveryAdmin(adr.lssRecoveryAdmin.address),
+          ).to.be.revertedWith('LERC20: Cannot set same address');
+        });
+
+        it('should not revert when setting zero address', async () => {
           await expect(
             env.lssController.connect(adr.lssRecoveryAdmin).setRecoveryAdmin(adr.ZERO_ADDRESS),
           ).to.not.be.reverted;
@@ -660,6 +707,24 @@ describe(scriptName, () => {
           await expect(
             env.lssController.connect(adr.regularUser1).afterDecreaseAllowance(adr.regularUser1.address, adr.regularUser2.address, 100),
           ).to.not.be.reverted;
+        });
+      });
+
+      describe('when setting a new timelock period', () => {
+        it('should not revert', async () => {
+          await expect(
+            env.lssController.connect(adr.lssAdmin).setSettlementTimeLock(10),
+          ).to.emit(env.lssController, 'NewSettlementTimelock').withArgs(10);
+        });
+
+        it('should revert when setting the same amount', async () => {
+          await expect(
+            env.lssController.connect(adr.lssAdmin).setSettlementTimeLock(10),
+          ).to.emit(env.lssController, 'NewSettlementTimelock').withArgs(10);
+
+          await expect(
+            env.lssController.connect(adr.lssAdmin).setSettlementTimeLock(10),
+          ).to.be.revertedWith('LSS: Cannot set same value');
         });
       });
     });
