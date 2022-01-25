@@ -79,7 +79,7 @@ describe(scriptName, () => {
         .proposeNewSettlementPeriod(lerc20Token.address, 10 * 60);
 
       await ethers.provider.send('evm_increaseTime', [
-        Number(time.duration.hours(13)),
+        Number(time.duration.seconds(61)),
       ]);
 
       await expect(
@@ -115,7 +115,7 @@ describe(scriptName, () => {
         .proposeNewSettlementPeriod(lerc20Token.address, 1 * 60);
 
       await ethers.provider.send('evm_increaseTime', [
-        Number(time.duration.hours(13)),
+        Number(time.duration.seconds(61)),
       ]);
 
       await expect(

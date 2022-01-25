@@ -381,11 +381,33 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     function _enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[recipient];
-        if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
+
+        if (queue.lockedFunds[queue.last].timestamp < checkpoint.timestamp) {
+            // Most common scenario where the item goes at the end of the queue
+            queue.lockedFunds[queue.last + 1] = checkpoint;
+            queue.last += 1;
+        } else if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
+            // Second most common scenario where the timestamps are the same so the amount adds up
             queue.lockedFunds[queue.last].amount += checkpoint.amount;
         } else {
-            queue.lockedFunds[queue.last] = checkpoint;
-            queue.last += 1;
+            // Edge case: The item has nothing to do with the last item and is not an item that goes at the end of the queue
+            // so we have to iterate in order to rearrange and place the item where it goes.
+            uint i = queue.first;
+            uint lastItem = queue.last;
+
+            while (i <= lastItem) {
+                ReceiveCheckpoint storage existingCheckpoint = queue.lockedFunds[i];
+
+                if (checkpoint.timestamp == existingCheckpoint.timestamp) {
+                    existingCheckpoint.amount += checkpoint.amount;
+                } else if (checkpoint.timestamp < existingCheckpoint.timestamp) {
+                        ReceiveCheckpoint memory rearrangeCheckpoint = existingCheckpoint;
+                        existingCheckpoint.timestamp = checkpoint.timestamp;
+                        existingCheckpoint.amount = checkpoint.amount;
+                        checkpoint = rearrangeCheckpoint;
+                }
+                i += 1;
+            }
         }
     }
 
@@ -454,7 +476,6 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         uint256 lastItem = queue.last;
 
         ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
-
 
         while (checkpoint.timestamp <= block.timestamp && i <= lastItem) {
             delete queue.lockedFunds[i];
