@@ -393,6 +393,8 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         }
     }
 
+    /// @notice This method retuns if a report is still active
+    /// @param reportId report Id to verify
     function isReportActive(uint256 reportId) public view returns(bool) {
         (,,,uint256 reportTimestamps,,) = losslessReporting.getReportInfo(reportId);
         return reportTimestamps != 0 && reportTimestamps + losslessReporting.reportLifetime() > block.timestamp;
