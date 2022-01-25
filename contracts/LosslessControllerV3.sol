@@ -220,11 +220,6 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
                 emit NewWhitelistedAddress(_addrList[i]);
             } else {
                 emit WhitelistedAddressRemoval(_addrList[i]);
-            
-            // An array can't have a total length
-            // larger than the max uint256 value.
-            unchecked {
-                i++;
             }
         }
     }

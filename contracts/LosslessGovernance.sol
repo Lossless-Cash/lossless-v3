@@ -580,7 +580,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     
     /// @notice This function is for the Lossless to claim the rewards
     /// @param reportId report worked on
-    function losslessClaim(uint256 reportId) public whenNotPaused onlyLosslessAdmin {
+    function losslessClaim(uint256 reportId) override public whenNotPaused onlyLosslessAdmin {
         require(reportResolution(reportId), "LSS: Report solved negatively");   
 
         Vote storage reportVote = reportVotes[reportId];
