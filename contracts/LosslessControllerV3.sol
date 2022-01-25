@@ -233,6 +233,12 @@ contract LosslessControllerV3 is Initializable, ContextUpgradeable, PausableUpgr
     function setWhitelist(address[] calldata _addrList, bool value) public onlyLosslessAdmin {
         for(uint256 i; i < _addrList.length; i++) {
             whitelist[_addrList[i]] = value;
+            
+            // An array can't have a total length
+            // larger than the max uint256 value.
+            unchecked {
+                i++;
+            }
         }
     }
 
