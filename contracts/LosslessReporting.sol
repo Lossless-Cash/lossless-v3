@@ -25,7 +25,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
 
     uint256 override public reportCount;
 
-    uint256 constant toPercentage = 10**2;
+    uint256 constant BY_HUNDRED = 1e2;
 
     ILERC20 override public stakingToken;
     ILssController override public losslessController;
@@ -86,7 +86,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
 
     function initialize(ILssController _losslessController) public initializer {
         reportCount = 0;
-        losslessController = ILssController(_losslessController);
+        losslessController = _losslessController;
     }
     
     // --- SETTERS ---
@@ -298,7 +298,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// @param reportId Staked report    
     function reporterClaimableAmount(uint256 reportId) override public view returns (uint256) {
         uint256 reportedAmount = losslessGovernance.getAmountReported(reportId);
-        return reportedAmount * reporterReward / toPercentage;
+        return reportedAmount * reporterReward / BY_HUNDRED;
     }
     
     /// @notice This function allows the governance token to retribute an erroneous report

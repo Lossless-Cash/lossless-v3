@@ -53,9 +53,9 @@ interface ILssController {
     function beforeBurn(address account, uint256 amount) external;
     function setProtectedAddress(ILERC20 token, address protectedAddress, ProtectionStrategy strategy) external;
 
-    event AdminChange(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChange(address indexed previousAdmin, address indexed newAdmin);
-    event PauseAdminChange(address indexed previousAdmin, address indexed newAdmin);
+    event AdminChange(address indexed newAdmin);
+    event RecoveryAdminChange(address indexed newAdmin);
+    event PauseAdminChange(address indexed newAdmin);
     event NewGuardian(address indexed oldGuardian, address indexed newGuardian);
     event NewProtectedAddress(address indexed token, address indexed protectedAddress, address indexed strategy);
     event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);

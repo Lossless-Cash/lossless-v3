@@ -7,9 +7,9 @@ import "./ILosslessReporting.sol";
 import "./ILosslessControllerV3.sol";
 
 interface ILssGovernance {
-    function lssTeamVoteIndex() external view returns(uint256);
-    function tokenOwnersVoteIndex() external view returns(uint256);
-    function committeeVoteIndex() external view returns(uint256);
+    function LSS_TEAM_INDEX() external view returns(uint256);
+    function TOKEN_OWNER_INDEX() external view returns(uint256);
+    function COMMITEE_INDEX() external view returns(uint256);
     function committeeMembersCount() external view returns(uint256);
     function walletDisputePeriod() external view returns(uint256);
     function losslessStaking() external view returns (ILssStaking);

@@ -16,9 +16,9 @@ import "./Interfaces/ILosslessGovernance.sol";
 /// @notice The governance contract is in charge of handling the voting process over the reports and their resolution
 contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgradeable, PausableUpgradeable {
 
-    uint256 override public constant lssTeamVoteIndex = 0;
-    uint256 override public constant tokenOwnersVoteIndex = 1;
-    uint256 override public constant committeeVoteIndex = 2;
+    uint256 override public constant LSS_TEAM_INDEX = 0;
+    uint256 override public constant TOKEN_OWNER_INDEX = 1;
+    uint256 override public constant COMMITEE_INDEX = 2;
 
     bytes32 public constant COMMITTEE_ROLE = keccak256("COMMITTEE_ROLE");
 
@@ -76,9 +76,9 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     address[] private reportedAddresses;
 
     function initialize(ILssReporting _losslessReporting, ILssController _losslessController, ILssStaking _losslessStaking) public initializer {
-        losslessReporting = ILssReporting(_losslessReporting);
-        losslessController = ILssController(_losslessController);
-        losslessStaking = ILssStaking(_losslessStaking);
+        losslessReporting = _losslessReporting;
+        losslessController = _losslessController;
+        losslessStaking = _losslessStaking;
         walletDisputePeriod = 7 days;
         committeeMembersCount = 0;
         _setupRole(DEFAULT_ADMIN_ROLE, losslessController.admin());
@@ -225,10 +225,10 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         
         Vote storage reportVote = reportVotes[reportId];
         
-        require(!reportVotes[reportId].voted[lssTeamVoteIndex], "LSS: LSS already voted");
+        require(!reportVotes[reportId].voted[LSS_TEAM_INDEX], "LSS: LSS already voted");
 
-        reportVote.voted[lssTeamVoteIndex] = true;
-        reportVote.votes[lssTeamVoteIndex] = vote;
+        reportVote.voted[LSS_TEAM_INDEX] = true;
+        reportVote.votes[LSS_TEAM_INDEX] = vote;
 
         if (vote) {
             emit LosslessTeamPositiveVote(reportId);
@@ -251,10 +251,10 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         Vote storage reportVote = reportVotes[reportId];
 
-        require(!reportVote.voted[tokenOwnersVoteIndex], "LSS: owners already voted");
+        require(!reportVote.voted[TOKEN_OWNER_INDEX], "LSS: owners already voted");
         
-        reportVote.voted[tokenOwnersVoteIndex] = true;
-        reportVote.votes[tokenOwnersVoteIndex] = vote;
+        reportVote.voted[TOKEN_OWNER_INDEX] = true;
+        reportVote.votes[TOKEN_OWNER_INDEX] = vote;
 
         if (vote) {
             emit TokenOwnersPositiveVote(reportId);
@@ -282,8 +282,8 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         (bool isMajorityReached, bool result) = _getCommitteeMajorityReachedResult(reportId);
 
         if (isMajorityReached) {
-            reportVote.votes[committeeVoteIndex] = result;
-            reportVote.voted[committeeVoteIndex] = true;
+            reportVote.votes[COMMITEE_INDEX] = result;
+            reportVote.voted[COMMITEE_INDEX] = true;
             emit CommitteeMajorityReach(reportId, result);
         }
 
@@ -329,10 +329,10 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         uint256 agreeCount = 0;
         uint256 voteCount = 0;
 
-        if (getIsVoted(reportId, lssTeamVoteIndex)){voteCount += 1;
-        if (getVote(reportId, lssTeamVoteIndex)){ agreeCount += 1;}}
-        if (getIsVoted(reportId, tokenOwnersVoteIndex)){voteCount += 1;
-        if (getVote(reportId, tokenOwnersVoteIndex)){ agreeCount += 1;}}
+        if (getIsVoted(reportId, LSS_TEAM_INDEX)){voteCount += 1;
+        if (getVote(reportId, LSS_TEAM_INDEX)){ agreeCount += 1;}}
+        if (getIsVoted(reportId, TOKEN_OWNER_INDEX)){voteCount += 1;
+        if (getVote(reportId, TOKEN_OWNER_INDEX)){ agreeCount += 1;}}
 
         (bool committeeResoluted, bool committeeResolution) = _getCommitteeMajorityReachedResult(reportId);
         if (committeeResoluted) {voteCount += 1;
@@ -529,6 +529,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     /// @notice This lets an erroneously reported account to retrieve compensation
     function retrieveCompensationForContract(address token) public whenNotPaused {
+        require(isContract(token), "LSS: Only for contracts");
         require(!compensation[token].payed, "LSS: Already retrieved");
         require(compensation[token].amount > 0, "LSS: No retribution assigned");
         
@@ -543,6 +544,16 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         emit CompensationRetrieval(tokenAdmin, compensation[token].amount);
 
         compensation[token].amount = 0;
+    }
+
+    ///@notice This function verifies is an address belongs to a contract
+    ///@param _addr address to verify
+    function isContract(address _addr) private view returns (bool){
+         uint32 size;
+        assembly {
+            size := extcodesize(_addr)
+        }
+        return (size > 0);
     }
 
     ///@notice This function is for committee members to claim their rewards

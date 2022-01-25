@@ -94,7 +94,7 @@ contract LERC20 is Context, ILERC20 {
     function setLosslessAdmin(address newAdmin) override external onlyRecoveryAdmin {
         require(newAdmin != address(0), "LERC20: Cannot be zero address");
         require(newAdmin != admin, "LERC20: Cannot set same address");
-        emit NewAdmin(admin, newAdmin);
+        emit NewAdmin(newAdmin);
         admin = newAdmin;
     }
 
@@ -108,7 +108,7 @@ contract LERC20 is Context, ILERC20 {
     function acceptRecoveryAdminOwnership(bytes memory key) override external {
         require(_msgSender() == recoveryAdminCandidate, "LERC20: Must be canditate");
         require(keccak256(key) == recoveryAdminKeyHash, "LERC20: Invalid key");
-        emit NewRecoveryAdmin(recoveryAdmin, recoveryAdminCandidate);
+        emit NewRecoveryAdmin(recoveryAdminCandidate);
         recoveryAdmin = recoveryAdminCandidate;
         recoveryAdminCandidate = address(0);
     }
@@ -129,6 +129,7 @@ contract LERC20 is Context, ILERC20 {
     }
 
     function executeLosslessTurnOn() override external onlyRecoveryAdmin {
+        require(!isLosslessOn, "LERC20: Lossless already on");
         losslessTurnOffTimestamp = type(uint256).max;
         isLosslessOn = true;
         emit LosslessOn();

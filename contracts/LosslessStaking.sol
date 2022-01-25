@@ -34,8 +34,8 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     ILssGovernance override public losslessGovernance;
 
     uint256 public override stakingAmount;
-    uint256 private constant toPercentage = 1e2;
-    uint256 private constant betterDecimals = 1e6;
+    uint256 private constant BY_HUNDRED = 1e2;
+    uint256 private constant SIX_DEC_PRECISION = 1e6;
     
     mapping(address => Stake) private stakes;
 
@@ -48,9 +48,9 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     }
 
     function initialize(ILssReporting _losslessReporting, ILssController _losslessController) public initializer {
-       losslessReporting = ILssReporting(_losslessReporting);
-       losslessController = ILssController(_losslessController);
-       stakingAmount = 0;
+       losslessReporting = _losslessReporting;
+       losslessController = _losslessController;
+       stakingAmount = 1000;
     }
 
     // --- MODIFIERS ---
@@ -86,27 +86,27 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
     function setLssReporting(ILssReporting _losslessReporting) override public onlyLosslessAdmin {
-        require(address(ILssReporting(_losslessReporting)) != address(0), "LERC20: Cannot be zero address");
-        losslessReporting = ILssReporting(_losslessReporting);
-        emit NewReportingContract(address(ILssReporting(_losslessReporting)));
+        require(address(_losslessReporting) != address(0), "LERC20: Cannot be zero address");
+        losslessReporting = _losslessReporting;
+        emit NewReportingContract(address(_losslessReporting));
     }
 
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingToken Address corresponding to the Lossless Governance Token
     function setStakingToken(ILERC20 _stakingToken) override public onlyLosslessAdmin {
-        require(address(ILERC20(_stakingToken)) != address(0), "LERC20: Cannot be zero address");
-        stakingToken = ILERC20(_stakingToken);
-        emit NewStakingToken(address(ILERC20(_stakingToken)));
+        require(address(_stakingToken) != address(0), "LERC20: Cannot be zero address");
+        stakingToken = _stakingToken;
+        emit NewStakingToken(address(_stakingToken));
     }
 
     /// @notice This function sets the address of the Lossless Governance contract
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessGovernance Address corresponding to the Lossless Governance contract
     function setLosslessGovernance(ILssGovernance _losslessGovernance) override public onlyLosslessAdmin {
-        require(address(ILssGovernance(_losslessGovernance)) != address(0), "LERC20: Cannot be zero address");
-        losslessGovernance = ILssGovernance(_losslessGovernance);
-        emit NewGovernanceContract(address(ILssGovernance(_losslessGovernance)));
+        require(address(_losslessGovernance) != address(0), "LERC20: Cannot be zero address");
+        losslessGovernance = _losslessGovernance;
+        emit NewGovernanceContract(address(_losslessGovernance));
     }
 
     /// @notice This function sets the amount of tokens to be staked when staking
@@ -163,10 +163,10 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     function stakerClaimableAmount(uint256 reportId) override public view returns (uint256) {
         (,,, uint256 stakersReward) = losslessReporting.getRewards();
         uint256 amountStakedOnReport = losslessGovernance.getAmountReported(reportId);
-        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / toPercentage;
+        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / BY_HUNDRED;
         uint256 stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
-        uint256 coefficientMultiplier = ((amountDistributedToStakers * betterDecimals) / reportCoefficient[reportId]);
-        uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / betterDecimals;
+        uint256 coefficientMultiplier = ((amountDistributedToStakers * SIX_DEC_PRECISION) / reportCoefficient[reportId]);
+        uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / SIX_DEC_PRECISION;
         return stakerAmountToClaim;
     }
 

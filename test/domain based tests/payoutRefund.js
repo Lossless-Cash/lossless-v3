@@ -212,6 +212,48 @@ describe(scriptName, () => {
       ).to.be.revertedWith('LSS: No retribution assigned');
     });
 
+    it('should revert if using the wrong method', async () => {
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker1.address, env.stakingAmount + env.stakingAmount);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker2.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.lssInitialHolder)
+        .transfer(adr.staker3.address, env.stakingAmount * 2);
+
+      await env.lssToken.connect(adr.staker1)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker2)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+      await env.lssToken.connect(adr.staker3)
+        .approve(env.lssStaking.address, env.stakingAmount * 2);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssStaking.connect(adr.staker1).stake(1);
+      await env.lssStaking.connect(adr.staker2).stake(1);
+      await env.lssStaking.connect(adr.staker3).stake(1);
+
+      await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+      expect(
+        await env.lssGovernance.isReportSolved(1),
+      ).to.be.equal(true);
+
+      expect(
+        await env.lssGovernance.reportResolution(1),
+      ).to.be.equal(false);
+
+      await expect(
+        env.lssGovernance.connect(adr.maliciousActor1).retrieveCompensationForContract(adr.maliciousActor1.address),
+      ).to.be.revertedWith('LSS: Only for contracts');
+    });
+
     it('should revert if called by other than the governance contract', async () => {
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
@@ -306,7 +348,7 @@ describe(scriptName, () => {
       await env.lssGovernance.connect(adr.member4).committeeMemberVote(2, false);
     });
 
-    it('should let reported address retrieve compensation', async () => {
+    it('should let reported contract retrieve compensation', async () => {
       await ethers.provider.send('evm_increaseTime', [
         Number(time.duration.minutes(5)),
       ]);

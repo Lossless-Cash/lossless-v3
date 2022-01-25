@@ -63,7 +63,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         uint256 timestamp;
     }
     
-    uint256 private constant toPercentage = 1e2;
+    uint256 private constant BY_HUNDRED = 1e2;
     uint256 override public dexTranferThreshold;
     uint256 override public settlementTimeLock;
 
@@ -151,7 +151,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @param newAdmin Address corresponding to the new Lossless Admin
     function setAdmin(address newAdmin) override public onlyLosslessRecoveryAdmin {
         require(newAdmin != admin, "LERC20: Cannot set same address");
-        emit AdminChange(admin, newAdmin);
+        emit AdminChange(newAdmin);
         admin = newAdmin;
     }
 
@@ -160,7 +160,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @param newRecoveryAdmin Address corresponding to the new Lossless Recovery Admin
     function setRecoveryAdmin(address newRecoveryAdmin) override public onlyLosslessRecoveryAdmin {
         require(newRecoveryAdmin != recoveryAdmin, "LERC20: Cannot set same address");
-        emit RecoveryAdminChange(recoveryAdmin, newRecoveryAdmin);
+        emit RecoveryAdminChange(newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
@@ -169,7 +169,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @param newPauseAdmin Address corresponding to the new Lossless Recovery Admin
     function setPauseAdmin(address newPauseAdmin) override public onlyLosslessRecoveryAdmin {
         require(newPauseAdmin != pauseAdmin, "LERC20: Cannot set same address");
-        emit PauseAdminChange(pauseAdmin, newPauseAdmin);
+        emit PauseAdminChange(newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
 
@@ -402,15 +402,15 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
                 
         (uint256 reporterReward, uint256 losslessReward, uint256 committeeReward, uint256 stakersReward) = losslessReporting.getRewards();
 
-        uint256 toLssStaking = totalAmount * stakersReward / toPercentage;
-        uint256 toLssReporting = totalAmount * reporterReward / toPercentage;
+        uint256 toLssStaking = totalAmount * stakersReward / BY_HUNDRED;
+        uint256 toLssReporting = totalAmount * reporterReward / BY_HUNDRED;
         uint256 toLssGovernance = totalAmount - toLssStaking - toLssReporting;
 
         require(_token.transfer(address(losslessStaking), toLssStaking), "LSS: Staking retrieval failed");
         require(_token.transfer(address(losslessReporting), toLssReporting), "LSS: Reporting retrieval failed");
         require(_token.transfer(address(losslessGovernance), toLssGovernance), "LSS: Governance retrieval failed");
 
-        return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / toPercentage);
+        return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / BY_HUNDRED);
     }
 
 
