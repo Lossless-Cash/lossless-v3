@@ -82,7 +82,7 @@ describe(scriptName, () => {
             adr.member3.address,
             adr.member4.address,
             adr.member5.address]),
-        ).to.be.revertedWith('LSS: committee has no members');
+        ).to.be.revertedWith('LSS: Not enough members to remove');
       });
 
       it('should revert if an address is not member', async () => {

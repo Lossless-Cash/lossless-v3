@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "hardhat/console.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessGovernance.sol";
@@ -63,7 +62,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         uint256 timestamp;
     }
     
-    uint256 private constant BY_HUNDRED = 1e2;
+    uint256 private constant HUNDRED = 1e2;
     uint256 override public dexTranferThreshold;
     uint256 override public settlementTimeLock;
 
@@ -214,12 +213,16 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @param _addrList List of addresses to add or remove
     function setWhitelist(address[] calldata _addrList, bool value) override public onlyLosslessAdmin {
         for(uint256 i; i < _addrList.length; i++) {
-            whitelist[_addrList[i]] = value;
+
+            address adr = _addrList[i];
+            require(!blacklist[adr], "LSS: An address is blacklisted");
+
+            whitelist[adr] = value;
 
             if (value) {
-                emit NewWhitelistedAddress(_addrList[i]);
+                emit NewWhitelistedAddress(adr);
             } else {
-                emit WhitelistedAddressRemoval(_addrList[i]);
+                emit WhitelistedAddressRemoval(adr);
             }
         }
     }
@@ -275,11 +278,11 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
 
         TokenConfig storage config = tokenConfig[_token];
 
-        require(_token.admin() == msg.sender, "LSS: Must be Token Admin");
+        require(msg.sender == _token.admin(), "LSS: Must be Token Admin");
         require(config.changeSettlementTimelock <= block.timestamp, "LSS: Time lock in progress");
         config.changeSettlementTimelock = block.timestamp + settlementTimeLock;
         config.proposedTokenLockTimeframe = _seconds;
-        emit NewSettlementPeriodProposal(address(_token), _seconds);
+        emit NewSettlementPeriodProposal(_token, _seconds);
     }
 
     /// @notice This function executes the new settlement period after the timelock
@@ -288,12 +291,12 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
 
         TokenConfig storage config = tokenConfig[_token];
 
-        require(_token.admin() == msg.sender, "LSS: Must be Token Admin");
+        require(msg.sender == _token.admin(), "LSS: Must be Token Admin");
         require(config.proposedTokenLockTimeframe != 0, "LSS: New Settlement not proposed");
         require(config.changeSettlementTimelock <= block.timestamp, "LSS: Time lock in progress");
         config.tokenLockTimeframe = config.proposedTokenLockTimeframe;
         config.proposedTokenLockTimeframe = 0; 
-        emit SettlementPeriodChange(address(_token), config.tokenLockTimeframe);
+        emit SettlementPeriodChange(_token, config.tokenLockTimeframe);
     }
 
     /// @notice This function activates the emergency mode
@@ -330,7 +333,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         Protection storage protection = tokenProtections[token].protections[protectedAddress];
         protection.isProtected = true;
         protection.strategy = strategy;
-        emit NewProtectedAddress(address(token), protectedAddress, address(strategy));
+        emit NewProtectedAddress(token, protectedAddress, address(strategy));
     }
 
     // @notice Remove the protection from the address.
@@ -339,7 +342,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     function removeProtectedAddress(ILERC20 token, address protectedAddress) override external onlyGuardian whenNotPaused {
         require(isAddressProtected(token, protectedAddress), "LSS: Address not protected");
         delete tokenProtections[token].protections[protectedAddress];
-        emit RemovedProtectedAddress(address(token), protectedAddress);
+        emit RemovedProtectedAddress(token, protectedAddress);
     }
 
     /// @notice This function will return the non-settled tokens amount
@@ -382,19 +385,20 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[recipient];
 
-        if (queue.lockedFunds[queue.last].timestamp < checkpoint.timestamp) {
+        uint i = queue.first;
+        uint lastItem = queue.last;
+
+        if (queue.lockedFunds[lastItem].timestamp < checkpoint.timestamp) {
             // Most common scenario where the item goes at the end of the queue
-            queue.lockedFunds[queue.last + 1] = checkpoint;
+            queue.lockedFunds[lastItem + 1] = checkpoint;
             queue.last += 1;
-        } else if (queue.lockedFunds[queue.last].timestamp == checkpoint.timestamp) {
+        } else if (queue.lockedFunds[lastItem].timestamp == checkpoint.timestamp) {
             // Second most common scenario where the timestamps are the same so the amount adds up
-            queue.lockedFunds[queue.last].amount += checkpoint.amount;
+            queue.lockedFunds[lastItem].amount += checkpoint.amount;
         } else {
             // Edge case: The item has nothing to do with the last item and is not an item that goes at the end of the queue
             // so we have to iterate in order to rearrange and place the item where it goes.
-            uint i = queue.first;
-            uint lastItem = queue.last;
-
+            
             while (i <= lastItem) {
                 ReceiveCheckpoint storage existingCheckpoint = queue.lockedFunds[i];
 
@@ -424,15 +428,15 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
                 
         (uint256 reporterReward, uint256 losslessReward, uint256 committeeReward, uint256 stakersReward) = losslessReporting.getRewards();
 
-        uint256 toLssStaking = totalAmount * stakersReward / BY_HUNDRED;
-        uint256 toLssReporting = totalAmount * reporterReward / BY_HUNDRED;
+        uint256 toLssStaking = totalAmount * stakersReward / HUNDRED;
+        uint256 toLssReporting = totalAmount * reporterReward / HUNDRED;
         uint256 toLssGovernance = totalAmount - toLssStaking - toLssReporting;
 
         require(_token.transfer(address(losslessStaking), toLssStaking), "LSS: Staking retrieval failed");
         require(_token.transfer(address(losslessReporting), toLssReporting), "LSS: Reporting retrieval failed");
         require(_token.transfer(address(losslessGovernance), toLssGovernance), "LSS: Governance retrieval failed");
 
-        return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / BY_HUNDRED);
+        return totalAmount - toLssStaking - toLssReporting - (totalAmount * (committeeReward + losslessReward) / HUNDRED);
     }
 
 

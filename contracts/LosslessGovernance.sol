@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "hardhat/console.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessControllerV3.sol";
@@ -47,16 +46,16 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     struct ProposedWallet {
         uint16 proposal;
-        address wallet;
         uint256 retrievalAmount;
         uint256 timestamp;
+        uint16 committeeDisagree;
+        address wallet;
         bool status;
         bool losslessVote;
         bool losslessVoted;
         bool tokenOwnersVote;
         bool tokenOwnersVoted;
         bool walletAccepted;
-        uint16 committeeDisagree;
         mapping (uint16 => MemberVotesOnProposal) memberVotesOnProposal;
     }
 
@@ -85,7 +84,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     }
 
     modifier onlyLosslessAdmin() {
-        require(losslessController.admin() == msg.sender, "LSS: Must be admin");
+        require(msg.sender == losslessController.admin(), "LSS: Must be admin");
         _;
     }
 
@@ -203,7 +202,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @notice This function removes Committee members    
     /// @param members Array of members to be added
     function removeCommitteeMembers(address[] memory members) override public onlyLosslessAdmin whenNotPaused {  
-        require(committeeMembersCount != 0, "LSS: committee has no members");
+        require(committeeMembersCount >= members.length, "LSS: Not enough members to remove");
 
         committeeMembersCount -= members.length;
 
@@ -225,7 +224,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         
         Vote storage reportVote = reportVotes[reportId];
         
-        require(!reportVotes[reportId].voted[LSS_TEAM_INDEX], "LSS: LSS already voted");
+        require(!reportVote.voted[LSS_TEAM_INDEX], "LSS: LSS already voted");
 
         reportVote.voted[LSS_TEAM_INDEX] = true;
         reportVote.votes[LSS_TEAM_INDEX] = vote;
@@ -245,7 +244,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         require(!isReportSolved(reportId), "LSS: Report already solved");
         require(isReportActive(reportId), "LSS: report is not valid");
 
-        (,,,,address reportTokens,) = losslessReporting.getReportInfo(reportId);
+        (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(reportId);
 
         require(ILERC20(reportTokens).admin() == msg.sender, "LSS: Must be token owner");
 
@@ -304,7 +303,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         require(!isReportSolved(reportId), "LSS: Report already solved");
 
 
-        (,,,uint256 reportTimestamps,,) = losslessReporting.getReportInfo(reportId);
+        (,,,uint256 reportTimestamps,,,) = losslessReporting.getReportInfo(reportId);
         
         if (reportTimestamps + losslessReporting.reportLifetime() > block.timestamp) {
             _resolveActive(reportId);
@@ -322,7 +321,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @param reportId Report to be resolved
     function _resolveActive(uint256 reportId) private {
                 
-        (,address reportedAddress, address secondReportedAddress,,address token, bool secondReports) = losslessReporting.getReportInfo(reportId);
+        (,address reportedAddress, address secondReportedAddress,, ILERC20 token, bool secondReports,) = losslessReporting.getReportInfo(reportId);
 
         Vote storage reportVote = reportVotes[reportId];
 
@@ -364,7 +363,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @param reportId Report to be resolved
     function _resolveExpired(uint256 reportId) private {
 
-        (,address reportedAddress, address secondReportedAddress,,,bool secondReports) = losslessReporting.getReportInfo(reportId);
+        (,address reportedAddress, address secondReportedAddress,,,bool secondReports,) = losslessReporting.getReportInfo(reportId);
 
         reportedAddresses.push(reportedAddress);
 
@@ -384,7 +383,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         uint256 compensationAmount = (reportingAmount * compensationPercentage) / 10**2;
 
         
-        for(uint256 i; i < addresses.length; i++) {
+        for(uint256 i = 0; i < addresses.length; i++) {
             address singleAddress = addresses[i];
             Compensation storage addressCompensation = compensation[singleAddress]; 
             losslessController.resolvedNegatively(singleAddress);      
@@ -396,7 +395,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @notice This method retuns if a report is still active
     /// @param reportId report Id to verify
     function isReportActive(uint256 reportId) public view returns(bool) {
-        (,,,uint256 reportTimestamps,,) = losslessReporting.getReportInfo(reportId);
+        (,,,uint256 reportTimestamps,,,) = losslessReporting.getReportInfo(reportId);
         return reportTimestamps != 0 && reportTimestamps + losslessReporting.reportLifetime() > block.timestamp;
     }
 
@@ -407,7 +406,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @param reportId Report to propose the wallet
     /// @param wallet proposed address
     function proposeWallet(uint256 reportId, address wallet) override public whenNotPaused {
-        (,,,uint256 reportTimestamps, address reportTokens,) = losslessReporting.getReportInfo(reportId);
+        (,,,uint256 reportTimestamps, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(reportId);
 
         require(msg.sender == losslessController.admin() || 
                 msg.sender == ILERC20(reportTokens).admin(),
@@ -415,13 +414,16 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         require(reportTimestamps != 0, "LSS: Report does not exist");
         require(reportResolution(reportId), "LSS: Report solved negatively");
         require(wallet != address(0), "LSS: Wallet cannot ber zero adr");
-        require(proposedWalletOnReport[reportId].wallet == address(0), "LSS: Wallet already proposed");
 
-        proposedWalletOnReport[reportId].wallet = wallet;
-        proposedWalletOnReport[reportId].timestamp = block.timestamp;
-        proposedWalletOnReport[reportId].losslessVote = true;
-        proposedWalletOnReport[reportId].tokenOwnersVote = true;
-        proposedWalletOnReport[reportId].walletAccepted = true;
+        ProposedWallet storage proposedWallet = proposedWalletOnReport[reportId];
+
+        require(proposedWallet.wallet == address(0), "LSS: Wallet already proposed");
+
+        proposedWallet.wallet = wallet;
+        proposedWallet.timestamp = block.timestamp;
+        proposedWallet.losslessVote = true;
+        proposedWallet.tokenOwnersVote = true;
+        proposedWallet.walletAccepted = true;
 
         emit WalletProposal(reportId, wallet);
     }
@@ -430,7 +432,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @dev Only can be run by the three pilars.
     /// @param reportId Report to propose the wallet
     function rejectWallet(uint256 reportId) override public whenNotPaused {
-        (,,,uint256 reportTimestamps,address reportTokens,) = losslessReporting.getReportInfo(reportId);
+        (,,,uint256 reportTimestamps,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(reportId);
 
         ProposedWallet storage proposedWallet = proposedWalletOnReport[reportId];
 
@@ -459,7 +461,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @notice This function retrieves the fund to the accepted proposed wallet
     /// @param reportId Report to propose the wallet
     function retrieveFunds(uint256 reportId) override public whenNotPaused {
-        (,,,uint256 reportTimestamps,address reportTokens,) = losslessReporting.getReportInfo(reportId);
+        (,,,uint256 reportTimestamps, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(reportId);
 
         ProposedWallet storage proposedWallet = proposedWalletOnReport[reportId];
 
@@ -546,7 +548,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         require(reportVotes[reportId].committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
         require(!reportVotes[reportId].committeeMemberClaimed[msg.sender], "LSS: Already claimed");
 
-        (,,,,address reportTokens,) = losslessReporting.getReportInfo(reportId);
+        (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(reportId);
 
         uint256 numberOfMembersVote = reportVotes[reportId].committeeVotes.length;
         uint256 committeeReward = losslessReporting.committeeReward();
@@ -570,7 +572,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         require(!reportVote.losslessPayed, "LSS: Already claimed");
 
-        (,,,,address reportTokens,) = losslessReporting.getReportInfo(reportId);
+        (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(reportId);
 
         uint256 amountToClaim = reportVote.amountReported * losslessReporting.losslessReward() / 10**2;
         reportVote.losslessPayed = true;

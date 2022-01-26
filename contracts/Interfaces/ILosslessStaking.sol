@@ -26,10 +26,10 @@ interface ILssStaking {
   function stake(uint256 reportId) external;
   function stakerClaim(uint256 reportId) external;
 
-  event NewStake(address indexed token, address indexed account, uint256 indexed reportId);
-  event StakerClaim(address indexed staker, address indexed token, uint256 indexed reportID, uint256 amount);
+  event NewStake(ILERC20 indexed token, address indexed account, uint256 indexed reportId);
+  event StakerClaim(address indexed staker, ILERC20 indexed token, uint256 indexed reportID, uint256 amount);
   event NewStakingAmount(uint256 indexed newAmount);
-  event NewStakingToken(address indexed newToken);
+  event NewStakingToken(ILERC20 indexed newToken);
   event NewReportingContract(address indexed newContract);
   event NewGovernanceContract(address indexed newContract);
 }

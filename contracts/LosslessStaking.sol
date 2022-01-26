@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "hardhat/console.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessControllerV3.sol";
@@ -34,8 +33,8 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     ILssGovernance override public losslessGovernance;
 
     uint256 public override stakingAmount;
-    uint256 private constant BY_HUNDRED = 1e2;
-    uint256 private constant SIX_DEC_PRECISION = 1e6;
+    uint256 private constant HUNDRED = 1e2;
+    uint256 private constant MILLION = 1e6;
     
     mapping(address => Stake) private stakes;
 
@@ -97,7 +96,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     function setStakingToken(ILERC20 _stakingToken) override public onlyLosslessAdmin {
         require(address(_stakingToken) != address(0), "LERC20: Cannot be zero address");
         stakingToken = _stakingToken;
-        emit NewStakingToken(address(_stakingToken));
+        emit NewStakingToken(_stakingToken);
     }
 
     /// @notice This function sets the address of the Lossless Governance contract
@@ -113,6 +112,8 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingAmount Amount to be staked
     function setStakingAmount(uint256 _stakingAmount) override public onlyLosslessAdmin {
+        require(_stakingAmount > 0, "LSS: Must be greater than zero");
+        require(_stakingAmount != stakingAmount, "LSS: Already set to that amount");
         stakingAmount = _stakingAmount;
         emit NewStakingAmount(_stakingAmount);
     }
@@ -129,10 +130,10 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
 
         StakeInfo storage stakeInfo = stakes[msg.sender].stakeInfoOnReport[reportId];
 
-        (address reporter,,, uint256 reportTimestamps, address reportTokens,) = losslessReporting.getReportInfo(reportId);
+        (address reporter,,, uint256 reportTimestamps, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(reportId);
 
         require(!stakeInfo.staked, "LSS: already staked");
-        require(reporter != msg.sender, "LSS: reporter can not stake");   
+        require(msg.sender != reporter, "LSS: reporter can not stake");   
 
         uint256 reportTimestamp = reportTimestamps;
 
@@ -163,10 +164,10 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     function stakerClaimableAmount(uint256 reportId) override public view returns (uint256) {
         (,,, uint256 stakersReward) = losslessReporting.getRewards();
         uint256 amountStakedOnReport = losslessGovernance.getAmountReported(reportId);
-        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / BY_HUNDRED;
+        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / HUNDRED;
         uint256 stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
-        uint256 coefficientMultiplier = ((amountDistributedToStakers * SIX_DEC_PRECISION) / reportCoefficient[reportId]);
-        uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / SIX_DEC_PRECISION;
+        uint256 coefficientMultiplier = ((amountDistributedToStakers * MILLION) / reportCoefficient[reportId]);
+        uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / MILLION;
         return stakerAmountToClaim;
     }
 
@@ -183,7 +184,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
 
         uint256 amountToClaim = stakerClaimableAmount(reportId);
 
-        (,,,, address reportTokens,) = losslessReporting.getReportInfo(reportId);
+        (,,,, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(reportId);
 
         require(ILERC20(reportTokens).transfer(msg.sender, amountToClaim),
         "LSS: Reward transfer failed");

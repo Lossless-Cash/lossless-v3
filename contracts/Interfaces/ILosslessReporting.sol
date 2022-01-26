@@ -25,8 +25,9 @@ interface ILssReporting {
         address reportedAddress,
         address secondReportedAddress,
         uint256 reportTimestamps,
-        address reportTokens,
-        bool secondReports);
+        ILERC20 reportTokens,
+        bool secondReports,
+        bool reporterClaimStatus);
   
   function pause() external;
   function unpause() external;
@@ -42,8 +43,8 @@ interface ILssReporting {
   function reporterClaim(uint256 reportId) external;
   function retrieveCompensation(address adr, uint256 amount) external;
 
-  event ReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
-  event SecondReportSubmission(address indexed token, address indexed account, uint256 indexed reportId);
+  event ReportSubmission(ILERC20 indexed token, address indexed account, uint256 indexed reportId);
+  event SecondReportSubmission(ILERC20 indexed token, address indexed account, uint256 indexed reportId);
   event NewReportingAmount(uint256 indexed newAmount);
   event NewStakingToken(ILERC20 indexed token);
   event NewGovernanceContract(ILssGovernance indexed adr);

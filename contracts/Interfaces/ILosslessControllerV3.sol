@@ -57,10 +57,10 @@ interface ILssController {
     event RecoveryAdminChange(address indexed newAdmin);
     event PauseAdminChange(address indexed newAdmin);
     event NewGuardian(address indexed oldGuardian, address indexed newGuardian);
-    event NewProtectedAddress(address indexed token, address indexed protectedAddress, address indexed strategy);
-    event RemovedProtectedAddress(address indexed token, address indexed protectedAddress);
-    event NewSettlementPeriodProposal(address indexed token, uint256 _seconds);
-    event SettlementPeriodChange(address indexed token, uint256 proposedTokenLockTimeframe);
+    event NewProtectedAddress(ILERC20 indexed token, address indexed protectedAddress, address indexed strategy);
+    event RemovedProtectedAddress(ILERC20 indexed token, address indexed protectedAddress);
+    event NewSettlementPeriodProposal(ILERC20 indexed token, uint256 _seconds);
+    event SettlementPeriodChange(ILERC20 indexed token, uint256 proposedTokenLockTimeframe);
     event NewSettlementTimelock(uint256 indexed timelock);
     event NewDexThreshold(uint256 indexed newThreshold);
     event NewDex(address indexed dexAddress);

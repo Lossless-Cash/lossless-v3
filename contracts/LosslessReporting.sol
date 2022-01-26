@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "hardhat/console.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessControllerV3.sol";
@@ -25,7 +24,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
 
     uint256 override public reportCount;
 
-    uint256 constant BY_HUNDRED = 1e2;
+    uint256 constant HUNDRED = 1e2;
 
     ILERC20 override public stakingToken;
     ILssController override public losslessController;
@@ -37,16 +36,16 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
 
     mapping(ILERC20 => TokenReports) private tokenReports;
 
-    mapping(uint256 => bool)  private reporterClaimStatus;
-
+    //mapping(uint256 => bool)  private reporterClaimStatus;
 
     struct Report {
         address reporter;
         address reportedAddress;
         address secondReportedAddress;
         uint256 reportTimestamps;
-        address reportTokens;
+        ILERC20 reportTokens;
         bool secondReports;
+        bool reporterClaimStatus;
     }
 
     mapping(uint256 => Report) reportInfo;
@@ -55,13 +54,13 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
 
     /// @notice Avoids execution from other than the Lossless Admin
     modifier onlyLosslessAdmin() {
-        require(losslessController.admin() == msg.sender, "LSS: Must be admin");
+        require(msg.sender == losslessController.admin(), "LSS: Must be admin");
         _;
     }
 
     /// @notice Avoids execution from other than the Pause Admin
     modifier onlyPauseAdmin() {
-        require(losslessController.pauseAdmin() == msg.sender, "LSS: Must be pauseAdmin");
+        require(msg.sender == losslessController.pauseAdmin(), "LSS: Must be pauseAdmin");
         _;
     }
 
@@ -107,7 +106,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     function setStakingToken(ILERC20 _stakingToken) override public onlyLosslessAdmin {
         require(address(_stakingToken) != address(0), "LSS: Cannot be zero address");
         require(_stakingToken != stakingToken, "LSS: Cannot be same address");
-        stakingToken = ILERC20(_stakingToken);
+        stakingToken = _stakingToken;
         emit NewStakingToken(stakingToken);
     }
 
@@ -117,7 +116,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     function setLosslessGovernance(ILssGovernance _losslessGovernance) override public onlyLosslessAdmin {
         require(address(_losslessGovernance) != address(0), "LSS: Cannot be zero address");
         require(_losslessGovernance != losslessGovernance, "LSS: Cannot be same address");
-        losslessGovernance = ILssGovernance(_losslessGovernance);
+        losslessGovernance = _losslessGovernance;
         emit NewGovernanceContract(losslessGovernance);
     }
 
@@ -198,12 +197,13 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         address reportedAddress,
         address secondReportedAddress,
         uint256 reportTimestamps,
-        address reportTokens,
-        bool secondReports) {
+        ILERC20 reportTokens,
+        bool secondReports,
+        bool reporterClaimStatus) {
 
         Report storage report = reportInfo[reportId];
 
-        return (report.reporter, report.reportedAddress, report.secondReportedAddress, report.reportTimestamps, report.reportTokens, report.secondReports);
+        return (report.reporter, report.reportedAddress, report.secondReportedAddress, report.reportTimestamps, report.reportTokens, report.secondReports, report.reporterClaimStatus);
     }
 
     // --- REPORTS ---
@@ -230,9 +230,9 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         reportId = reportCount;
         reportInfo[reportId].reporter = msg.sender;
 
-        tokenReports[ILERC20(token)].reports[account] = reportId;
+        tokenReports[token].reports[account] = reportId;
         reportInfo[reportId].reportTimestamps = block.timestamp;
-        reportInfo[reportId].reportTokens = address(token);
+        reportInfo[reportId].reportTokens = token;
 
         require(stakingToken.transferFrom(msg.sender, address(this), reportingAmount), "LSS: Reporting stake failed");
 
@@ -241,7 +241,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         
         losslessController.activateEmergency(token);
 
-        emit ReportSubmission(address(token), account, reportId);
+        emit ReportSubmission(token, account, reportId);
 
         return reportId;
     }
@@ -260,14 +260,14 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         require(!losslessController.dexList(account), "LSS: Cannot report Dex");
 
         uint256 reportTimestamp = reportInfo[reportId].reportTimestamps;
-        address token = reportInfo[reportId].reportTokens;
+        ILERC20 token = reportInfo[reportId].reportTokens;
 
         require(reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(reportInfo[reportId].secondReports == false, "LSS: Another already submitted");
         require(msg.sender == reportInfo[reportId].reporter, "LSS: invalid reporter");
 
         reportInfo[reportId].secondReports = true;
-        tokenReports[ILERC20(token)].reports[account] = reportId;
+        tokenReports[token].reports[account] = reportId;
 
         losslessController.addToBlacklist(account);
         reportInfo[reportId].secondReportedAddress = account;
@@ -279,10 +279,13 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// @param reportId Staked report
     function reporterClaim(uint256 reportId) override public whenNotPaused {
         require(reportInfo[reportId].reporter == msg.sender, "LSS: Only reporter");
-        require(!reporterClaimStatus[reportId], "LSS: You already claimed");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively");
 
-        reporterClaimStatus[reportId] = true;
+        Report storage report = reportInfo[reportId];
+
+        require(!report.reporterClaimStatus, "LSS: You already claimed");
+
+        report.reporterClaimStatus = true;
 
         uint256 amountToClaim = reporterClaimableAmount(reportId);
 
@@ -298,7 +301,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// @param reportId Staked report    
     function reporterClaimableAmount(uint256 reportId) override public view returns (uint256) {
         uint256 reportedAmount = losslessGovernance.getAmountReported(reportId);
-        return reportedAmount * reporterReward / BY_HUNDRED;
+        return reportedAmount * reporterReward / HUNDRED;
     }
     
     /// @notice This function allows the governance token to retribute an erroneous report
