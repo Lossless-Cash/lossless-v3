@@ -165,6 +165,7 @@ const setupEnvironment = async (
       lssReporting.address,
       lssController.address,
       lssStaking.address,
+      604800, // 7 days
     ],
     { initializer: 'initialize' },
   );

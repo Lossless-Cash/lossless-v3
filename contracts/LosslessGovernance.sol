@@ -76,11 +76,11 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     address[] private reportedAddresses;
 
-    function initialize(ILssReporting _losslessReporting, ILssController _losslessController, ILssStaking _losslessStaking) public initializer {
+    function initialize(ILssReporting _losslessReporting, ILssController _losslessController, ILssStaking _losslessStaking, uint256 _walletDisputePeriod) public initializer {
         losslessReporting = _losslessReporting;
         losslessController = _losslessController;
         losslessStaking = _losslessStaking;
-        walletDisputePeriod = 7 days;
+        walletDisputePeriod = _walletDisputePeriod;
         committeeMembersCount = 0;
         _setupRole(DEFAULT_ADMIN_ROLE, losslessController.admin());
     }
