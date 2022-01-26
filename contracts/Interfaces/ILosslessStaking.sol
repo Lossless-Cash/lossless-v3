@@ -30,6 +30,6 @@ interface ILssStaking {
   event StakerClaim(address indexed staker, ILERC20 indexed token, uint256 indexed reportID, uint256 amount);
   event NewStakingAmount(uint256 indexed newAmount);
   event NewStakingToken(ILERC20 indexed newToken);
-  event NewReportingContract(address indexed newContract);
-  event NewGovernanceContract(address indexed newContract);
+  event NewReportingContract(ILssReporting indexed newContract);
+  event NewGovernanceContract(ILssGovernance indexed newContract);
 }

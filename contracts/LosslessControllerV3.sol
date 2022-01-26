@@ -62,7 +62,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         uint256 timestamp;
     }
     
-    uint256 private constant HUNDRED = 1e2;
+    uint256 public constant HUNDRED = 1e2;
     uint256 override public dexTranferThreshold;
     uint256 override public settlementTimeLock;
 
@@ -198,12 +198,16 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @param _dexList List of dex addresses to add or remove
     function setDexList(address[] calldata _dexList, bool value) override public onlyLosslessAdmin {
         for(uint256 i; i < _dexList.length; i++) {
-            dexList[_dexList[i]] = value;
+
+            address adr = _dexList[i];
+            require(!blacklist[adr], "LSS: An address is blacklisted");
+
+            dexList[adr] = value;
 
             if (value) {
-                emit NewDex(_dexList[i]);
+                emit NewDex(adr);
             } else {
-                emit DexRemoval(_dexList[i]);
+                emit DexRemoval(adr);
             }
         }
     }
@@ -387,14 +391,16 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
 
         uint i = queue.first;
         uint lastItem = queue.last;
+        
+        ReceiveCheckpoint storage lastCheckpoint = queue.lockedFunds[lastItem];
 
-        if (queue.lockedFunds[lastItem].timestamp < checkpoint.timestamp) {
+        if (lastCheckpoint.timestamp < checkpoint.timestamp) {
             // Most common scenario where the item goes at the end of the queue
             queue.lockedFunds[lastItem + 1] = checkpoint;
             queue.last += 1;
-        } else if (queue.lockedFunds[lastItem].timestamp == checkpoint.timestamp) {
+        } else if (lastCheckpoint.timestamp == checkpoint.timestamp) {
             // Second most common scenario where the timestamps are the same so the amount adds up
-            queue.lockedFunds[lastItem].amount += checkpoint.amount;
+            lastCheckpoint.amount += checkpoint.amount;
         } else {
             // Edge case: The item has nothing to do with the last item and is not an item that goes at the end of the queue
             // so we have to iterate in order to rearrange and place the item where it goes.
@@ -447,9 +453,11 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @param amount Amount to lift
     function _removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
         LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[account];
+        ILERC20 token = ILERC20(msg.sender);
+        
+        queue = tokenScopedLockedFunds[token].queue[account];
 
-        require(queue.touchedTimestamp + tokenConfig[ILERC20(msg.sender)].tokenLockTimeframe <= block.timestamp, "LSS: Transfers limit reached");
+        require(queue.touchedTimestamp + tokenConfig[token].tokenLockTimeframe <= block.timestamp, "LSS: Transfers limit reached");
 
         uint256 amountLeft =  amount - availableAmount;
         uint256 i = queue.first;
@@ -497,9 +505,10 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @param recipient Address recieving the funds
     /// @param amount Amount to be transfered
     function _evaluateTransfer(address sender, address recipient, uint256 amount) private returns (bool) {
-        uint256 settledAmount = getAvailableAmount(ILERC20(msg.sender), sender);
+        ILERC20 token = ILERC20(msg.sender);
+        uint256 settledAmount = getAvailableAmount(token, sender);
         
-        TokenConfig storage config = tokenConfig[ILERC20(msg.sender)];
+        TokenConfig storage config = tokenConfig[token];
 
         if (amount > settledAmount) {
             require(config.emergencyMode + config.tokenLockTimeframe < block.timestamp,
@@ -521,13 +530,14 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransfer(address sender, address recipient, uint256 amount) override external {
-        if (tokenProtections[ILERC20(msg.sender)].protections[sender].isProtected) {
-            tokenProtections[ILERC20(msg.sender)].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
+        ILERC20 token = ILERC20(msg.sender);
+        if (tokenProtections[token].protections[sender].isProtected) {
+            tokenProtections[token].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
         require(!blacklist[sender], "LSS: You cannot operate");
         
-        if (tokenConfig[ILERC20(msg.sender)].tokenLockTimeframe != 0) {
+        if (tokenConfig[token].tokenLockTimeframe != 0) {
             _evaluateTransfer(sender, recipient, amount);
         }
     }
@@ -535,14 +545,16 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @notice If address is protected, transfer validation rules have to be run inside the strategy.
     /// @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) override external {
-        if (tokenProtections[ILERC20(msg.sender)].protections[sender].isProtected) {
-            tokenProtections[ILERC20(msg.sender)].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
+        ILERC20 token = ILERC20(msg.sender);
+
+        if (tokenProtections[token].protections[sender].isProtected) {
+            tokenProtections[token].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
         }
 
         require(!blacklist[msgSender], "LSS: You cannot operate");
         require(!blacklist[sender], "LSS: Sender is blacklisted");
 
-        if (tokenConfig[ILERC20(msg.sender)].tokenLockTimeframe != 0) {
+        if (tokenConfig[token].tokenLockTimeframe != 0) {
             _evaluateTransfer(sender, recipient, amount);
         }
 

@@ -24,7 +24,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
 
     uint256 override public reportCount;
 
-    uint256 constant HUNDRED = 1e2;
+    uint256 public constant HUNDRED = 1e2;
 
     ILERC20 override public stakingToken;
     ILssController override public losslessController;
@@ -193,6 +193,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// @return reportTimestamps
     /// @return reportTokens
     /// @return secondReports 
+    /// @return reporterClaimStatus 
     function getReportInfo(uint256 reportId) override external view returns(address reporter,
         address reportedAddress,
         address secondReportedAddress,
@@ -201,9 +202,15 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         bool secondReports,
         bool reporterClaimStatus) {
 
-        Report storage report = reportInfo[reportId];
+        Report storage queriedReport = reportInfo[reportId];
 
-        return (report.reporter, report.reportedAddress, report.secondReportedAddress, report.reportTimestamps, report.reportTokens, report.secondReports, report.reporterClaimStatus);
+        return (queriedReport.reporter, 
+        queriedReport.reportedAddress, 
+        queriedReport.secondReportedAddress, 
+        queriedReport.reportTimestamps, 
+        queriedReport.reportTokens, 
+        queriedReport.secondReports, 
+        queriedReport.reporterClaimStatus);
     }
 
     // --- REPORTS ---
@@ -281,15 +288,15 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         require(reportInfo[reportId].reporter == msg.sender, "LSS: Only reporter");
         require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively");
 
-        Report storage report = reportInfo[reportId];
+        Report storage queriedReport = reportInfo[reportId];
 
-        require(!report.reporterClaimStatus, "LSS: You already claimed");
+        require(!queriedReport.reporterClaimStatus, "LSS: You already claimed");
 
-        report.reporterClaimStatus = true;
+        queriedReport.reporterClaimStatus = true;
 
         uint256 amountToClaim = reporterClaimableAmount(reportId);
 
-        require(ILERC20(reportInfo[reportId].reportTokens).transfer(msg.sender, amountToClaim), "LSS: Token transfer failed");
+        require(queriedReport.reportTokens.transfer(msg.sender, amountToClaim), "LSS: Token transfer failed");
         require(stakingToken.transfer(msg.sender, reportingAmount), "LSS: Reporting stake failed");
         emit ReporterClaim(msg.sender, reportId, amountToClaim);
     }

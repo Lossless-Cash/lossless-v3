@@ -22,9 +22,9 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     struct StakeInfo {
         uint256 timestamp;
         uint256 coefficient;
+        uint256 totalStakedOnReport;
         bool staked;
         bool payed;
-        uint256 totalStakedOnReport;
     }
 
     ILERC20 override public stakingToken;
@@ -33,9 +33,9 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     ILssGovernance override public losslessGovernance;
 
     uint256 public override stakingAmount;
-    uint256 private constant HUNDRED = 1e2;
-    uint256 private constant MILLION = 1e6;
-    
+    uint256 public constant HUNDRED = 1e2;
+    uint256 public constant MILLION = 1e6;
+
     mapping(address => Stake) private stakes;
 
     mapping(uint256 => uint256) public reportCoefficient;
@@ -87,7 +87,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     function setLssReporting(ILssReporting _losslessReporting) override public onlyLosslessAdmin {
         require(address(_losslessReporting) != address(0), "LERC20: Cannot be zero address");
         losslessReporting = _losslessReporting;
-        emit NewReportingContract(address(_losslessReporting));
+        emit NewReportingContract(_losslessReporting);
     }
 
     /// @notice This function sets the address of the Lossless Governance Token
@@ -105,7 +105,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     function setLosslessGovernance(ILssGovernance _losslessGovernance) override public onlyLosslessAdmin {
         require(address(_losslessGovernance) != address(0), "LERC20: Cannot be zero address");
         losslessGovernance = _losslessGovernance;
-        emit NewGovernanceContract(address(_losslessGovernance));
+        emit NewGovernanceContract(_losslessGovernance);
     }
 
     /// @notice This function sets the amount of tokens to be staked when staking
@@ -136,10 +136,11 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
         require(msg.sender != reporter, "LSS: reporter can not stake");   
 
         uint256 reportTimestamp = reportTimestamps;
+        uint256 reportLifetime = losslessReporting.reportLifetime();
 
-        require(reportId > 0 && (reportTimestamp + losslessReporting.reportLifetime()) > block.timestamp, "LSS: report does not exists");
+        require(reportId > 0 && (reportTimestamp + reportLifetime) > block.timestamp, "LSS: report does not exists");
 
-        uint256 stakerCoefficient = reportTimestamp + losslessReporting.reportLifetime() - block.timestamp;
+        uint256 stakerCoefficient = reportTimestamp + reportLifetime - block.timestamp;
 
         stakeInfo.timestamp = block.timestamp;
         stakeInfo.coefficient = stakerCoefficient;
@@ -186,7 +187,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
 
         (,,,, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(reportId);
 
-        require(ILERC20(reportTokens).transfer(msg.sender, amountToClaim),
+        require(reportTokens.transfer(msg.sender, amountToClaim),
         "LSS: Reward transfer failed");
         require(stakingToken.transfer(msg.sender, stakedOnReport[msg.sender].report[reportId]),
         "LSS: Staking transfer failed");
