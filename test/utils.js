@@ -155,7 +155,7 @@ const setupEnvironment = async (
 
   lssStaking = await upgrades.deployProxy(
     LosslessStaking,
-    [lssReporting.address, lssController.address],
+    [lssReporting.address, lssController.address, 1000],
     { initializer: 'initialize' },
   );
 

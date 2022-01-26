@@ -114,23 +114,23 @@ contract LERC20 is Context, ILERC20 {
     }
 
     function proposeLosslessTurnOff() override external onlyRecoveryAdmin {
-        require(losslessTurnOffTimestamp != type(uint256).max, "LERC20: TurnOff already proposed");
+        require(losslessTurnOffTimestamp != 0, "LERC20: TurnOff already proposed");
         require(isLosslessOn, "LERC20: Lossless already off");
         losslessTurnOffTimestamp = block.timestamp + timelockPeriod;
         emit LosslessTurnOffProposal(losslessTurnOffTimestamp);
     }
 
     function executeLosslessTurnOff() override external onlyRecoveryAdmin {
-        require(losslessTurnOffTimestamp == type(uint256).max, "LERC20: TurnOff not proposed");
+        require(losslessTurnOffTimestamp == 0, "LERC20: TurnOff not proposed");
         require(losslessTurnOffTimestamp <= block.timestamp, "LERC20: Time lock in progress");
         isLosslessOn = false;
-        losslessTurnOffTimestamp = type(uint256).max;
+        losslessTurnOffTimestamp = 0;
         emit LosslessOff();
     }
 
     function executeLosslessTurnOn() override external onlyRecoveryAdmin {
         require(!isLosslessOn, "LERC20: Lossless already on");
-        losslessTurnOffTimestamp = type(uint256).max;
+        losslessTurnOffTimestamp = 0;
         isLosslessOn = true;
         emit LosslessOn();
     }

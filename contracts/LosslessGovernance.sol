@@ -529,25 +529,6 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     }
 
-    /// @notice This lets an erroneously reported account to retrieve compensation
-    function retrieveCompensationForContract(address token) public whenNotPaused {
-        require(isContract(token), "LSS: Only for contracts");
-        require(!compensation[token].payed, "LSS: Already retrieved");
-        require(compensation[token].amount > 0, "LSS: No retribution assigned");
-        
-        address tokenAdmin = ILERC20(token).admin();
-
-        require(msg.sender == tokenAdmin, "LSS: Must be token admin");
-        
-        compensation[token].payed = true;
-
-        losslessReporting.retrieveCompensation(tokenAdmin, compensation[token].amount);
-
-        emit CompensationRetrieval(tokenAdmin, compensation[token].amount);
-
-        compensation[token].amount = 0;
-    }
-
     ///@notice This function verifies is an address belongs to a contract
     ///@param _addr address to verify
     function isContract(address _addr) private view returns (bool){

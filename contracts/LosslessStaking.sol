@@ -47,10 +47,10 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
         mapping(uint256 => uint256) report;
     }
 
-    function initialize(ILssReporting _losslessReporting, ILssController _losslessController) public initializer {
+    function initialize(ILssReporting _losslessReporting, ILssController _losslessController, uint256 _stakingAmount) public initializer {
        losslessReporting = _losslessReporting;
        losslessController = _losslessController;
-       stakingAmount = 1000;
+       stakingAmount = _stakingAmount;
     }
 
     // --- MODIFIERS ---
