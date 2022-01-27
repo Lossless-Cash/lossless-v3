@@ -13,9 +13,9 @@ interface ILssStaking {
   function losslessGovernance() external returns(ILssGovernance);
   function stakingAmount() external returns(uint256);
   function getVersion() external pure returns (uint256);
-  function getIsAccountStaked(uint256 reportId, address account) external view returns(bool);
-  function getStakerCoefficient(uint256 reportId, address _address) external view returns (uint256);
-  function stakerClaimableAmount(uint256 reportId) external view returns (uint256);
+  function getIsAccountStaked(uint256 _reportId, address _account) external view returns(bool);
+  function getStakerCoefficient(uint256 _reportId, address _address) external view returns (uint256);
+  function stakerClaimableAmount(uint256 _reportId) external view returns (uint256);
   
   function pause() external;
   function unpause() external;
@@ -23,13 +23,13 @@ interface ILssStaking {
   function setStakingToken(ILERC20 _stakingToken) external;
   function setLosslessGovernance(ILssGovernance _losslessGovernance) external;
   function setStakingAmount(uint256 _stakingAmount) external;
-  function stake(uint256 reportId) external;
-  function stakerClaim(uint256 reportId) external;
+  function stake(uint256 _reportId) external;
+  function stakerClaim(uint256 _reportId) external;
 
-  event NewStake(ILERC20 indexed token, address indexed account, uint256 indexed reportId);
-  event StakerClaim(address indexed staker, ILERC20 indexed token, uint256 indexed reportID, uint256 amount);
-  event NewStakingAmount(uint256 indexed newAmount);
-  event NewStakingToken(ILERC20 indexed newToken);
-  event NewReportingContract(ILssReporting indexed newContract);
-  event NewGovernanceContract(ILssGovernance indexed newContract);
+  event NewStake(ILERC20 indexed _token, address indexed _account, uint256 indexed _reportId);
+  event StakerClaim(address indexed _staker, ILERC20 indexed _token, uint256 indexed _reportID, uint256 _amount);
+  event NewStakingAmount(uint256 indexed _newAmount);
+  event NewStakingToken(ILERC20 indexed _newToken);
+  event NewReportingContract(ILssReporting indexed _newContract);
+  event NewGovernanceContract(ILssGovernance indexed _newContract);
 }

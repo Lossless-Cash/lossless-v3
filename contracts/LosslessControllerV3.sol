@@ -326,7 +326,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     // @dev Guardian contract must be trusted as it has some access rights and can modify controller's state.
     function setGuardian(address newGuardian) override external onlyLosslessAdmin whenNotPaused {
         require(newGuardian != address(0), "LSS: Cannot be zero address");
-        emit NewGuardian(guardian, newGuardian);
+        emit GuardianSet(guardian, newGuardian);
         guardian = newGuardian;
     }
 
@@ -337,7 +337,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         Protection storage protection = tokenProtections[token].protections[protectedAddress];
         protection.isProtected = true;
         protection.strategy = strategy;
-        emit NewProtectedAddress(token, protectedAddress, address(strategy));
+        emit NewProtectedAddress(address(token), protectedAddress, address(strategy));
     }
 
     // @notice Remove the protection from the address.
@@ -346,7 +346,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     function removeProtectedAddress(ILERC20 token, address protectedAddress) override external onlyGuardian whenNotPaused {
         require(isAddressProtected(token, protectedAddress), "LSS: Address not protected");
         delete tokenProtections[token].protections[protectedAddress];
-        emit RemovedProtectedAddress(token, protectedAddress);
+        emit RemovedProtectedAddress(address(token), protectedAddress);
     }
 
     /// @notice This function will return the non-settled tokens amount

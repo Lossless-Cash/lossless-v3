@@ -42,7 +42,7 @@ describe('ControllerProtection', () => {
               .connect(vars.lssAdmin)
               .setGuardian(protection.guardian.address),
           )
-            .to.emit(vars.losslessController, 'NewGuardian')
+            .to.emit(vars.losslessController, 'GuardianSet')
             .withArgs(constants.ZERO_ADDRESS, protection.guardian.address);
         });
         it('should succeed', async () => {
@@ -61,7 +61,7 @@ describe('ControllerProtection', () => {
               .connect(vars.lssAdmin)
               .setGuardian(protection.guardian.address),
           )
-            .to.emit(vars.losslessController, 'NewGuardian')
+            .to.emit(vars.losslessController, 'GuardianSet')
             .withArgs(constants.ZERO_ADDRESS, protection.guardian.address);
         });
       });

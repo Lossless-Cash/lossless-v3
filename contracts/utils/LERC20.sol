@@ -92,14 +92,12 @@ contract LERC20 is Context, ILERC20 {
     }
 
     function setLosslessAdmin(address newAdmin) override external onlyRecoveryAdmin {
-        require(newAdmin != address(0), "LERC20: Cannot be zero address");
         require(newAdmin != admin, "LERC20: Cannot set same address");
         emit NewAdmin(newAdmin);
         admin = newAdmin;
     }
 
     function transferRecoveryAdminOwnership(address candidate, bytes32 keyHash) override  external onlyRecoveryAdmin {
-        require(candidate != address(0), "LERC20: Cannot be zero address");
         recoveryAdminCandidate = candidate;
         recoveryAdminKeyHash = keyHash;
         emit NewRecoveryAdminProposal(candidate);
@@ -133,6 +131,10 @@ contract LERC20 is Context, ILERC20 {
         losslessTurnOffTimestamp = 0;
         isLosslessOn = true;
         emit LosslessOn();
+    }
+
+    function getAdmin() override public view virtual returns (address) {
+        return admin;
     }
 
     // --- ERC20 methods ---
@@ -196,7 +198,6 @@ contract LERC20 is Context, ILERC20 {
 
     function _transfer(address sender, address recipient, uint256 amount) internal virtual {
         require(sender != address(0), "LERC20: transfer from the zero address");
-        require(recipient != address(0), "LERC20: transfer to the zero address");
 
         uint256 senderBalance = _balances[sender];
         require(senderBalance >= amount, "LERC20: transfer amount exceeds balance");
@@ -208,9 +209,8 @@ contract LERC20 is Context, ILERC20 {
 
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "LERC20: mint to the zero address");
-
+    
         _totalSupply += amount;
-        _balances[account] += amount;
 
         // Cannot overflow because the sum of all user
         // balances can't exceed the max uint256 value.
@@ -221,9 +221,6 @@ contract LERC20 is Context, ILERC20 {
     }
 
     function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }

@@ -459,7 +459,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         } else revert ("LSS: Role cannot reject.");
 
         if (!_determineProposedWallet(reportId)) {
-            emit WalletRejection(reportId, proposedWallet.wallet);
+            emit WalletRejection(reportId);
         }
     }
 
@@ -481,7 +481,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         require(reportTokens.transfer(msg.sender, proposedWallet.retrievalAmount), 
         "LSS: Funds retrieve failed");
 
-        emit FundsRetrieval(reportId, msg.sender, proposedWallet.retrievalAmount);
+        emit FundsRetrieval(reportId, proposedWallet.retrievalAmount);
     }
 
     /// @notice This function determins if the refund wallet was accepted

@@ -18,41 +18,41 @@ interface ILssReporting {
   function losslessController() external returns(ILssController);
   function losslessGovernance() external returns(ILssGovernance);
   function getVersion() external pure returns (uint256);
-  function getRewards() external view returns (uint256 reporter, uint256 lossless, uint256 committee, uint256 stakers);
-  function report(ILERC20 token, address account) external returns (uint256);
-  function reporterClaimableAmount(uint256 reportId) external view returns (uint256);
-  function getReportInfo(uint256 reportId) external view returns(address reporter,
-        address reportedAddress,
-        address secondReportedAddress,
-        uint256 reportTimestamps,
-        ILERC20 reportTokens,
-        bool secondReports,
-        bool reporterClaimStatus);
+  function getRewards() external view returns (uint256 _reporter, uint256 _lossless, uint256 _committee, uint256 _stakers);
+  function report(ILERC20 _token, address _account) external returns (uint256);
+  function reporterClaimableAmount(uint256 _reportId) external view returns (uint256);
+  function getReportInfo(uint256 _reportId) external view returns(address _reporter,
+        address _reportedAddress,
+        address _secondReportedAddress,
+        uint256 _reportTimestamps,
+        ILERC20 _reportTokens,
+        bool _secondReports,
+        bool _reporterClaimStatus);
   
   function pause() external;
   function unpause() external;
   function setStakingToken(ILERC20 _stakingToken) external;
   function setLosslessGovernance(ILssGovernance _losslessGovernance) external;
   function setReportingAmount(uint256 _reportingAmount) external;
-  function setReporterReward(uint256 reward) external;
-  function setLosslessReward(uint256 reward) external;
-  function setStakersReward(uint256 reward) external;
-  function setCommitteeReward(uint256 reward) external;
+  function setReporterReward(uint256 _reward) external;
+  function setLosslessReward(uint256 _reward) external;
+  function setStakersReward(uint256 _reward) external;
+  function setCommitteeReward(uint256 _reward) external;
   function setReportLifetime(uint256 _lifetime) external;
-  function secondReport(uint256 reportId, address account) external;
-  function reporterClaim(uint256 reportId) external;
-  function retrieveCompensation(address adr, uint256 amount) external;
+  function secondReport(uint256 _reportId, address _account) external;
+  function reporterClaim(uint256 _reportId) external;
+  function retrieveCompensation(address _adr, uint256 _amount) external;
 
-  event ReportSubmission(ILERC20 indexed token, address indexed account, uint256 indexed reportId);
-  event SecondReportSubmission(ILERC20 indexed token, address indexed account, uint256 indexed reportId);
-  event NewReportingAmount(uint256 indexed newAmount);
-  event NewStakingToken(ILERC20 indexed token);
-  event NewGovernanceContract(ILssGovernance indexed adr);
-  event NewReporterReward(uint256 indexed newValue);
-  event NewLosslessReward(uint256 indexed newValue);
-  event NewStakersReward(uint256 indexed newValue);
-  event NewCommitteeReward(uint256 indexed newValue);
-  event NewReportLifetime(uint256 indexed newValue);
-  event ReporterClaim(address indexed reporter, uint256 indexed reportId, uint256 indexed amount);
-  event CompensationRetrieve(address indexed adr, uint256 indexed amount);
+  event ReportSubmission(ILERC20 indexed _token, address indexed _account, uint256 indexed _reportId);
+  event SecondReportSubmission(ILERC20 indexed _token, address indexed _account, uint256 indexed _reportId);
+  event NewReportingAmount(uint256 indexed _newAmount);
+  event NewStakingToken(ILERC20 indexed _token);
+  event NewGovernanceContract(ILssGovernance indexed _adr);
+  event NewReporterReward(uint256 indexed _newValue);
+  event NewLosslessReward(uint256 indexed _newValue);
+  event NewStakersReward(uint256 indexed _newValue);
+  event NewCommitteeReward(uint256 indexed _newValue);
+  event NewReportLifetime(uint256 indexed _newValue);
+  event ReporterClaim(address indexed _reporter, uint256 indexed _reportId, uint256 indexed _amount);
+  event CompensationRetrieve(address indexed _adr, uint256 indexed _amount);
 }
