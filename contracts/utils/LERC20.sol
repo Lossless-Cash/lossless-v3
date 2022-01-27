@@ -27,6 +27,8 @@ contract LERC20 is Context, ILERC20 {
         _symbol = symbol_;
         admin = admin_;
         recoveryAdmin = recoveryAdmin_;
+        recoveryAdminCandidate = address(0);
+        recoveryAdminKeyHash = "";
         timelockPeriod = timelockPeriod_;
         lossless = ILssController(lossless_);
     }
