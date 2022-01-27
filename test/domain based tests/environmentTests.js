@@ -732,7 +732,7 @@ describe(scriptName, () => {
     describe('when setting up Lossless Governance Contract', () => {
       describe('when paused', () => {
         beforeEach(async () => {
-          await env.lssGovernance.connect(adr.lssAdmin).pause();
+          await env.lssGovernance.connect(adr.lssPauseAdmin).pause();
         });
 
         it('should prevent adding committee members', async () => {
@@ -827,24 +827,24 @@ describe(scriptName, () => {
 
       describe('when unpausing', () => {
         beforeEach(async () => {
-          await env.lssGovernance.connect(adr.lssAdmin).pause();
+          await env.lssGovernance.connect(adr.lssPauseAdmin).pause();
         });
 
         it('should unpause', async () => {
           await expect(
-            env.lssGovernance.connect(adr.lssAdmin).unpause(),
+            env.lssGovernance.connect(adr.lssPauseAdmin).unpause(),
           ).to.not.be.reverted;
         });
 
         it('should revert when other than admin', async () => {
           await expect(
             env.lssGovernance.connect(adr.regularUser1).unpause(),
-          ).to.be.revertedWith('LSS: Must be admin');
+          ).to.be.revertedWith('LSS: Must be pauseAdmin');
         });
 
         describe('when unpaused', async () => {
           beforeEach(async () => {
-            await env.lssGovernance.connect(adr.lssAdmin).unpause();
+            await env.lssGovernance.connect(adr.lssPauseAdmin).unpause();
           });
           it('should not prevent adding committee members', async () => {
             await expect(

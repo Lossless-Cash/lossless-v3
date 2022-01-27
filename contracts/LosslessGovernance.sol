@@ -90,13 +90,18 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         _;
     }
 
+    modifier onlyLosslessPauseAdmin() {
+        require(msg.sender == losslessController.pauseAdmin(), "LSS: Must be pauseAdmin");
+        _;
+    }
+
     // --- ADMINISTRATION ---
 
-    function pause() public onlyLosslessAdmin  {
+    function pause() public onlyLosslessPauseAdmin  {
         _pause();
     }    
     
-    function unpause() public onlyLosslessAdmin {
+    function unpause() public onlyLosslessPauseAdmin {
         _unpause();
     }
 
