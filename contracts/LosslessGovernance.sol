@@ -48,9 +48,9 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     struct ProposedWallet {
         uint16 proposal;
+        uint16 committeeDisagree;
         uint256 retrievalAmount;
         uint256 timestamp;
-        uint16 committeeDisagree;
         address wallet;
         bool status;
         bool losslessVote;
