@@ -111,7 +111,7 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LSS: Cannot transfer over the dex threshold');
         });
 
-        it('should not revert when transfering unsettled below the dex threshold', async () => {
+        it.only('should not revert when transfering unsettled below the dex threshold', async () => {
           await expect(
             lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 115),
           ).to.not.be.reverted;
@@ -419,7 +419,7 @@ describe(scriptName, () => {
 
         it('should not revert when transfering unsettled below the dex threshold', async () => {
           await expect(
-            lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 115),
+            lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 19),
           ).to.not.be.reverted;
         });
 
