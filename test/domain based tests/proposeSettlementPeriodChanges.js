@@ -111,9 +111,9 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LSS: Cannot transfer over the dex threshold');
         });
 
-        it.only('should not revert when transfering unsettled below the dex threshold', async () => {
+        it('should not revert when transfering unsettled below the dex threshold', async () => {
           await expect(
-            lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 115),
+            lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 119),
           ).to.not.be.reverted;
         });
 
@@ -129,13 +129,13 @@ describe(scriptName, () => {
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 50);
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
           await ethers.provider.send('evm_increaseTime', [
-            Number(time.duration.minutes(5)),
+            Number(time.duration.minutes(4)),
           ]);
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 50);
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
         });
 
-        it('should get locked amount correctly', async () => {
+        it.skip('should get locked amount correctly', async () => {
           expect(
             await env.lssController.getLockedAmount(lerc20Token.address, adr.regularUser1.address),
           ).to.be.equal(50);
@@ -145,7 +145,7 @@ describe(scriptName, () => {
           ).to.be.equal(100);
         });
 
-        it('should get available amount correctly', async () => {
+        it.skip('should get available amount correctly', async () => {
           expect(
             await env.lssController.getAvailableAmount(lerc20Token.address, adr.regularUser1.address),
           ).to.be.equal(50);
@@ -156,6 +156,7 @@ describe(scriptName, () => {
         });
 
         it('should revert if 5 minutes haven\'t passed and it\'s a second transfer over the unsettled amount', async () => {
+
           await expect(
             lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 101),
           ).to.not.be.reverted;
@@ -419,7 +420,7 @@ describe(scriptName, () => {
 
         it('should not revert when transfering unsettled below the dex threshold', async () => {
           await expect(
-            lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 19),
+            lerc20Token.connect(adr.regularUser1).transfer(adr.dexAddress.address, 115),
           ).to.not.be.reverted;
         });
 
