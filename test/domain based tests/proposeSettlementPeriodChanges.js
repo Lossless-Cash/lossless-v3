@@ -167,21 +167,6 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LSS: Transfers limit reached');
         });
 
-        it('should revert if 5 minutes haven\'t passed and it\'s a second transfer over the unsettled amount with large locks queue', async () => {
-          // push 150 checkpoints to a locks queue
-          for(let i=0; i<150; i++) {
-            await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser5.address, 1);
-          }
-
-          await expect(
-            lerc20Token.connect(adr.regularUser5).transfer(adr.regularUser4.address, 101),
-          ).to.not.be.reverted;
-
-          await expect(
-            lerc20Token.connect(adr.regularUser5).transfer(adr.regularUser4.address, 5),
-          ).to.be.revertedWith('LSS: Transfers limit reached');
-        });
-
         it('should not revert if 5 minutes haven\'t passed but its the first transfer over the unsettled amount', async () => {
           await expect(
             lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 55),

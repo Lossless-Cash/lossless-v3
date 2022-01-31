@@ -11,8 +11,6 @@ import "./Interfaces/ILosslessStaking.sol";
 import "./Interfaces/ILosslessReporting.sol";
 import "./Interfaces/IProtectionStrategy.sol";
 
-import "hardhat/console.sol";
-
 /// @title Lossless Controller Contract
 /// @notice The controller contract is in charge of the communication and senstive data among all Lossless Environment Smart Contracts
 contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeable, PausableUpgradeable {
@@ -479,7 +477,6 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         uint256 settledAmount = _getAvailableAmount(token, sender);
         
         TokenConfig storage config = tokenConfig[token];
-        console.log("%s - %s <= %s", amount, settledAmount, dexTranferThreshold);
 
         if (amount > settledAmount) {
             require(config.emergencyMode + config.tokenLockTimeframe < block.timestamp,

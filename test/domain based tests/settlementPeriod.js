@@ -15,7 +15,7 @@ let env;
 
 const scriptName = path.basename(__filename, '.js');
 
-describe.only(scriptName, () => {
+describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -108,6 +108,19 @@ describe.only(scriptName, () => {
           await expect(
             lerc20Token.connect(adr.regularUser5).transfer(adr.regularUser1.address, 500),
           ).to.not.be.reverted;
+        });
+        it('should revert transfering unsettled tokens more than once per period with large locks queue', async () => {
+          for(let i=0; i<150; i++) {
+            await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser5.address, 1);
+          }
+
+          await expect(
+            lerc20Token.connect(adr.regularUser5).transfer(adr.regularUser4.address, 101),
+          ).to.not.be.reverted;
+
+          await expect(
+            lerc20Token.connect(adr.regularUser5).transfer(adr.regularUser4.address, 5),
+          ).to.be.revertedWith('LSS: Transfers limit reached');
         });
         it('should revert transfering unsettled tokens more than once per period', async () => {
           await expect(
