@@ -479,6 +479,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         uint256 settledAmount = _getAvailableAmount(token, sender);
         
         TokenConfig storage config = tokenConfig[token];
+        console.log("%s - %s <= %s", amount, settledAmount, dexTranferThreshold);
 
         if (amount > settledAmount) {
             require(config.emergencyMode + config.tokenLockTimeframe < block.timestamp,
