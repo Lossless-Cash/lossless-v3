@@ -128,9 +128,11 @@ describe(scriptName, () => {
         beforeEach(async () => {
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 50);
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
+
           await ethers.provider.send('evm_increaseTime', [
-            Number(time.duration.minutes(4)),
+            Number(time.duration.minutes(5)),
           ]);
+
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser1.address, 50);
           await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser2.address, 100);
         });
@@ -156,7 +158,6 @@ describe(scriptName, () => {
         });
 
         it('should revert if 5 minutes haven\'t passed and it\'s a second transfer over the unsettled amount', async () => {
-
           await expect(
             lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 101),
           ).to.not.be.reverted;
@@ -166,13 +167,58 @@ describe(scriptName, () => {
           ).to.be.revertedWith('LSS: Transfers limit reached');
         });
 
+        it('should revert if 5 minutes haven\'t passed and it\'s a second transfer over the unsettled amount with large locks queue', async () => {
+          // push 150 checkpoints to a locks queue
+          for(let i=0; i<150; i++) {
+            await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser5.address, 1);
+          }
+
+          await expect(
+            lerc20Token.connect(adr.regularUser5).transfer(adr.regularUser4.address, 101),
+          ).to.not.be.reverted;
+
+          await expect(
+            lerc20Token.connect(adr.regularUser5).transfer(adr.regularUser4.address, 5),
+          ).to.be.revertedWith('LSS: Transfers limit reached');
+        });
+
         it('should not revert if 5 minutes haven\'t passed but its the first transfer over the unsettled amount', async () => {
           await expect(
             lerc20Token.connect(adr.regularUser2).transfer(adr.regularUser4.address, 55),
           ).to.not.be.reverted;
         });
 
+        it('should not revert if 5 minutes haven\'t passed but its the first transfer over the unsettled amount with large locks queue', async () => {
+          // push 150 checkpoints to a locks queue
+          for(let i=0; i<150; i++) {
+            await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser5.address, 1);
+          }
+
+          await expect(
+            lerc20Token.connect(adr.regularUser5).transfer(adr.regularUser4.address, 55),
+          ).to.not.be.reverted;
+        });
+
         it('should not revert if 5 minutes have passed on first transfer', async () => {
+          await ethers.provider.send('evm_increaseTime', [
+            Number(time.duration.minutes(5)),
+          ]);
+
+          await expect(
+            lerc20Token.connect(adr.regularUser1).transfer(adr.regularUser3.address, 5),
+          ).to.not.be.reverted;
+
+          expect(
+            await lerc20Token.balanceOf(adr.regularUser3.address),
+          ).to.be.equal(5);
+        });
+
+        it('should not revert if 5 minutes have passed on first transfer with large locks queue', async () => {
+          // push 150 checkpoints to a locks queue
+          for(let i=0; i<150; i++) {
+            await lerc20Token.connect(adr.lerc20InitialHolder).transfer(adr.regularUser5.address, 1);
+          }
+          
           await ethers.provider.send('evm_increaseTime', [
             Number(time.duration.minutes(5)),
           ]);

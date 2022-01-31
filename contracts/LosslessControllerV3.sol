@@ -351,46 +351,17 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         emit RemovedProtectedAddress(address(token), protectedAddress);
     }
 
-    /// @notice This function will return the non-settled tokens amount
-    /// @param _token Address corresponding to the token being held
-    /// @param account Address to get the available amount
-    /// @return Returns the amount of locked funds
-    function _getLockedAmount(ILERC20 _token, address account) private returns (uint256) {
-        LocksQueue storage queue = tokenScopedLockedFunds[_token].queue[account];
-        ReceiveCheckpoint storage cp = queue.lockedFunds[queue.last];
-        (uint256 outdatedCummulative, uint256 newFirst) = _getLatestOudatedCheckpoint(queue);
-        queue.first = newFirst;
-        console.log("outdated");
-        console.log(outdatedCummulative);
-        console.log("cumulative");
-        console.log(cp.cummulativeAmount);
-        cp.cummulativeAmount = cp.cummulativeAmount - outdatedCummulative;
-        console.log("new cummulative");
-        console.log(cp.cummulativeAmount);
-        return cp.cummulativeAmount;
-    }
-
     function _getLatestOudatedCheckpoint(LocksQueue storage queue) private view returns (uint256, uint256) {
         uint256 lower = queue.first;
         uint256 upper = queue.last;
         uint256 currentTimestamp = block.timestamp;
         uint256 center = queue.first;
-        // I need to find a latest checkpoint that's checkpoint.timestamp < block.timestamp
-        console.log("start");
         ReceiveCheckpoint memory cp = queue.lockedFunds[queue.last];
         ReceiveCheckpoint memory lowestCp = queue.lockedFunds[queue.first];
-        console.log("lowest cp");
-        console.log(lowestCp.timestamp);
+
         while (upper > lower) {
             center = upper - (upper - lower) / 2; // ceil, avoiding overflow
             cp = queue.lockedFunds[center];
-
-            console.log(cp.timestamp);
-            console.log(currentTimestamp);
-            console.log(lower);
-            console.log(center);
-            console.log(upper);
-
             if (cp.timestamp == currentTimestamp) {
                 return (cp.cummulativeAmount, center + 1);
             } else if (cp.timestamp < currentTimestamp) {
@@ -402,35 +373,27 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
             }
         }
 
-        console.log(cp.timestamp);
-        console.log(currentTimestamp);
-
         if (lowestCp.timestamp < currentTimestamp) {
             if (cp.timestamp < lowestCp.timestamp) {
-                console.log("A");
                 return (cp.cummulativeAmount, center);
             } else {
-                console.log("B");
-                return (lowestCp.cummulativeAmount, lower);
+                return (lowestCp.cummulativeAmount, lower + 1);
             }
         } else {
-            console.log("C");
             return (0, center);
         }
-        // return (cp.cummulativeAmount, center);
     }
 
     /// @notice This function will calculate the available amount that an address has to transfer. 
     /// @param _token Address corresponding to the token being held
     /// @param account Address to get the available amount
     function _getAvailableAmount(ILERC20 _token, address account) private returns (uint256 amount) {
-        uint256 total = _token.balanceOf(account);
-        console.log("total");
-        console.log(total);
-        uint256 locked = _getLockedAmount(_token, account);
-        console.log("available");
-        console.log(total - locked);
-        return total - locked;
+        LocksQueue storage queue = tokenScopedLockedFunds[_token].queue[account];
+        ReceiveCheckpoint storage cp = queue.lockedFunds[queue.last];
+        (uint256 outdatedCummulative, uint256 newFirst) = _getLatestOudatedCheckpoint(queue);
+        queue.first = newFirst;
+        cp.cummulativeAmount = cp.cummulativeAmount - outdatedCummulative;
+        return _token.balanceOf(account) - cp.cummulativeAmount;
     }
 
     // LOCKs & QUEUES
@@ -441,12 +404,8 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     function _enqueueLockedFunds(ReceiveCheckpoint memory checkpoint, address recipient) private {
         LocksQueue storage queue;
         queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[recipient];
-
-        uint i = queue.first;
         uint lastItem = queue.last;
-        
         ReceiveCheckpoint storage lastCheckpoint = queue.lockedFunds[lastItem];
-
 
         if (lastCheckpoint.timestamp < checkpoint.timestamp) {
             // Most common scenario where the item goes at the end of the queue
@@ -454,34 +413,17 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
             queue.lockedFunds[lastItem + 1] = checkpoint;
             queue.last += 1;
 
-        } else if (lastCheckpoint.timestamp == checkpoint.timestamp) {
-            // Second most common scenario where the timestamps are the same so the amount adds up
+        } else {
+            // Second most common scenario where the timestamps are the same 
+            // or new one is smaller than the latest one.
+            // So the amount adds up.
             lastCheckpoint.amount += checkpoint.amount;
             lastCheckpoint.cummulativeAmount += checkpoint.amount;
-        } else {
-            // Edge case: The item has nothing to do with the last item and is not an item that goes at the end of the queue
-            // so we have to iterate in order to rearrange and place the item where it goes.
-            console.log("opa");
-            while (i <= lastItem) {
-                ReceiveCheckpoint storage existingCheckpoint = queue.lockedFunds[i];
-
-                if (checkpoint.timestamp == existingCheckpoint.timestamp) {
-                    existingCheckpoint.amount += checkpoint.amount;
-                } else if (checkpoint.timestamp < existingCheckpoint.timestamp) {
-                        ReceiveCheckpoint memory rearrangeCheckpoint = existingCheckpoint;
-                        existingCheckpoint.timestamp = checkpoint.timestamp;
-                        existingCheckpoint.amount = checkpoint.amount;
-                        checkpoint = rearrangeCheckpoint;
-                }
-                i += 1;
-            }
-        }
+        } 
 
         if (queue.first == 0) {
             queue.first += 1;
         }
-
-        
     }
 
     // --- REPORT RESOLUTION ---
@@ -517,62 +459,12 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     function _removeUsedUpLocks (uint256 availableAmount, address account, uint256 amount) private {
         LocksQueue storage queue;
         ILERC20 token = ILERC20(msg.sender);
-        
         queue = tokenScopedLockedFunds[token].queue[account];
-
-        console.log("not touched");
-        console.log(queue.touchedTimestamp + tokenConfig[token].tokenLockTimeframe <= block.timestamp);
         require(queue.touchedTimestamp + tokenConfig[token].tokenLockTimeframe <= block.timestamp, "LSS: Transfers limit reached");
-        console.log("availableAmount");
-        console.log(availableAmount);
-        console.log("amount");
-        console.log(amount);
         uint256 amountLeft = amount - availableAmount;
-        console.log("amountLeft");
-        console.log(amountLeft);
-        uint256 i = queue.first;
-        uint256 lastItem = queue.last;
-        
         ReceiveCheckpoint storage cp = queue.lockedFunds[queue.last];
         cp.cummulativeAmount -= amountLeft;
-        // while (amountLeft > 0 && i <= lastItem) {
-        //     ReceiveCheckpoint storage checkpoint = queue.lockedFunds[i];
-        //     if (checkpoint.cummulativeAmount > amountLeft) {
-        //         console.log("c");
-        //         console.log(checkpoint.cummulativeAmount);
-        //         console.log("d");
-        //         console.log(amountLeft);
-        //         checkpoint.cummulativeAmount -= amountLeft;
-        //         console.log("sanity");
-        //         console.log(checkpoint.cummulativeAmount);
-        //         delete amountLeft;
-        //     } else {
-        //         amountLeft -= checkpoint.cummulativeAmount;
-        //         delete checkpoint.amount;
-        //     }
-        //     i += 1;
-        // }
-
         queue.touchedTimestamp = block.timestamp;
-    }
-
-    /// @notice This function will remove the locks that have already been lifted
-    /// @param recipient Address to lift the locks
-    function _removeExpiredLocks (address recipient) private {
-        LocksQueue storage queue;
-        queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[recipient];
-
-        uint i = queue.first;
-        uint256 lastItem = queue.last;
-
-        ReceiveCheckpoint memory checkpoint = queue.lockedFunds[i];
-
-        while (checkpoint.timestamp <= block.timestamp && i <= lastItem) {
-            delete queue.lockedFunds[i];
-            i += 1;
-            checkpoint = queue.lockedFunds[i];
-            queue.first += 1;
-        }
     }
 
 
@@ -601,7 +493,6 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
 
         ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + config.tokenLockTimeframe, 0);
         _enqueueLockedFunds(newCheckpoint, recipient);
-        // _removeExpiredLocks(recipient);
         return true;
     }
 
