@@ -8,8 +8,8 @@ import "./ILosslessReporting.sol";
 import "./IProtectionStrategy.sol";
 
 interface ILssController {
-    function getLockedAmount(ILERC20 _token, address _account) external view returns (uint256);
-    function getAvailableAmount(ILERC20 _token, address _account) external view returns (uint256 amount);
+    // function getLockedAmount(ILERC20 _token, address _account)  returns (uint256);
+    // function getAvailableAmount(ILERC20 _token, address _account) external view returns (uint256 amount);
     function retrieveBlacklistedFunds(address[] calldata _addresses, ILERC20 _token, uint256 _reportId) external returns(uint256);
     function whitelist(address _adr) external view returns (bool);
     function dexList(address _dexAddress) external returns (bool);
