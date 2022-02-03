@@ -463,9 +463,9 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     function _removeUsedUpLocks (uint256 _availableAmount, address _account, uint256 _amount) private {
         LocksQueue storage queue;
         ILERC20 token = ILERC20(msg.sender);
-        queue = tokenScopedLockedFunds[token].queue[account];
+        queue = tokenScopedLockedFunds[token].queue[_account];
         require(queue.touchedTimestamp + tokenConfig[token].tokenLockTimeframe <= block.timestamp, "LSS: Transfers limit reached");
-        uint256 amountLeft = amount - availableAmount;
+        uint256 amountLeft = _amount - _availableAmount;
         ReceiveCheckpoint storage cp = queue.lockedFunds[queue.last];
         cp.cummulativeAmount -= amountLeft;
         queue.touchedTimestamp = block.timestamp;
@@ -480,7 +480,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     function _evaluateTransfer(address _sender, address _recipient, uint256 _amount) private returns (bool) {
         ILERC20 token = ILERC20(msg.sender);
 
-        uint256 settledAmount = getAvailableAmount(token, _sender);
+        uint256 settledAmount = _getAvailableAmount(token, _sender);
         
         TokenConfig storage config = tokenConfig[token];
 
@@ -495,8 +495,8 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
             }
         }
 
-        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(amount, block.timestamp + config.tokenLockTimeframe, 0);
-        _enqueueLockedFunds(newCheckpoint, recipient);
+        ReceiveCheckpoint memory newCheckpoint = ReceiveCheckpoint(_amount, block.timestamp + config.tokenLockTimeframe, 0);
+        _enqueueLockedFunds(newCheckpoint, _recipient);
         return true;
     }
 
