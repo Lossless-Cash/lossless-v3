@@ -41,7 +41,7 @@ describe(scriptName, () => {
       ).to.not.be.reverted;
 
       expect(
-        await env.lssGovernance.erroneousCompensation(),
+        await env.lssGovernance.compensationPercentage(),
       ).to.be.equal(3);
     });
   });

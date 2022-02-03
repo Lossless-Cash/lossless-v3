@@ -197,10 +197,11 @@ describe(scriptName, () => {
         it('should emit event', async () => {
           expect(
             await env.lssStaking.connect(adr.staker1).stakerClaim(1),
-          ).to.be.emit(env.lssStaking, 'StakerClaimed').withArgs(
+          ).to.be.emit(env.lssStaking, 'StakerClaim').withArgs(
             adr.staker1.address,
             lerc20Token.address,
             1,
+            7095,
           );
         });
       });

@@ -117,7 +117,7 @@ describe(scriptName, () => {
 
         await expect(
           env.lssStaking.connect(adr.staker1).stake(1),
-        ).to.emit(env.lssStaking, 'Staked').withArgs(
+        ).to.emit(env.lssStaking, 'NewStake').withArgs(
           lerc20Token.address,
           adr.staker1.address,
           1,
@@ -185,7 +185,7 @@ describe(scriptName, () => {
 
         await expect(
           env.lssStaking.connect(adr.staker5).stake(1),
-        ).to.be.revertedWith('LERC20: transfer amount exceeds balance');
+        ).to.be.revertedWith('LERC20: transfer amount exceeds allowance');
       });
     });
 

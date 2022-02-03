@@ -164,7 +164,7 @@ describe(scriptName, () => {
 
         await expect(
           env.lssGovernance.connect(adr.member4).committeeMemberVote(1, true),
-        ).to.emit(env.lssGovernance, 'CommitteeMajorityReached').withArgs(
+        ).to.emit(env.lssGovernance, 'CommitteeMajorityReach').withArgs(
           1,
           true,
         );

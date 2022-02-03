@@ -85,12 +85,10 @@ describe(scriptName, () => {
 
     describe('when succesfully generating a report', () => {
       it('should not revert', async () => {
-        await env.lssReporting.connect(adr.reporter1)
-          .report(lerc20Token.address, adr.maliciousActor1.address);
-
-        expect(
-          await env.lssReporting.reportTimestamps(1),
-        ).to.not.be.empty;
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .report(lerc20Token.address, adr.maliciousActor1.address),
+        ).to.not.be.reverted;
       });
 
       it('should blacklist address', async () => {
@@ -106,7 +104,7 @@ describe(scriptName, () => {
         expect(
           await env.lssReporting.connect(adr.reporter1)
             .report(lerc20Token.address, adr.maliciousActor1.address),
-        ).to.emit(env.lssReporting, 'ReportSubmitted').withArgs(
+        ).to.emit(env.lssReporting, 'ReportSubmission').withArgs(
           lerc20Token.address,
           adr.maliciousActor1.address,
           1,

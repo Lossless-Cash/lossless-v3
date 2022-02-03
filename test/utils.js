@@ -155,7 +155,7 @@ const setupEnvironment = async (
 
   lssStaking = await upgrades.deployProxy(
     LosslessStaking,
-    [lssReporting.address, lssController.address],
+    [lssReporting.address, lssController.address, 1000],
     { initializer: 'initialize' },
   );
 
@@ -165,6 +165,7 @@ const setupEnvironment = async (
       lssReporting.address,
       lssController.address,
       lssStaking.address,
+      604800, // 7 days
     ],
     { initializer: 'initialize' },
   );
@@ -186,8 +187,8 @@ const setupEnvironment = async (
     lssAdmin.address],
   true);
   await lssController.connect(lssAdmin).setDexTransferThreshold(20);
-  await lssController.connect(lssAdmin).setSettlementTimeLock(12 * 3600);
-  
+  await lssController.connect(lssAdmin).setSettlementTimeLock(60);
+
   await lssStaking.connect(lssAdmin).setStakingAmount(stakingAmount);
   await lssStaking.connect(lssAdmin).setStakingToken(lssToken.address);
   await lssStaking

@@ -127,7 +127,7 @@ describe('TreasuryProtectionStrategy', () => {
         ).to.be.equal(true);
       });
 
-      it('should emit ProtectedAddressSet event', async () => {
+      it('should emit NewProtectedAddress event', async () => {
         await protection.guardian
           .connect(vars.lssAdmin)
           .verifyAddress(
@@ -144,7 +144,7 @@ describe('TreasuryProtectionStrategy', () => {
               [vars.recipient.address],
             ),
         )
-          .to.emit(vars.losslessController, 'ProtectedAddressSet')
+          .to.emit(vars.losslessController, 'NewProtectedAddress')
           .withArgs(
             vars.erc20s[0].address,
             vars.initialHolder.address,

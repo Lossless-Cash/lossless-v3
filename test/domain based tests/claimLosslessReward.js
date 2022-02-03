@@ -54,9 +54,7 @@ describe(scriptName, () => {
       adr.member3.address,
       adr.member4.address,
       adr.member5.address]);
-
-    await env.lssReporting.connect(adr.lssAdmin).setLosslessReward(10);
-
+      
     await env.lssToken
       .connect(adr.lssInitialHolder)
       .transfer(adr.reporter1.address, env.stakingAmount);
@@ -193,7 +191,7 @@ describe(scriptName, () => {
       it('should emit event', async () => {
         await expect(
           env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1),
-        ).to.emit(env.lssGovernance, 'LosslessClaimed').withArgs(
+        ).to.emit(env.lssGovernance, 'LosslessClaim').withArgs(
           lerc20Token.address,
           1,
           reportedAmount * losslessReward,

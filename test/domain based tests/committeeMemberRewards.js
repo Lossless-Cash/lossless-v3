@@ -127,7 +127,7 @@ describe(scriptName, () => {
       it('should emit event when member claims', async () => {
         await expect(
           env.lssGovernance.connect(adr.member1).claimCommitteeReward(1),
-        ).to.emit(env.lssGovernance, 'CommitteeMemberClaimed').withArgs(
+        ).to.emit(env.lssGovernance, 'CommitteeMemberClaim').withArgs(
           1,
           adr.member1.address,
           (reportedAmount * committeeReward) / 4,

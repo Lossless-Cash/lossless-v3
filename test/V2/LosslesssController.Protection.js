@@ -134,6 +134,13 @@ describe('ControllerProtection', () => {
               vars.oneMoreAccount.address,
             ),
           ).to.be.equal(protection.treasuryProtectionStrategy.address);
+
+          await expect(
+            vars.losslessController.getProtectedAddressStrategy(
+              vars.erc20s[0].address,
+              vars.recipient.address,
+            ),
+          ).to.be.revertedWith('LSS: Address not protected');
         });
 
         it('should not affect other tokens', async () => {
@@ -172,7 +179,7 @@ describe('ControllerProtection', () => {
           ).to.be.equal(false);
         });
 
-        it('should emit ProtectedAddressSet event', async () => {
+        it('should emit NewProtectedAddress event', async () => {
           await expect(
             vars.losslessController
               .connect(vars.anotherAccount)
@@ -182,7 +189,7 @@ describe('ControllerProtection', () => {
                 protection.treasuryProtectionStrategy.address,
               ),
           )
-            .to.emit(vars.losslessController, 'ProtectedAddressSet')
+            .to.emit(vars.losslessController, 'NewProtectedAddress')
             .withArgs(
               vars.erc20s[0].address,
               vars.oneMoreAccount.address,

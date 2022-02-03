@@ -60,6 +60,13 @@ describe(scriptName, () => {
     });
 
     describe('when generating another report successfully', () => {
+      it('should revert if reporting the zero address', async () => {
+        await expect(
+          env.lssReporting.connect(adr.reporter1)
+            .secondReport(1, adr.ZERO_ADDRESS),
+        ).to.be.revertedWith('LSS: Cannot report zero address');
+      });
+
       it('should not revert', async () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
@@ -71,7 +78,7 @@ describe(scriptName, () => {
         await expect(
           env.lssReporting.connect(adr.reporter1)
             .secondReport(1, adr.maliciousActor2.address),
-        ).to.emit(env.lssReporting, 'SecondReportsubmitted').withArgs(
+        ).to.emit(env.lssReporting, 'SecondReportSubmission').withArgs(
           lerc20Token.address,
           adr.maliciousActor2.address,
           1,

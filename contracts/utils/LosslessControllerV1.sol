@@ -10,14 +10,14 @@ contract LosslessControllerV1 is Initializable, ContextUpgradeable, PausableUpgr
     address public admin;
     address public recoveryAdmin;
 
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event RecoveryAdminChanged(address indexed previousAdmin, address indexed newAdmin);
-    event PauseAdminChanged(address indexed previousAdmin, address indexed newAdmin);
+    event AdminChange(address indexed previousAdmin, address indexed newAdmin);
+    event RecoveryAdminChange(address indexed previousAdmin, address indexed newAdmin);
+    event PauseAdminChange(address indexed previousAdmin, address indexed newAdmin);
 
     // --- MODIFIERS ---
 
     modifier onlyLosslessRecoveryAdmin() {
-        require(_msgSender() == recoveryAdmin, "LOSSLESS: Must be recoveryAdmin");
+        require(recoveryAdmin == _msgSender(), "LOSSLESS: Must be recoveryAdmin");
         _;
     }
 
@@ -30,6 +30,8 @@ contract LosslessControllerV1 is Initializable, ContextUpgradeable, PausableUpgr
         admin = _admin;
         recoveryAdmin = _recoveryAdmin;
         pauseAdmin = _pauseAdmin;
+        __Context_init_unchained();
+        __Pausable_init_unchained();
     }
 
     // --- SETTERS ---
@@ -45,17 +47,20 @@ contract LosslessControllerV1 is Initializable, ContextUpgradeable, PausableUpgr
     }
 
     function setAdmin(address newAdmin) public onlyLosslessRecoveryAdmin {
-        emit AdminChanged(admin, newAdmin);
+        require(newAdmin != admin, "LERC20: Cannot set same address");
+        emit AdminChange(admin, newAdmin);
         admin = newAdmin;
     }
 
     function setRecoveryAdmin(address newRecoveryAdmin) public onlyLosslessRecoveryAdmin {
-        emit RecoveryAdminChanged(recoveryAdmin, newRecoveryAdmin);
+        require(newRecoveryAdmin != recoveryAdmin, "LERC20: Cannot set same address");
+        emit RecoveryAdminChange(recoveryAdmin, newRecoveryAdmin);
         recoveryAdmin = newRecoveryAdmin;
     }
 
     function setPauseAdmin(address newPauseAdmin) public onlyLosslessRecoveryAdmin {
-        emit PauseAdminChanged(pauseAdmin, newPauseAdmin);
+        require(newPauseAdmin != pauseAdmin, "LERC20: Cannot set same address");
+        emit PauseAdminChange(pauseAdmin, newPauseAdmin);
         pauseAdmin = newPauseAdmin;
     }
 
@@ -67,6 +72,9 @@ contract LosslessControllerV1 is Initializable, ContextUpgradeable, PausableUpgr
 
     // --- BEFORE HOOKS ---
 
+    // The following before hooks are in place as a placeholder for future products.
+    // Also to preserve legacy LERC20 compatibility
+    
     function beforeTransfer(address sender, address recipient, uint256 amount) external {}
 
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {}
@@ -78,6 +86,9 @@ contract LosslessControllerV1 is Initializable, ContextUpgradeable, PausableUpgr
     function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external {}
 
     // --- AFTER HOOKS ---
+
+    // * After hooks are deprecated in LERC20 but we have to keep them
+    //   here in order to support legacy LERC20.
 
     function afterApprove(address sender, address spender, uint256 amount) external {}
 

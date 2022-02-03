@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.4;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "hardhat/console.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
 import "./Interfaces/ILosslessControllerV3.sol";
 import "./Interfaces/ILosslessGovernance.sol";
 import "./Interfaces/ILosslessReporting.sol";
+import "./Interfaces/ILosslessStaking.sol";
 
 /// @title Lossless Staking Contract
 /// @notice The Staking contract is in charge of handling the staking done on reports
-contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeable {
+contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, PausableUpgradeable {
 
     struct Stake {
         mapping(uint256 => StakeInfo) stakeInfoOnReport;
@@ -22,37 +22,40 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     struct StakeInfo {
         uint256 timestamp;
         uint256 coefficient;
+        uint256 totalStakedOnReport;
         bool staked;
         bool payed;
     }
 
-    ILERC20 public stakingToken;
-    ILssReporting public losslessReporting;
-    ILssController public losslessController;
-    ILssGovernance public losslessGovernance;
+    ILERC20 override public stakingToken;
+    ILssReporting override public losslessReporting;
+    ILssController override public losslessController;
+    ILssGovernance override public losslessGovernance;
 
-    uint256 public stakingAmount;
-    
+    uint256 public override stakingAmount;
+    uint256 public constant HUNDRED = 1e2;
+    uint256 public constant MILLION = 1e6;
+
     mapping(address => Stake) private stakes;
-    mapping(uint256 => address[]) public stakers;
-
-    mapping(uint256 => uint256) public totalStakedOnReport;
 
     mapping(uint256 => uint256) public reportCoefficient;
 
-    event Staked(address indexed token, address indexed account, uint256 reportId);
-    event StakerClaimed(address indexed staker, address indexed token, uint256 indexed reportID);
-    event StakingAmountChanged(uint256 indexed newAmount);
+    mapping(address => PerReportAmount) stakedOnReport;
 
-    function initialize(address _losslessReporting, address _losslessController) public initializer {
-       losslessReporting = ILssReporting(_losslessReporting);
-       losslessController = ILssController(_losslessController);
+    struct PerReportAmount {
+        mapping(uint256 => uint256) report;
+    }
+
+    function initialize(ILssReporting _losslessReporting, ILssController _losslessController, uint256 _stakingAmount) public initializer {
+       losslessReporting = _losslessReporting;
+       losslessController = _losslessController;
+       stakingAmount = _stakingAmount;
     }
 
     // --- MODIFIERS ---
 
     modifier onlyLosslessAdmin() {
-        require(losslessController.admin() == msg.sender, "LSS: Must be admin");
+        require(msg.sender == losslessController.admin(), "LSS: Must be admin");
         _;
     }
 
@@ -69,45 +72,50 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     // --- SETTERS ---
 
     /// @notice This function pauses the contract
-    function pause() public onlyLosslessPauseAdmin {
+    function pause() override public onlyLosslessPauseAdmin {
         _pause();
     }    
 
     /// @notice This function unpauses the contract
-    function unpause() public onlyLosslessPauseAdmin {
+    function unpause() override public onlyLosslessPauseAdmin {
         _unpause();
     }
 
     /// @notice This function sets the address of the Lossless Reporting contract
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessReporting Address corresponding to the Lossless Reporting contract
-    function setLssReporting(address _losslessReporting) public onlyLosslessAdmin {
-        require(_losslessReporting != address(0), "LERC20: Cannot be zero address");
-        losslessReporting = ILssReporting(_losslessReporting);
+    function setLssReporting(ILssReporting _losslessReporting) override public onlyLosslessAdmin {
+        require(address(_losslessReporting) != address(0), "LERC20: Cannot be zero address");
+        losslessReporting = _losslessReporting;
+        emit NewReportingContract(_losslessReporting);
     }
 
     /// @notice This function sets the address of the Lossless Governance Token
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingToken Address corresponding to the Lossless Governance Token
-    function setStakingToken(address _stakingToken) public onlyLosslessAdmin {
-        require(_stakingToken != address(0), "LERC20: Cannot be zero address");
-        stakingToken = ILERC20(_stakingToken);
+    function setStakingToken(ILERC20 _stakingToken) override public onlyLosslessAdmin {
+        require(address(_stakingToken) != address(0), "LERC20: Cannot be zero address");
+        stakingToken = _stakingToken;
+        emit NewStakingToken(_stakingToken);
     }
 
     /// @notice This function sets the address of the Lossless Governance contract
     /// @dev Only can be called by the Lossless Admin
     /// @param _losslessGovernance Address corresponding to the Lossless Governance contract
-    function setLosslessGovernance(address _losslessGovernance) public onlyLosslessAdmin {
-        require(_losslessGovernance != address(0), "LERC20: Cannot be zero address");
-        losslessGovernance = ILssGovernance(_losslessGovernance);
+    function setLosslessGovernance(ILssGovernance _losslessGovernance) override public onlyLosslessAdmin {
+        require(address(_losslessGovernance) != address(0), "LERC20: Cannot be zero address");
+        losslessGovernance = _losslessGovernance;
+        emit NewGovernanceContract(_losslessGovernance);
     }
 
     /// @notice This function sets the amount of tokens to be staked when staking
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingAmount Amount to be staked
-    function setStakingAmount(uint256 _stakingAmount) public onlyLosslessAdmin {
+    function setStakingAmount(uint256 _stakingAmount) override public onlyLosslessAdmin {
+        require(_stakingAmount > 0, "LSS: Must be greater than zero");
+        require(_stakingAmount != stakingAmount, "LSS: Already set to that amount");
         stakingAmount = _stakingAmount;
-        emit StakingAmountChanged(_stakingAmount);
+        emit NewStakingAmount(_stakingAmount);
     }
 
     // STAKING
@@ -116,85 +124,100 @@ contract LosslessStaking is Initializable, ContextUpgradeable, PausableUpgradeab
     /// @dev The earlier the stake is placed on the report, the higher the reward is.
     /// The reporter cannot stake as it'll have a fixed percentage reward.
     /// A reported address cannot stake.
-    /// @param reportId Report to stake
-    function stake(uint256 reportId) public notBlacklisted whenNotPaused {
-        require(!losslessGovernance.isReportSolved(reportId), "LSS: Report already resolved");
-        require(!stakes[msg.sender].stakeInfoOnReport[reportId].staked, "LSS: already staked");
-        require(losslessReporting.reporter(reportId) != msg.sender, "LSS: reporter can not stake");   
+    /// @param _reportId Report to stake
+    function stake(uint256 _reportId) override public notBlacklisted whenNotPaused {
+        require(!losslessGovernance.isReportSolved(_reportId), "LSS: Report already resolved");
 
-        uint256 reportTimestamp = losslessReporting.reportTimestamps(reportId);
+        StakeInfo storage stakeInfo = stakes[msg.sender].stakeInfoOnReport[_reportId];
 
-        require(reportId > 0 && (reportTimestamp + losslessReporting.reportLifetime()) > block.timestamp, "LSS: report does not exists");
+        (address reporter,,, uint256 reportTimestamps, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
 
-        uint256 stakerCoefficient = reportTimestamp + losslessReporting.reportLifetime() - block.timestamp;
+        require(!stakeInfo.staked, "LSS: already staked");
+        require(msg.sender != reporter, "LSS: reporter can not stake");   
 
-        stakers[reportId].push(msg.sender);
-        stakes[msg.sender].stakeInfoOnReport[reportId].timestamp = block.timestamp;
-        stakes[msg.sender].stakeInfoOnReport[reportId].coefficient = stakerCoefficient;
-        stakes[msg.sender].stakeInfoOnReport[reportId].staked = true;
+        uint256 reportTimestamp = reportTimestamps;
+        uint256 reportLifetime = losslessReporting.reportLifetime();
 
-        reportCoefficient[reportId] += stakerCoefficient;
+        require(_reportId > 0 && (reportTimestamp + reportLifetime) > block.timestamp, "LSS: report does not exists");
+
+        uint256 stakerCoefficient = reportTimestamp + reportLifetime - block.timestamp;
+
+        stakeInfo.timestamp = block.timestamp;
+        stakeInfo.coefficient = stakerCoefficient;
+        stakeInfo.staked = true;
+
+        reportCoefficient[_reportId] += stakerCoefficient;
         
-        stakingToken.transferFrom(msg.sender, address(this), stakingAmount);
+        require(stakingToken.transferFrom(msg.sender, address(this), stakingAmount),
+        "LSS: Staking transfer failed");
 
-        totalStakedOnReport[reportId] += stakingAmount;
+        stakeInfo.totalStakedOnReport += stakingAmount;
+        stakedOnReport[msg.sender].report[_reportId] = stakingAmount;
         
-        emit Staked(losslessReporting.reportTokens(reportId), msg.sender, reportId);
+        emit NewStake(reportTokens, msg.sender, _reportId);
     }
 
     // --- CLAIM ---
     
     /// @notice This function returns the claimable amount by the stakers
     /// @dev It takes into consideration the staker coefficient in order to return the percentage rewarded.
-    /// @param reportId Staked report
-    function stakerClaimableAmount(uint256 reportId) public view returns (uint256) {
+    /// @param _reportId Staked report
+    function stakerClaimableAmount(uint256 _reportId) override public view returns (uint256) {
         (,,, uint256 stakersReward) = losslessReporting.getRewards();
-        uint256 amountStakedOnReport = losslessGovernance.amountReported(reportId);
-        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / 10**2;
-        uint256 stakerCoefficient = getStakerCoefficient(reportId, msg.sender);
-        uint256 coefficientMultiplier = ((amountDistributedToStakers * 10**6) / reportCoefficient[reportId]);
-        uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / 10**6;
+        uint256 amountStakedOnReport = losslessGovernance.getAmountReported(_reportId);
+        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / HUNDRED;
+        uint256 stakerCoefficient = getStakerCoefficient(_reportId, msg.sender);
+        uint256 coefficientMultiplier = ((amountDistributedToStakers * MILLION) / reportCoefficient[_reportId]);
+        uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / MILLION;
         return stakerAmountToClaim;
     }
 
 
     /// @notice This function is for the stakers to claim their rewards
-    /// @param reportId Staked report
-    function stakerClaim(uint256 reportId) public whenNotPaused {
-        require(!stakes[msg.sender].stakeInfoOnReport[reportId].payed, "LSS: You already claimed");
-        require(losslessGovernance.reportResolution(reportId), "LSS: Report solved negatively");
+    /// @param _reportId Staked report
+    function stakerClaim(uint256 _reportId) override public whenNotPaused {
+        StakeInfo storage stakeInfo = stakes[msg.sender].stakeInfoOnReport[_reportId];
 
-        stakes[msg.sender].stakeInfoOnReport[reportId].payed = true;
+        require(!stakeInfo.payed, "LSS: You already claimed");
+        require(losslessGovernance.reportResolution(_reportId), "LSS: Report solved negatively");
 
-        ILERC20(losslessReporting.reportTokens(reportId)).transfer(msg.sender, stakerClaimableAmount(reportId));
-        stakingToken.transfer( msg.sender, stakingAmount);
+        stakeInfo.payed = true;
 
-        emit StakerClaimed(msg.sender, losslessReporting.reportTokens(reportId), reportId);
+        uint256 amountToClaim = stakerClaimableAmount(_reportId);
+
+        (,,,, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+
+        require(reportTokens.transfer(msg.sender, amountToClaim),
+        "LSS: Reward transfer failed");
+        require(stakingToken.transfer(msg.sender, stakedOnReport[msg.sender].report[_reportId]),
+        "LSS: Staking transfer failed");
+
+        emit StakerClaim(msg.sender, reportTokens, _reportId, amountToClaim);
     }
 
     // --- GETTERS ---
 
     /// @notice This function returns the contract version
     /// @return Returns the Smart Contract version
-    function getVersion() public pure returns (uint256) {
+    function getVersion() override public pure returns (uint256) {
         return 1;
     }
 
     
     /// @notice This function returns if an address is already staking on a report
-    /// @param reportId Report being staked
-    /// @param account Address to consult
+    /// @param _reportId Report being staked
+    /// @param _account Address to consult
     /// @return True if the account is already staking
-    function getIsAccountStaked(uint256 reportId, address account) public view returns(bool) {
-        return stakes[account].stakeInfoOnReport[reportId].staked;
+    function getIsAccountStaked(uint256 _reportId, address _account) override public view returns(bool) {
+        return stakes[_account].stakeInfoOnReport[_reportId].staked;
     }
 
     /// @notice This function returns the coefficient of a staker in a report
-    /// @param reportId Report where the address staked
+    /// @param _reportId Report where the address staked
     /// @param _address Staking address
     /// @return The coefficient calculated for the staker
-    function getStakerCoefficient(uint256 reportId, address _address) public view returns (uint256) {
-        return stakes[_address].stakeInfoOnReport[reportId].coefficient;
+    function getStakerCoefficient(uint256 _reportId, address _address) override public view returns (uint256) {
+        return stakes[_address].stakeInfoOnReport[_reportId].coefficient;
     }
 
 
