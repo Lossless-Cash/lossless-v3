@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
 import "./Interfaces/ILosslessERC20.sol";
-import "./Interfaces/ILosslessControllerV3.sol";
+import "./Interfaces/ILosslessController.sol";
 import "./Interfaces/ILosslessGovernance.sol";
 import "./Interfaces/ILosslessReporting.sol";
 import "./Interfaces/ILosslessStaking.sol";

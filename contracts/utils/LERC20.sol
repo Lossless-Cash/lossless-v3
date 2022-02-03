@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./Context.sol";
 import "../Interfaces/ILosslessERC20.sol";
-import "../Interfaces/ILosslessControllerV3.sol";
+import "../Interfaces/ILosslessController.sol";
 
 contract LERC20 is Context, ILERC20 {
     mapping (address => uint256) private _balances;

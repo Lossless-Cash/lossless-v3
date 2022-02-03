@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./ILosslessERC20.sol";
 import "./ILosslessGovernance.sol";
 import "./ILosslessReporting.sol";
-import "./ILosslessControllerV3.sol";
+import "./ILosslessController.sol";
 
 interface ILssStaking {
   function stakingToken() external returns(ILERC20);
