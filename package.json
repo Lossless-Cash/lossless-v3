@@ -22,7 +22,7 @@
     "ethereum-waffle": "^3.3.0",
     "hardhat": "^2.8.2",
     "hardhat-gas-reporter": "^1.0.7",
-    "hardhat-abi-exporter": "^2.7.2",
+    "hardhat-abi-exporter": "^2.8.0",
     "solidity-coverage": "^0.7.16",
     "solidity-parser-antlr": "^0.4.11"
   },
