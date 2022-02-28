@@ -39,5 +39,5 @@ jobs:
         run: npm test
         
       - name: Slither static analyser
+        uses: crytic/slither-action@v0.1.0
         continue-on-error: true
-        uses: luisfontes19/slither-static-analysis-action@v0.3.4
