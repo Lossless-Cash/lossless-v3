@@ -160,7 +160,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @notice This function sets the amount of tokens given to the erroneously reported address
     /// @param _amount Percentage to return
     function setCompensationAmount(uint256 _amount) override public onlyLosslessAdmin {
-        require(0 <= _amount && _amount <= 100, "LSS: Invalid amount");
+        require(_amount <= 100, "LSS: Invalid amount");
         compensationPercentage = _amount;
     }
     
