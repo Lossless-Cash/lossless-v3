@@ -410,7 +410,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
 
         queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[_recipient];
 
-        uint lastItem = queue.last;
+        uint256 lastItem = queue.last;
         ReceiveCheckpoint storage lastCheckpoint = queue.lockedFunds[lastItem];
 
         if (lastCheckpoint.timestamp < _checkpoint.timestamp) {
