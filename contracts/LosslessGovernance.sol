@@ -529,7 +529,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @notice This lets an erroneously reported account to retrieve compensation
     function retrieveCompensation() override public whenNotPaused {
         require(!compensation[msg.sender].payed, "LSS: Already retrieved");
-        require(compensation[msg.sender].amount > 0, "LSS: No retribution assigned");
+        require(compensation[msg.sender].amount != 0, "LSS: No retribution assigned");
         
         compensation[msg.sender].payed = true;
 
@@ -548,7 +548,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         assembly {
             size := extcodesize(_addr)
         }
-        return (size > 0);
+        return (size != 0);
     }
 
     ///@notice This function is for committee members to claim their rewards

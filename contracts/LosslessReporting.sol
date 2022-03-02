@@ -271,7 +271,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         uint256 reportTimestamp = queriedReport.reportTimestamps;
         ILERC20 token = queriedReport.reportTokens;
 
-        require(_reportId > 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
+        require(_reportId != 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
         require(queriedReport.secondReports == false, "LSS: Another already submitted");
         require(msg.sender == queriedReport.reporter, "LSS: invalid reporter");
 
