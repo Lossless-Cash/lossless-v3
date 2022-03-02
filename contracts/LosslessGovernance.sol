@@ -173,10 +173,11 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         uint256 committeeQuorum = (committeeMembersCount >> 2) + 1; 
 
         uint256 agreeCount;
-        for(uint256 i = 0; i < committeeLength; i++) {
+        for(uint256 i = 0; i < committeeLength;) {
             if (reportVote.committeeVotes[i]) {
                 agreeCount += 1;
             }
+            unchecked{i++;}
         }
 
         if (agreeCount >= committeeQuorum) {
@@ -199,10 +200,12 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     function addCommitteeMembers(address[] memory _members) override public onlyLosslessAdmin whenNotPaused {
         committeeMembersCount += _members.length;
 
-        for (uint256 i = 0; i < _members.length; ++i) {
+        for(uint256 i = 0; i < _members.length;) {
             address newMember = _members[i];
             require(!isCommitteeMember(newMember), "LSS: duplicate members");
             grantRole(COMMITTEE_ROLE, newMember);
+
+            unchecked{i++;}
         }
 
         emit NewCommitteeMembers(_members);
@@ -215,10 +218,11 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         committeeMembersCount -= _members.length;
 
-        for (uint256 i = 0; i < _members.length; ++i) {
+        for(uint256 i = 0; i < _members.length;) {
             address newMember = _members[i];
             require(isCommitteeMember(newMember), "LSS: An address is not member");
             revokeRole(COMMITTEE_ROLE, newMember);
+            unchecked{i++;}
         }
 
         emit CommitteeMembersRemoval(_members);
@@ -358,8 +362,9 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         if (agreeCount > (voteCount - agreeCount)){
             reportVote.resolution = true;
-            for(uint256 i; i < reportedAddresses.length; i++) {
+            for(uint256 i; i < reportedAddresses.length;) {
                 reportVote.amountReported += token.balanceOf(reportedAddresses[i]);
+                unchecked{i++;}
             }
             proposedWalletOnReport[_reportId].retrievalAmount = losslessController.retrieveBlacklistedFunds(reportedAddresses, token, _reportId);
             losslessController.deactivateEmergency(token);
@@ -393,12 +398,13 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         uint256 compensationAmount = (reportingAmount * compensationPercentage) / HUNDRED;
 
         
-        for(uint256 i = 0; i < _addresses.length; i++) {
+        for(uint256 i = 0; i < _addresses.length;) {
             address singleAddress = _addresses[i];
             Compensation storage addressCompensation = compensation[singleAddress]; 
             losslessController.resolvedNegatively(singleAddress);      
             addressCompensation.amount += compensationAmount;
             addressCompensation.payed = false;
+            unchecked{i++;}
         }
     }
 

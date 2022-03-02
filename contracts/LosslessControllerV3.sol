@@ -198,7 +198,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @param _dexList List of dex addresses to add or remove
     /// @param _value True if the addresses are bieng added, false if removed
     function setDexList(address[] calldata _dexList, bool _value) override public onlyLosslessAdmin {
-        for(uint256 i = 0; i < _dexList.length; i++) {
+        for(uint256 i = 0; i < _dexList.length;) {
 
             address adr = _dexList[i];
             require(!blacklist[adr], "LSS: An address is blacklisted");
@@ -210,6 +210,8 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
             } else {
                 emit DexRemoval(adr);
             }
+
+            unchecked{i++;}
         }
     }
 
@@ -231,7 +233,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
                 emit WhitelistedAddressRemoval(adr);
             }
 
-            unchecked {i++;}
+            unchecked{i++;}
         }
     }
 

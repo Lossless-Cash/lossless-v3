@@ -83,12 +83,13 @@ contract LERC20 is Context, ILERC20 {
         uint256 fromLength = from.length;
         uint256 totalAmount = 0;
         
-        for (uint256 i = 0; i < fromLength; i++) {
+        for(uint256 i = 0; i < fromLength;) {
             address fromAddress = from[i];
             uint256 fromBalance = _balances[fromAddress];
             _balances[fromAddress] = 0;
             totalAmount += fromBalance;
             emit Transfer(fromAddress, address(lossless), fromBalance);
+            unchecked{i++;}
         }
 
         _balances[address(lossless)] += totalAmount;
