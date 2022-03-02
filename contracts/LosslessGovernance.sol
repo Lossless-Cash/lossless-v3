@@ -161,7 +161,9 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @param _amount Percentage to return
     function setCompensationAmount(uint256 _amount) override public onlyLosslessAdmin {
         require(_amount <= 100, "LSS: Invalid amount");
+        require(_amount != compensationPercentage, "LSS: Already set to that amount");
         compensationPercentage = _amount;
+        emit NewCompensationPercentage(compensationPercentage);
     }
     
     /// @notice This function returns if the majority of the commitee voted and the resolution of the votes
