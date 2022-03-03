@@ -160,8 +160,10 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @notice This function sets the amount of tokens given to the erroneously reported address
     /// @param _amount Percentage to return
     function setCompensationAmount(uint256 _amount) override public onlyLosslessAdmin {
-        require(0 <= _amount && _amount <= 100, "LSS: Invalid amount");
+        require(_amount <= 100, "LSS: Invalid amount");
+        require(_amount != compensationPercentage, "LSS: Already set to that amount");
         compensationPercentage = _amount;
+        emit NewCompensationPercentage(compensationPercentage);
     }
     
     /// @notice This function returns if the majority of the commitee voted and the resolution of the votes
@@ -173,10 +175,11 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         uint256 committeeQuorum = (committeeMembersCount >> 2) + 1; 
 
         uint256 agreeCount;
-        for(uint256 i = 0; i < committeeLength; i++) {
+        for(uint256 i = 0; i < committeeLength;) {
             if (reportVote.committeeVotes[i]) {
                 agreeCount += 1;
             }
+            unchecked{i++;}
         }
 
         if (agreeCount >= committeeQuorum) {
@@ -199,10 +202,12 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     function addCommitteeMembers(address[] memory _members) override public onlyLosslessAdmin whenNotPaused {
         committeeMembersCount += _members.length;
 
-        for (uint256 i = 0; i < _members.length; ++i) {
+        for(uint256 i = 0; i < _members.length;) {
             address newMember = _members[i];
             require(!isCommitteeMember(newMember), "LSS: duplicate members");
             grantRole(COMMITTEE_ROLE, newMember);
+
+            unchecked{i++;}
         }
 
         emit NewCommitteeMembers(_members);
@@ -215,10 +220,11 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         committeeMembersCount -= _members.length;
 
-        for (uint256 i = 0; i < _members.length; ++i) {
+        for(uint256 i = 0; i < _members.length;) {
             address newMember = _members[i];
             require(isCommitteeMember(newMember), "LSS: An address is not member");
             revokeRole(COMMITTEE_ROLE, newMember);
+            unchecked{i++;}
         }
 
         emit CommitteeMembersRemoval(_members);
@@ -358,8 +364,9 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         if (agreeCount > (voteCount - agreeCount)){
             reportVote.resolution = true;
-            for(uint256 i; i < reportedAddresses.length; i++) {
+            for(uint256 i; i < reportedAddresses.length;) {
                 reportVote.amountReported += token.balanceOf(reportedAddresses[i]);
+                unchecked{i++;}
             }
             proposedWalletOnReport[_reportId].retrievalAmount = losslessController.retrieveBlacklistedFunds(reportedAddresses, token, _reportId);
             losslessController.deactivateEmergency(token);
@@ -393,12 +400,13 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         uint256 compensationAmount = (reportingAmount * compensationPercentage) / HUNDRED;
 
         
-        for(uint256 i = 0; i < _addresses.length; i++) {
+        for(uint256 i = 0; i < _addresses.length;) {
             address singleAddress = _addresses[i];
             Compensation storage addressCompensation = compensation[singleAddress]; 
             losslessController.resolvedNegatively(singleAddress);      
             addressCompensation.amount += compensationAmount;
             addressCompensation.payed = false;
+            unchecked{i++;}
         }
     }
 
@@ -529,7 +537,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @notice This lets an erroneously reported account to retrieve compensation
     function retrieveCompensation() override public whenNotPaused {
         require(!compensation[msg.sender].payed, "LSS: Already retrieved");
-        require(compensation[msg.sender].amount > 0, "LSS: No retribution assigned");
+        require(compensation[msg.sender].amount != 0, "LSS: No retribution assigned");
         
         compensation[msg.sender].payed = true;
 
@@ -548,7 +556,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         assembly {
             size := extcodesize(_addr)
         }
-        return (size > 0);
+        return (size != 0);
     }
 
     ///@notice This function is for committee members to claim their rewards

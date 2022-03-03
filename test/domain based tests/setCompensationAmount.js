@@ -35,10 +35,20 @@ describe(scriptName, () => {
       ).to.be.revertedWith('LSS: Invalid amount');
     });
 
+    it('should revert when setting the same amount', async () => {
+      await expect(
+        env.lssGovernance.connect(adr.lssAdmin).setCompensationAmount(3),
+      ).to.emit(env.lssGovernance, 'NewCompensationPercentage').withArgs(3);
+
+      await expect(
+        env.lssGovernance.connect(adr.lssAdmin).setCompensationAmount(3),
+      ).to.be.revertedWith('LSS: Already set to that amount');
+    });
+
     it('should not revert when sent by admin', async () => {
       await expect(
         env.lssGovernance.connect(adr.lssAdmin).setCompensationAmount(3),
-      ).to.not.be.reverted;
+      ).to.emit(env.lssGovernance, 'NewCompensationPercentage').withArgs(3);
 
       expect(
         await env.lssGovernance.compensationPercentage(),

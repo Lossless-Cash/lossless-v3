@@ -112,7 +112,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     /// @dev Only can be called by the Lossless Admin
     /// @param _stakingAmount Amount to be staked
     function setStakingAmount(uint256 _stakingAmount) override public onlyLosslessAdmin {
-        require(_stakingAmount > 0, "LSS: Must be greater than zero");
+        require(_stakingAmount != 0, "LSS: Must be greater than zero");
         require(_stakingAmount != stakingAmount, "LSS: Already set to that amount");
         stakingAmount = _stakingAmount;
         emit NewStakingAmount(_stakingAmount);
@@ -138,7 +138,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
         uint256 reportTimestamp = reportTimestamps;
         uint256 reportLifetime = losslessReporting.reportLifetime();
 
-        require(_reportId > 0 && (reportTimestamp + reportLifetime) > block.timestamp, "LSS: report does not exists");
+        require(_reportId != 0 && (reportTimestamp + reportLifetime) > block.timestamp, "LSS: report does not exists");
 
         uint256 stakerCoefficient = reportTimestamp + reportLifetime - block.timestamp;
 
@@ -165,7 +165,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     function stakerClaimableAmount(uint256 _reportId) override public view returns (uint256) {
         (,,, uint256 stakersReward) = losslessReporting.getRewards();
         uint256 amountStakedOnReport = losslessGovernance.getAmountReported(_reportId);
-        uint256 amountDistributedToStakers = amountStakedOnReport * stakersReward / HUNDRED;
+        uint256 amountDistributedToStakers = (amountStakedOnReport * stakersReward) / HUNDRED;
         uint256 stakerCoefficient = getStakerCoefficient(_reportId, msg.sender);
         uint256 coefficientMultiplier = ((amountDistributedToStakers * MILLION) / reportCoefficient[_reportId]);
         uint256 stakerAmountToClaim = (coefficientMultiplier * stakerCoefficient) / MILLION;

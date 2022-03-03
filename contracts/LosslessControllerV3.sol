@@ -198,7 +198,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
     /// @param _dexList List of dex addresses to add or remove
     /// @param _value True if the addresses are bieng added, false if removed
     function setDexList(address[] calldata _dexList, bool _value) override public onlyLosslessAdmin {
-        for(uint256 i = 0; i < _dexList.length; i++) {
+        for(uint256 i = 0; i < _dexList.length;) {
 
             address adr = _dexList[i];
             require(!blacklist[adr], "LSS: An address is blacklisted");
@@ -210,6 +210,8 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
             } else {
                 emit DexRemoval(adr);
             }
+
+            unchecked{i++;}
         }
     }
 
@@ -231,7 +233,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
                 emit WhitelistedAddressRemoval(adr);
             }
 
-            unchecked {i++;}
+            unchecked{i++;}
         }
     }
 
@@ -362,7 +364,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         ReceiveCheckpoint memory lowestCp = queue.lockedFunds[queue.first];
 
         while (upper > lower) {
-            center = upper - (upper - lower) / 2; // ceil, avoiding overflow
+            center = upper - ((upper - lower) >> 2); // ceil, avoiding overflow
             cp = queue.lockedFunds[center];
             if (cp.timestamp == currentTimestamp) {
                 return (cp.cummulativeAmount, center + 1);
@@ -408,7 +410,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
 
         queue = tokenScopedLockedFunds[ILERC20(msg.sender)].queue[_recipient];
 
-        uint lastItem = queue.last;
+        uint256 lastItem = queue.last;
         ReceiveCheckpoint storage lastCheckpoint = queue.lockedFunds[lastItem];
 
         if (lastCheckpoint.timestamp < _checkpoint.timestamp) {
