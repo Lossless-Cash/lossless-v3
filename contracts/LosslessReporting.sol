@@ -248,7 +248,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         
         losslessController.activateEmergency(_token);
 
-        emit ReportSubmission(_token, _account, reportId);
+        emit ReportSubmission(_token, _account, reportId, reportingAmount);
 
         return reportId;
     }

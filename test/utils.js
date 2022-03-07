@@ -79,6 +79,9 @@ const setupAddresses = async () => {
   };
 };
 
+const stakingAmount = 2500;
+const reportingAmount = 1000;
+
 const setupEnvironment = async (
   lssAdmin,
   lssRecoveryAdmin,
@@ -90,8 +93,7 @@ const setupEnvironment = async (
   const tokenOwnersVoteIndex = 1;
   const committeeVoteIndex = 2;
 
-  const stakingAmount = 2500;
-  const reportingAmount = 1000;
+
   const reportLifetime = time.duration.days(1);
 
   const lssName = 'Lossless';
@@ -247,4 +249,6 @@ module.exports = {
   setupAddresses,
   setupEnvironment,
   setupToken,
+  stakingAmount,
+  reportingAmount
 };

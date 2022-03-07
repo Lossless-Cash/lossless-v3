@@ -6,7 +6,7 @@
 const { time, constants } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 const path = require('path');
-const { setupAddresses, setupEnvironment, setupToken } = require('../utils');
+const { setupAddresses, setupEnvironment, setupToken, reportingAmount } = require('../utils');
 
 let adr;
 let env;
@@ -108,6 +108,7 @@ describe(scriptName, () => {
           lerc20Token.address,
           adr.maliciousActor1.address,
           1,
+          reportingAmount
         );
       });
 
