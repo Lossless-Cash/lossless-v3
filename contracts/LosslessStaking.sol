@@ -154,7 +154,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
         stakeInfo.totalStakedOnReport += stakingAmount;
         stakedOnReport[msg.sender].report[_reportId] = stakingAmount;
         
-        emit NewStake(reportTokens, msg.sender, _reportId);
+        emit NewStake(reportTokens, msg.sender, _reportId, stakingAmount);
     }
 
     // --- CLAIM ---

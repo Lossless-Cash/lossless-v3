@@ -5,7 +5,7 @@
 const { time, constants } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 const path = require('path');
-const { setupAddresses, setupEnvironment, setupToken } = require('../utils');
+const { setupAddresses, setupEnvironment, setupToken, stakingAmount } = require('../utils');
 
 let adr;
 let env;
@@ -121,6 +121,7 @@ describe(scriptName, () => {
           lerc20Token.address,
           adr.staker1.address,
           1,
+          stakingAmount
         );
       });
     });

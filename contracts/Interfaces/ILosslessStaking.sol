@@ -26,7 +26,7 @@ interface ILssStaking {
   function stake(uint256 _reportId) external;
   function stakerClaim(uint256 _reportId) external;
 
-  event NewStake(ILERC20 indexed _token, address indexed _account, uint256 indexed _reportId);
+  event NewStake(ILERC20 indexed _token, address indexed _account, uint256 indexed _reportId, uint256 _amount);
   event StakerClaim(address indexed _staker, ILERC20 indexed _token, uint256 indexed _reportID, uint256 _amount);
   event NewStakingAmount(uint256 indexed _newAmount);
   event NewStakingToken(ILERC20 indexed _newToken);
