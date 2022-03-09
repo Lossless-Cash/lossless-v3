@@ -81,6 +81,7 @@ contract LiquidityProtectionSingleLimitStrategy is StrategyBase {
     // @dev Limit is reset every period.
     // @dev Every period has it's own amountLeft which gets decreased on every transfer.
     // @dev This method modifies state so should be callable only by the trusted address!
+    // @dev Unused recipien variable is neede to comply with the strategy interface, it is used in the other strategies.
     function isTransferAllowed(address token, address sender, address recipient, uint256 amount) external {
         require(msg.sender == address(controller), "LOSSLESS: LSS Controller only");
         Limit storage limit = protection[token].limits[sender];

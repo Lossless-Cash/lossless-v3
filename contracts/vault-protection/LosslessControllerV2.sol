@@ -149,6 +149,7 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     // @notice If address is protected, transfer validation rules have to be run inside the strategy.
     // @dev isTransferAllowed reverts in case transfer can not be done by the defined rules.
+    // @dev msgSender is unused here, but it is sent by the LERC20, removing it would halt the transferFrom function of LERC20s
     function beforeTransferFrom(address msgSender, address sender, address recipient, uint256 amount) external {
         if (tokenProtections[ILERC20(msg.sender)].protections[sender].isProtected) {
             tokenProtections[ILERC20(msg.sender)].protections[sender].strategy.isTransferAllowed(msg.sender, sender, recipient, amount);
