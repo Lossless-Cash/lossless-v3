@@ -165,6 +165,10 @@ contract LosslessControllerV2 is Initializable, ContextUpgradeable, PausableUpgr
 
     function beforeDecreaseAllowance(address msgSender, address spender, uint256 subtractedValue) external {}
 
+    function beforeMint(address _to, uint256 _amount) override external {}
+
+    function beforeBurn(address _account, uint256 _amount) override external {}
+
     // --- AFTER HOOKS ---
     // * After hooks are deprecated in LERC20 but we have to keep them
     //   here in order to support legacy LERC20.
