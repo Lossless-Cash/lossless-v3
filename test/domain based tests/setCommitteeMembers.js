@@ -60,6 +60,31 @@ describe(scriptName, () => {
           await env.lssGovernance.isCommitteeMember(adr.member3.address),
         ).to.be.equal(true);
       });
+
+      it('should not revert if changing admin', async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address]);
+
+        expect(
+          await env.lssGovernance.isCommitteeMember(adr.member1.address),
+        ).to.be.equal(true);
+
+        expect(
+          await env.lssGovernance.isCommitteeMember(adr.member2.address),
+        ).to.be.equal(true);
+
+        expect(
+          await env.lssGovernance.isCommitteeMember(adr.member3.address),
+        ).to.be.equal(true);
+
+        await env.lssController.connect(adr.lssRecoveryAdmin).setAdmin(adr.regularUser4.address);
+
+        await expect(
+          env.lssGovernance.connect(adr.regularUser4).removeCommitteeMembers([adr.member1.address]),
+        ).to.not.be.reverted;
+      });
     });
 
     describe('when removing Committee members', () => {
@@ -116,7 +141,6 @@ describe(scriptName, () => {
             adr.member3.address]),
         ).to.be.revertedWith('LSS: An address is not member');
       });
-
 
       it('should remove members', async () => {
         await env.lssGovernance.connect(adr.lssAdmin).addCommitteeMembers([

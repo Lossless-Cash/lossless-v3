@@ -82,7 +82,6 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         losslessStaking = _losslessStaking;
         walletDisputePeriod = _walletDisputePeriod;
         committeeMembersCount = 0;
-        _setupRole(DEFAULT_ADMIN_ROLE, losslessController.admin());
     }
 
     modifier onlyLosslessAdmin() {
@@ -205,7 +204,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         for(uint256 i = 0; i < _members.length;) {
             address newMember = _members[i];
             require(!isCommitteeMember(newMember), "LSS: duplicate members");
-            grantRole(COMMITTEE_ROLE, newMember);
+            _grantRole(COMMITTEE_ROLE, newMember);
 
             unchecked{i++;}
         }
@@ -223,7 +222,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         for(uint256 i = 0; i < _members.length;) {
             address newMember = _members[i];
             require(isCommitteeMember(newMember), "LSS: An address is not member");
-            revokeRole(COMMITTEE_ROLE, newMember);
+            _revokeRole(COMMITTEE_ROLE, newMember);
             unchecked{i++;}
         }
 
