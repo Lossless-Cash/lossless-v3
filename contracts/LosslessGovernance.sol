@@ -27,8 +27,6 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     uint256 public compensationPercentage;
 
-    uint256 public revsharePercent;
-
     uint256 public constant HUNDRED = 1e2;
 
     ILssReporting override public losslessReporting;
@@ -44,7 +42,6 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         bool resolved;
         bool resolution;
         bool losslessPayed;
-        bool revsharePayed;
         uint256 amountReported;
     }
     mapping(uint256 => Vote) public reportVotes;
@@ -79,7 +76,10 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     address[] private reportedAddresses;
 
+
+    uint256 public revsharePercent;
     address public revshareAdmin;
+    mapping(uint256 => bool) public revsharePayed;
 
     function initialize(ILssReporting _losslessReporting, ILssController _losslessController, ILssStaking _losslessStaking, uint256 _walletDisputePeriod) public initializer {
         losslessReporting = _losslessReporting;
@@ -172,7 +172,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     /// @notice This function sets revenue share Admin
     /// @param _address Address of the new admin
-    function setRevShareAdmin(address _address) override public onlyLosslessAdmin {
+    function setRevshareAdmin(address _address) override public onlyLosslessAdmin {
         require(_address != revshareAdmin, "LSS: Already set to that address");
         revshareAdmin = _address;
         emit NewRevshareAdmin(revshareAdmin);
@@ -640,14 +640,14 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         Vote storage reportVote = reportVotes[_reportId];
 
-        require(!reportVote.revsharePayed, "LSS: Already claimed");
+        require(!revsharePayed[_reportId], "LSS: Already claimed");
 
         (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
 
         uint256 losslessReward = reportVote.amountReported * losslessReporting.losslessReward() / HUNDRED;
         uint256 amountToClaim = losslessReward * revsharePercent / HUNDRED;
 
-        reportVote.revsharePayed = true;
+        revsharePayed[_reportId] = true;
         require(reportTokens.transfer(msg.sender, amountToClaim), 
         "LSS: Reward transfer failed");
 

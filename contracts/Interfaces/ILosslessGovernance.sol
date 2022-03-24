@@ -36,7 +36,7 @@ interface ILssGovernance {
     function claimCommitteeReward(uint256 _reportId) external;
     function setCompensationAmount(uint256 _amount) external;
     function losslessClaim(uint256 _reportId) external;
-    function setRevShareAdmin(address _address) external;
+    function setRevshareAdmin(address _address) external;
     function setRevsharePercentage(uint256 _amount) external;
     function revshareClaim(uint256 _reportId) external;
 
