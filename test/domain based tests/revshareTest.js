@@ -16,7 +16,7 @@ const reportedAmount = 1000000;
 const losslessReward = 0.1;
 const revsharePercent = 0.5;
 
-describe.only(scriptName, () => {
+describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
     env = await setupEnvironment(adr.lssAdmin,
@@ -203,13 +203,29 @@ describe.only(scriptName, () => {
       });
     });
 
-    describe('when revshare admin team claims two times', () => {
+    describe('when revshare admin claims two times', () => {
       it('should revert', async () => {
         await env.lssGovernance.connect(adr.regularUser5).revshareClaim(1);
 
         await expect(
           env.lssGovernance.connect(adr.regularUser5).revshareClaim(1),
         ).to.be.revertedWith('LSS: Already claimed');
+      });
+    });
+
+    describe('when revshare admin  and lossless team claims', () => {
+      it('should not revert', async () => {
+        const revshareClaim = (reportedAmount * losslessReward) * revsharePercent;
+        const losslessClaim = reportedAmount * losslessReward - revshareClaim;
+        await env.lssGovernance.connect(adr.regularUser5).revshareClaim(1);
+        await env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1);
+
+        expect(
+          await lerc20Token.balanceOf(adr.regularUser5.address),
+        ).to.be.equal(revshareClaim);
+        expect(
+          await lerc20Token.balanceOf(adr.lssAdmin.address),
+        ).to.be.equal(losslessClaim);
       });
     });
 
