@@ -93,7 +93,7 @@ describe(scriptName, () => {
       Number(time.duration.minutes(5)),
     ]);
 
-    await env.lssGovernance.connect(adr.lssAdmin).setRevShareAdmin(adr.regularUser5.address);
+    await env.lssGovernance.connect(adr.lssAdmin).setRevshareAdmin(adr.regularUser5.address);
     await env.lssGovernance.connect(adr.lssAdmin).setRevsharePercentage(50);
   });
 

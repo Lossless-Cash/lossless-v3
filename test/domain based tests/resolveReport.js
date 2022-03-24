@@ -27,7 +27,7 @@ describe(scriptName, () => {
       adr.lerc20Admin.address,
       adr.lerc20BackupAdmin.address,
       Number(time.duration.days(1)),
-      env.lssController.address);z
+      env.lssController.address);
 
     await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
     await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
