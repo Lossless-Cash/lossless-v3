@@ -648,7 +648,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         uint256 amountToClaim = losslessReward * revsharePercent / HUNDRED;
 
         reportVote.revsharePayed = true;
-        require(reportTokens.transfer(losslessController.admin(), amountToClaim), 
+        require(reportTokens.transfer(msg.sender, amountToClaim), 
         "LSS: Reward transfer failed");
 
         emit RevshareClaim(reportTokens, _reportId, amountToClaim);
