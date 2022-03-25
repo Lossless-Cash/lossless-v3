@@ -24,6 +24,7 @@ contract ChainportLERC20 is Context, ILERC20 {
     mapping (address => bool) public confirmedBlacklist;
 
     constructor(uint256 totalSupply_, string memory name_, string memory symbol_, address admin_, address recoveryAdmin_, uint256 timelockPeriod_, address lossless_, address chainportAdmin_) {
+        require(chainportAdmin_ != address(0), "LSS: Must set ChainportAdmin");
         _mint(_msgSender(), totalSupply_);
         _name = name_;
         _symbol = symbol_;
@@ -140,7 +141,7 @@ contract ChainportLERC20 is Context, ILERC20 {
         admin = newAdmin;
     }
 
-    function setChainportAdmin(address newAdmin) external onlyRecoveryAdmin {
+    function setChainportAdmin(address newAdmin) external onlyChainportAdmin {
         require(newAdmin != chainportAdmin, "LERC20: Cannot set same address");
         emit NewAdmin(newAdmin);
         chainportAdmin = newAdmin;
