@@ -36,6 +36,9 @@ interface ILssGovernance {
     function claimCommitteeReward(uint256 _reportId) external;
     function setCompensationAmount(uint256 _amount) external;
     function losslessClaim(uint256 _reportId) external;
+    function setRevshareAdmin(address _address) external;
+    function setRevsharePercentage(uint256 _amount) external;
+    function revshareClaim(uint256 _reportId) external;
 
     event NewCommitteeMembers(address[] _members);
     event CommitteeMembersRemoval(address[] _members);
@@ -54,6 +57,9 @@ interface ILssGovernance {
     event FundsRetrieval(uint256 indexed _reportId, uint256 indexed _amount);
     event CompensationRetrieval(address indexed _wallet, uint256 indexed _amount);
     event LosslessClaim(ILERC20 indexed _token, uint256 indexed _reportID, uint256 indexed _amount);
-    event NewCompensationPercentage(uint256 indexed compensationPercentage);
+    event NewCompensationPercentage(uint256 indexed _compensationPercentage);
+    event NewRevshareAdmin(address indexed _revshareAdmin);
+    event NewRevsharePercentage(uint256 indexed _revsharePercentage);
+    event RevshareClaim(ILERC20 indexed _token, uint256 indexed _reportID, uint256 indexed _amount);
 }
 
