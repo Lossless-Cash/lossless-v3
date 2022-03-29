@@ -9,7 +9,6 @@ require('@nomiclabs/hardhat-etherscan');
 const {
   PRIVATE_KEY,
   MORALIS_KEY,
-  ETHERSCAN_KEY,
 } = require('./config');
 
 module.exports = {
@@ -26,6 +25,33 @@ module.exports = {
       },
       {
         version: '0.8.0',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: '0.6.12',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: '0.6.0',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: '0.4.24',
         settings: {
           optimizer: {
             enabled: true,
@@ -62,16 +88,16 @@ module.exports = {
       accounts: [PRIVATE_KEY],
     },
     fantom_test: {
-      url: `https://rpc.testnet.fantom.network/`,
+      url: 'https://rpc.testnet.fantom.network/',
       accounts: [PRIVATE_KEY],
     },
     harmony_test: {
-      url: `https://api.s0.b.hmny.io/`,
+      url: 'https://api.s0.b.hmny.io/',
       accounts: [PRIVATE_KEY],
     },
 
     // --- MAINNETS ---
-    
+
     eth: {
       url: `https://speedy-nodes-nyc.moralis.io/${MORALIS_KEY}/eth/mainnet/archive`,
       accounts: [PRIVATE_KEY],
@@ -93,7 +119,7 @@ module.exports = {
       accounts: [PRIVATE_KEY],
     },
     harmony: {
-      url: `https://api.harmony.one/`,
+      url: 'https://api.harmony.one/',
       accounts: [PRIVATE_KEY],
     },
   },
