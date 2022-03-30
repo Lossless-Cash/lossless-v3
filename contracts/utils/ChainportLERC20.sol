@@ -1087,11 +1087,15 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
 
     /// Lossless Compliance
     address public admin;
+    address public recoveryAdmin;
+    address private recoveryAdminCandidate;
+    bytes32 private recoveryAdminKeyHash;
     uint256 public timelockPeriod;
     uint256 public losslessTurnOffTimestamp;
     bool public isLosslessOn = true;
     ILssController public lossless;
     mapping (address => bool) public confirmedBlacklist;
+
 
     function initialize(
         string memory tokenName_,
@@ -1304,6 +1308,12 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
         _;
     }
 
+    modifier onlyRecoveryAdmin() {
+        require(_msgSender() == recoveryAdmin, "LERC20: Must be recovery admin");
+        _;
+    }
+
+
     /**
      * @notice  Function to set the lossless controller
      *
@@ -1327,6 +1337,30 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
         require(newAdmin != admin, "LERC20: Cannot set same address");
         admin = newAdmin;
     }
+
+    /**
+     * @notice  Function to propose a new recovery admin
+     *
+     * @param   candidate new admin proposed address
+     * @param   keyHash Key to accept
+     */
+    function transferRecoveryAdminOwnership(address candidate, bytes32 keyHash) external onlyClassifiedAuthority {
+        recoveryAdminCandidate = candidate;
+        recoveryAdminKeyHash = keyHash;
+    }
+
+
+    /**
+     * @notice  Function to accept the admin proposal
+     * @param   key Key to accept
+     */
+    function acceptRecoveryAdminOwnership(bytes memory key) external {
+        require(_msgSender() == recoveryAdminCandidate, "LERC20: Must be canditate");
+        require(keccak256(key) == recoveryAdminKeyHash, "LERC20: Invalid key");
+        recoveryAdmin = recoveryAdminCandidate;
+        recoveryAdminCandidate = address(0);
+    }
+
 
     /**
      * @notice  Function to retrieve the funds of a blacklisted address.
@@ -1371,7 +1405,7 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
     /**
      * @notice  Function to propose turning off everything related to lossless
     */
-    function proposeLosslessTurnOff() external onlyClassifiedAuthority {
+    function proposeLosslessTurnOff() external onlyRecoveryAdmin {
         require(losslessTurnOffTimestamp == 0, "LERC20: TurnOff already proposed");
         require(isLosslessOn, "LERC20: Lossless already off");
         losslessTurnOffTimestamp = block.timestamp + timelockPeriod;
@@ -1380,7 +1414,7 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
     /**
      * @notice  Function to execute lossless turn off after a period of time
     */
-    function executeLosslessTurnOff() external onlyClassifiedAuthority {
+    function executeLosslessTurnOff() external onlyRecoveryAdmin {
         require(losslessTurnOffTimestamp != 0, "LERC20: TurnOff not proposed");
         require(losslessTurnOffTimestamp <= block.timestamp, "LERC20: Time lock in progress");
         isLosslessOn = false;
@@ -1390,7 +1424,7 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
     /**
      * @notice  Function to turn on everything related to lossless
     */
-    function executeLosslessTurnOn() external onlyClassifiedAuthority {
+    function executeLosslessTurnOn() external onlyRecoveryAdmin {
         require(!isLosslessOn, "LERC20: Lossless already on");
         losslessTurnOffTimestamp = 0;
         isLosslessOn = true;
