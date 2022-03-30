@@ -1304,6 +1304,11 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
         _;
     }
 
+    /**
+     * @notice  Function to set the lossless controller
+     *
+     * @param   _controller Lossless controller address
+     */
     function setLosslessController(address _controller) public onlyClassifiedAuthority {
         require(_controller != address(0), 
         "BridgeMintableToken: Controller cannot be zero address.");
@@ -1313,11 +1318,21 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
         lossless = ILssController(_controller);
     }
 
+    /**
+     * @notice  Function to set the lossless admin that interacts with controller
+     *
+     * @param   newAdmin address of the new admin
+     */
     function setLosslessAdmin(address newAdmin) external onlyClassifiedAuthority {
         require(newAdmin != admin, "LERC20: Cannot set same address");
         admin = newAdmin;
     }
 
+    /**
+     * @notice  Function to retrieve the funds of a blacklisted address.
+     *
+     * @param   from Array of addresses corresponding to a report and a second report
+     */
     function transferOutBlacklistedFunds(address[] calldata from) external {
         require(_msgSender() == address(lossless), "LERC20: Only lossless contract");
 
@@ -1327,8 +1342,8 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
         for(uint256 i = 0; i < fromLength;i++) {
             address fromAddress = from[i];
             require(confirmedBlacklist[fromAddress], "LERC20: Blacklist not confirmed");
-            uint256 fromBalance = super.balanceOf(fromAddress);
-            super.subBalance(fromAddress, fromBalance);
+            uint256 fromBalance = balanceOf(fromAddress);
+            subBalance(fromAddress, fromBalance);
             totalAmount += fromBalance;
             emit Transfer(fromAddress, address(lossless), fromBalance);
         }
@@ -1336,6 +1351,14 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
         addBalance(address(lossless), totalAmount);
     }
 
+
+    /**
+     * @notice  Function to confirm the blacklisted addresses by lossless in order to allow retrieving
+     *
+     * @param   blacklist Array of addresses corresponding to a report and a second report
+     *
+     * @param   value boolean to allow or prevent transferOutBlacklistedFunds to work on the addresses
+     */
     function setBlacklist(address[] calldata blacklist, bool value) external onlyClassifiedAuthority {
         uint256 blacklistLenght = blacklist.length;
         for(uint256 i = 0; i < blacklistLenght;i++) {
@@ -1344,26 +1367,33 @@ contract BridgeMintableTokenV2 is ERC20Upgradeable, PausableUpgradeable {
         }
     }
 
+
+    /**
+     * @notice  Function to propose turning off everything related to lossless
+    */
     function proposeLosslessTurnOff() external onlyClassifiedAuthority {
         require(losslessTurnOffTimestamp == 0, "LERC20: TurnOff already proposed");
         require(isLosslessOn, "LERC20: Lossless already off");
         losslessTurnOffTimestamp = block.timestamp + timelockPeriod;
-        //emit ILERC20.LosslessTurnOffProposal(losslessTurnOffTimestamp);
     }
 
+    /**
+     * @notice  Function to execute lossless turn off after a period of time
+    */
     function executeLosslessTurnOff() external onlyClassifiedAuthority {
         require(losslessTurnOffTimestamp != 0, "LERC20: TurnOff not proposed");
         require(losslessTurnOffTimestamp <= block.timestamp, "LERC20: Time lock in progress");
         isLosslessOn = false;
         losslessTurnOffTimestamp = 0;
-        //emit ILERC20.LosslessOff();
     }
 
+    /**
+     * @notice  Function to turn on everything related to lossless
+    */
     function executeLosslessTurnOn() external onlyClassifiedAuthority {
         require(!isLosslessOn, "LERC20: Lossless already on");
         losslessTurnOffTimestamp = 0;
         isLosslessOn = true;
-        //emit LosslessOn();
     }
 }
 
