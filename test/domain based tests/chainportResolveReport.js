@@ -22,18 +22,17 @@ describe(scriptName, () => {
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
 
-    const token = await ethers.getContractFactory('ChainportLERC20');
+    const token = await ethers.getContractFactory('BridgeMintableTokenV2');
 
-    lerc20Token = await token
-      .connect(adr.lerc20InitialHolder)
-      .deploy(100000000,
-        'Chainport LERC20',
-        'CLERC',
-        adr.lerc20Admin.address,
-        adr.lerc20BackupAdmin.address,
-        Number(time.duration.days(1)),
-        env.lssController.address,
-        adr.regularUser5.address);
+    lerc20Token = await token.connect(adr.lerc20Admin).deploy();
+    await lerc20Token.connect(adr.lerc20Admin).initialize('Chainport LERC20',
+      'CLERC',
+      18,
+      adr.regularUser1.address);
+
+    await lerc20Token.connect(adr.lerc20Admin).setLosslessController(env.lssController.address);
+    await lerc20Token.connect(adr.lerc20Admin).setLosslessAdmin(adr.lerc20Admin.address);
+    await lerc20Token.connect(adr.lerc20Admin).mint(adr.lerc20InitialHolder.address, 1000000000000);
 
     await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
     await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
@@ -59,7 +58,7 @@ describe(scriptName, () => {
     await env.lssReporting.connect(adr.reporter2)
       .report(lerc20Token.address, adr.maliciousActor2.address);
 
-    await lerc20Token.connect(adr.regularUser5).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], true);
+    await lerc20Token.connect(adr.regularUser1).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], true);
   });
 
   describe('when working over report 1', () => {
@@ -106,7 +105,7 @@ describe(scriptName, () => {
             });
 
             it('should revert when blacklist is not confirmed', async () => {
-              await lerc20Token.connect(adr.regularUser5).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], false);
+              await lerc20Token.connect(adr.regularUser1).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], false);
               await expect(
                 env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
               ).to.be.revertedWith('LERC20: Blacklist not confirmed');
@@ -175,7 +174,7 @@ describe(scriptName, () => {
               });
 
               it('should revert when blacklist is not confirmed', async () => {
-                await lerc20Token.connect(adr.regularUser5).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], false);
+                await lerc20Token.connect(adr.regularUser1).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], false);
                 await expect(
                   env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
                 ).to.be.revertedWith('LERC20: Blacklist not confirmed');
@@ -243,7 +242,7 @@ describe(scriptName, () => {
                 });
 
                 it('should revert when blacklist is not confirmed', async () => {
-                  await lerc20Token.connect(adr.regularUser5).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], false);
+                  await lerc20Token.connect(adr.regularUser1).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], false);
                   await expect(
                     env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
                   ).to.be.revertedWith('LERC20: Blacklist not confirmed');
@@ -427,7 +426,7 @@ describe(scriptName, () => {
               });
 
               it('should revert when blacklist is not confirmed', async () => {
-                await lerc20Token.connect(adr.regularUser5).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], false);
+                await lerc20Token.connect(adr.regularUser1).setBlacklist([adr.maliciousActor1.address, adr.maliciousActor2.address], false);
                 await expect(
                   env.lssGovernance.connect(adr.lssAdmin).resolveReport(1),
                 ).to.be.revertedWith('LERC20: Blacklist not confirmed');

@@ -23,14 +23,19 @@ describe(scriptName, () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-    lerc20Token = await setupToken(2000000,
-      'Random Token',
-      'RAND',
-      adr.lerc20InitialHolder,
-      adr.lerc20Admin.address,
-      adr.lerc20BackupAdmin.address,
-      Number(time.duration.days(1)),
-      env.lssController.address);
+
+    const token = await ethers.getContractFactory('BridgeMintableTokenV2');
+
+    lerc20Token = await token.connect(adr.lerc20Admin).deploy();
+    await lerc20Token.connect(adr.lerc20Admin).initialize('Chainport LERC20',
+      'CLERC',
+      18,
+      adr.regularUser1.address);
+
+    await lerc20Token.connect(adr.lerc20Admin).setLosslessController(env.lssController.address);
+    await lerc20Token.connect(adr.lerc20Admin).setLosslessAdmin(adr.lerc20Admin.address);
+    await lerc20Token.connect(adr.lerc20Admin).mint(adr.lerc20InitialHolder.address, 1000000000000);
+
     anotherLerc20Token = await setupToken(2000000,
       'Another Token',
       'OTHER',
