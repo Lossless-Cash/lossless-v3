@@ -1,4 +1,4 @@
-const { controllerProxy, reportingProxy } = require('./address-book');
+const { controllerProxy, reportingProxy, stakingAmount } = require('./configuration');
 
 /* eslint-disable no-console */
 /* eslint-disable no-undef */
@@ -10,7 +10,7 @@ async function main() {
   
     const lssStaking = await upgrades.deployProxy(
       LosslessStaking,
-      [reportingProxy, controllerProxy],
+      [reportingProxy, controllerProxy, stakingAmount],
       { initializer: 'initialize' },
     );
   

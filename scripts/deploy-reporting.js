@@ -1,4 +1,4 @@
-const { controllerProxy } = require('./address-book');
+const { controllerProxy } = require('./configuration');
 
 /* eslint-disable no-console */
 /* eslint-disable no-undef */

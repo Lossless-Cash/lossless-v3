@@ -1,4 +1,4 @@
-const { controllerProxy, reportingProxy, stakingProxy } = require('./address-book');
+const { controllerProxy, reportingProxy, stakingProxy, disputePeriod } = require('./configuration');
 
 /* eslint-disable no-console */
 /* eslint-disable no-undef */
@@ -16,6 +16,7 @@ async function main() {
         reportingProxy,
         controllerProxy,
         stakingProxy,
+        disputePeriod
       ],
       { initializer: 'initialize' },
     );
