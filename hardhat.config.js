@@ -6,10 +6,11 @@ require('@nomiclabs/hardhat-etherscan');
 // require('@openzeppelin/hardhat-defender');
 // require('hardhat-gas-reporter');
 
-const {
-  PRIVATE_KEY,
-  MORALIS_KEY,
-} = require('./config');
+// const { PRIVATE_KEY, MORALIS_KEY, ETHERSCAN_KEY } = require('./config');
+
+const PRIVATE_KEY = '';
+const MORALIS_KEY = '';
+const ETHERSCAN_KEY = '';
 
 module.exports = {
   solidity: {
@@ -68,15 +69,15 @@ module.exports = {
   networks: {
     // --- TESTNETS ---
     ropsten: {
-      url: `https://speedy-nodes-nyc.moralis.io/${MORALIS_KEY}/eth/ropsten/archive`,
+      url: `https://eth-ropsten.alchemyapi.io/v2/YzORPoYzWj2GrWSEmJrelCNuw5FsziK6`,
       accounts: [PRIVATE_KEY],
     },
     rinkeby: {
-      url: `https://speedy-nodes-nyc.moralis.io/${MORALIS_KEY}/eth/rinkeby/archive`,
+      url: 'https://eth-rinkeby.alchemyapi.io/v2/QmxZu6QhVDaiBxWro1HHkTJNNgE-4Ga_',
       accounts: [PRIVATE_KEY],
     },
-    bsc_test: {
-      url: `https://speedy-nodes-nyc.moralis.io/${MORALIS_KEY}/bsc/testnet/archive`,
+    bsctest: {
+      url: `https://data-seed-prebsc-1-s1.binance.org:8545/`,
       accounts: [PRIVATE_KEY],
     },
     matic_test: {
@@ -134,7 +135,7 @@ module.exports = {
   //   flat: true,
   //   spacing: 2,
   // },
-  // etherscan: {
-  //   apiKey: ETHERSCAN_KEY,
-  // },
+  etherscan: {
+    apiKey: ETHERSCAN_KEY,
+  },
 };
