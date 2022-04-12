@@ -364,7 +364,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         ReceiveCheckpoint memory lowestCp = queue.lockedFunds[queue.first];
 
         while (upper > lower) {
-            center = upper - ((upper - lower) >> 2); // ceil, avoiding overflow
+            center = upper - ((upper - lower) >> 1); // ceil, avoiding overflow
             cp = queue.lockedFunds[center];
             if (cp.timestamp == currentTimestamp) {
                 return (cp.cummulativeAmount, center + 1);
