@@ -77,10 +77,6 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     address[] private reportedAddresses;
 
 
-    uint256 public revsharePercent;
-    address public revshareAdmin;
-    mapping(uint256 => bool) public revsharePayed;
-
     function initialize(ILssReporting _losslessReporting, ILssController _losslessController, ILssStaking _losslessStaking, uint256 _walletDisputePeriod) public initializer {
         losslessReporting = _losslessReporting;
         losslessController = _losslessController;
@@ -169,24 +165,6 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         compensationPercentage = _amount;
         emit NewCompensationPercentage(compensationPercentage);
     }
-
-    /// @notice This function sets revenue share Admin
-    /// @param _address Address of the new admin
-    function setRevshareAdmin(address _address) override public onlyLosslessAdmin {
-        require(_address != revshareAdmin, "LSS: Already set to that address");
-        revshareAdmin = _address;
-        emit NewRevshareAdmin(revshareAdmin);
-    }
-    
-    /// @notice This function sets the share percentage
-    /// @param _amount Percentage to share
-    function setRevsharePercentage(uint256 _amount) override public onlyLosslessAdmin {
-        require(_amount <= 100, "LSS: Invalid amount");
-        require(_amount != revsharePercent, "LSS: Already set to that amount");
-        revsharePercent = _amount;
-        emit NewRevsharePercentage(revsharePercent);
-    }
-
 
     /// @notice This function returns if the majority of the commitee voted and the resolution of the votes
     /// @param _reportId Report number to be checked
@@ -618,40 +596,10 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         uint256 amountToClaim = reportVote.amountReported * losslessReporting.losslessReward() / HUNDRED;
 
-        if (revshareAdmin != address(0)) {
-            uint256 shared = amountToClaim * revsharePercent / HUNDRED;
-            amountToClaim -= shared;
-        }
-
         reportVote.losslessPayed = true;
         require(reportTokens.transfer(losslessController.admin(), amountToClaim), 
         "LSS: Reward transfer failed");
 
         emit LosslessClaim(reportTokens, _reportId, amountToClaim);
     }
-
-    /// REVENUE SHARE
-        
-    /// @notice This function is for the claim of the Shared revenue
-    /// @param _reportId report worked on
-    function revshareClaim(uint256 _reportId) override public whenNotPaused {
-        require(msg.sender == revshareAdmin, "LSS: Must be revshareAdmin");
-        require(reportResolution(_reportId), "LSS: Report solved negatively");   
-
-        Vote storage reportVote = reportVotes[_reportId];
-
-        require(!revsharePayed[_reportId], "LSS: Already claimed");
-
-        (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
-
-        uint256 losslessReward = reportVote.amountReported * losslessReporting.losslessReward() / HUNDRED;
-        uint256 amountToClaim = losslessReward * revsharePercent / HUNDRED;
-
-        revsharePayed[_reportId] = true;
-        require(reportTokens.transfer(msg.sender, amountToClaim), 
-        "LSS: Reward transfer failed");
-
-        emit RevshareClaim(reportTokens, _reportId, amountToClaim);
-    }
-
 }
