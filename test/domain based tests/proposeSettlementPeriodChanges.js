@@ -574,6 +574,49 @@ describe(scriptName, () => {
             .connect(adr.regularUser5)
             .transfer(adr.regularUser6.address, 1);
         });
+
+        it('users are able to transfer settled LERC20 tokens when a report is not filled', async function () {
+          // First let's assume the LERC20 token has a settlement period for transfers
+          // Let's set this up with a settlement period of 10,000 seconds just for demonstation (any value >0 exhibits this issue)
+          await env.lssController
+            .connect(adr.lerc20Admin)
+            .proposeNewSettlementPeriod(lerc20Token.address, 10000);
+          await ethers.provider.send('evm_increaseTime', [86400]); // Timelock period passes
+          await env.lssController
+            .connect(adr.lerc20Admin)
+            .executeNewSettlementPeriod(lerc20Token.address);
+
+          // Now let's transfer some tokens
+          await lerc20Token
+            .connect(adr.lerc20InitialHolder)
+            .transfer(adr.regularUser5.address, 4);
+          await ethers.provider.send('evm_increaseTime', [10001]); // Token lock period passes
+
+          await lerc20Token
+            .connect(adr.regularUser5)
+            .transfer(adr.regularUser6.address, 1);
+          await lerc20Token
+            .connect(adr.regularUser5)
+            .transfer(adr.regularUser6.address, 1);
+          await lerc20Token
+            .connect(adr.regularUser5)
+            .transfer(adr.regularUser6.address, 1);
+          await lerc20Token
+            .connect(adr.regularUser5)
+            .transfer(adr.regularUser6.address, 1);
+
+          // Before this transfer user1 has a token balance of 0
+          // They have 1 incoming transfer and 10 outgoing transfers
+          await lerc20Token
+            .connect(adr.lerc20InitialHolder)
+            .transfer(adr.regularUser5.address, 90);
+          await ethers.provider.send('evm_increaseTime', [10001]); // Token lock period passes
+
+          // All of the tokens owned by user1 are settled. However they can't transfer any of them!
+          await lerc20Token
+            .connect(adr.regularUser5)
+            .transfer(adr.regularUser6.address, 1);
+        });
       });
     });
 
