@@ -38,6 +38,8 @@ const setupAddresses = async () => {
     regularUser3,
     regularUser4,
     regularUser5,
+    regularUser6,
+    regularUser7,
     dexAddress,
   ] = await ethers.getSigners();
 
@@ -76,6 +78,8 @@ const setupAddresses = async () => {
     regularUser5,
     dexAddress,
     ZERO_ADDRESS,
+    regularUser6,
+    regularUser7,
   };
 };
 
@@ -92,7 +96,6 @@ const setupEnvironment = async (
   const lssTeamVoteIndex = 0;
   const tokenOwnersVoteIndex = 1;
   const committeeVoteIndex = 2;
-
 
   const reportLifetime = time.duration.days(1);
 
@@ -183,11 +186,12 @@ const setupEnvironment = async (
   await lssController
     .connect(lssAdmin)
     .setGovernanceContractAddress(lssGovernance.address);
-  await lssController.connect(lssAdmin).setWhitelist([
-    lssPauseAdmin.address,
-    lssRecoveryAdmin.address,
-    lssAdmin.address],
-  true);
+  await lssController
+    .connect(lssAdmin)
+    .setWhitelist(
+      [lssPauseAdmin.address, lssRecoveryAdmin.address, lssAdmin.address],
+      true,
+    );
   await lssController.connect(lssAdmin).setDexTransferThreshold(20);
   await lssController.connect(lssAdmin).setSettlementTimeLock(60);
 
@@ -250,5 +254,5 @@ module.exports = {
   setupEnvironment,
   setupToken,
   stakingAmount,
-  reportingAmount
+  reportingAmount,
 };

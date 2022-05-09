@@ -381,7 +381,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
             if (cp.timestamp < lowestCp.timestamp) {
                 return (cp.cummulativeAmount, center);
             } else {
-                return (lowestCp.cummulativeAmount, lower + 1);
+                return (lowestCp.cummulativeAmount, lower);
             }
         } else {
             return (0, center);
@@ -396,6 +396,8 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         ReceiveCheckpoint storage cp = queue.lockedFunds[queue.last];
         (uint256 outdatedCummulative, uint256 newFirst) = _getLatestOudatedCheckpoint(queue);
         queue.first = newFirst;
+
+        require(cp.cummulativeAmount >= outdatedCummulative, "LSS: Transfers limit reached");
         cp.cummulativeAmount = cp.cummulativeAmount - outdatedCummulative;
         return _token.balanceOf(account) - cp.cummulativeAmount;
     }
@@ -471,6 +473,12 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
         ReceiveCheckpoint storage cp = queue.lockedFunds[queue.last];
         cp.cummulativeAmount -= amountLeft;
         queue.touchedTimestamp = block.timestamp;
+
+        ReceiveCheckpoint storage firstCp = queue.lockedFunds[queue.first];
+        // Consume all used up settled tokens
+        if (firstCp.timestamp < block.timestamp) {
+            firstCp.cummulativeAmount = 0;
+        }
     }
 
     // --- BEFORE HOOKS ---
@@ -492,7 +500,7 @@ contract LosslessControllerV3 is ILssController, Initializable, ContextUpgradeab
             if (dexList[_recipient]) {
                 require(_amount - settledAmount <= dexTranferThreshold,
                         "LSS: Cannot transfer over the dex threshold");
-            } else {
+            } else { 
                 _removeUsedUpLocks(settledAmount, _sender, _amount);
             }
         }
