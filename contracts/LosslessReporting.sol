@@ -309,8 +309,8 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// @dev The reporter has a fixed percentage as reward.
     /// @param _reportId Staked report    
     function reporterClaimableAmount(uint256 _reportId) override public view returns (uint256) {
-        uint256 reportedAmount = losslessGovernance.getAmountReported(_reportId);
-        return reportedAmount * reporterReward / HUNDRED;
+        uint256 balance = losslessGovernance.getReportingBalance(_reportId);
+        return balance * reporterReward / HUNDRED;
     }
     
     /// @notice This function allows the governance token to retribute an erroneous report
