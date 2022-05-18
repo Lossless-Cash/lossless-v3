@@ -15,6 +15,7 @@ const scriptName = path.basename(__filename, '.js');
 
 const reportedAmount = 1000000;
 const reporterReward = 0.02;
+const fee = 0.97;
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -24,7 +25,7 @@ describe(scriptName, () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-    lerc20Token = await setupToken(false, 2000000,
+    lerc20Token = await setupToken(true, 2000000,
       'Random Token',
       'RAND',
       adr.lerc20InitialHolder,
@@ -38,7 +39,7 @@ describe(scriptName, () => {
 
     await lerc20Token
       .connect(adr.lerc20InitialHolder)
-      .transfer(adr.maliciousActor1.address, reportedAmount);
+      .transfer(adr.maliciousActor1.address, reportedAmount * fee);
 
     await env.lssToken
       .connect(adr.lssInitialHolder)
@@ -76,7 +77,7 @@ describe(scriptName, () => {
             await env.lssReporting
               .connect(adr.reporter1)
               .reporterClaimableAmount(1),
-          ).to.be.equal(reportedAmount * reporterReward);
+          ).to.be.equal(Math.floor((((reportedAmount * fee) * reporterReward) * fee) * fee));
         });
       });
     });
@@ -96,7 +97,7 @@ describe(scriptName, () => {
 
         expect(
           await lerc20Token.balanceOf(adr.reporter1.address),
-        ).to.be.equal(reportedAmount * reporterReward);
+        ).to.be.equal(Math.ceil(((((reportedAmount * fee) * reporterReward)* fee) * fee) * fee));
 
         expect(
           (balance = await env.lssToken.balanceOf(adr.reporter1.address)),

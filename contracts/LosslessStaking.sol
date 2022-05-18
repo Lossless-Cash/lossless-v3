@@ -164,7 +164,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
     /// @param _reportId Staked report
     function stakerClaimableAmount(uint256 _reportId) override public view returns (uint256) {
         (,,, uint256 stakersReward) = losslessReporting.getRewards();
-        uint256 balance = losslessGovernance.getStakingBalance(_reportId);
+        uint256 balance = losslessGovernance.getAmountToDistribute(_reportId);
         uint256 amountDistributedToStakers = (balance * stakersReward) / HUNDRED;
         uint256 stakerCoefficient = getStakerCoefficient(_reportId, msg.sender);
         uint256 coefficientMultiplier = ((amountDistributedToStakers * MILLION) / reportCoefficient[_reportId]);
@@ -187,6 +187,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
 
         (,,,, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
 
+        // TODO: Update staking amount on LssGov
         require(reportTokens.transfer(msg.sender, amountToClaim),
         "LSS: Reward transfer failed");
         require(stakingToken.transfer(msg.sender, stakedOnReport[msg.sender].report[_reportId]),

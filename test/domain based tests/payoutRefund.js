@@ -20,7 +20,7 @@ describe(scriptName, () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-    lerc20Token = await setupToken(2000000,
+    lerc20Token = await setupToken(false, 2000000,
       'Random Token',
       'RAND',
       adr.lerc20InitialHolder,
@@ -28,7 +28,7 @@ describe(scriptName, () => {
       adr.lerc20BackupAdmin.address,
       Number(time.duration.days(1)),
       env.lssController.address);
-    reportedToken = await setupToken(2000000,
+    reportedToken = await setupToken(false, 2000000,
       'Reported Token',
       'REPORT',
       adr.lerc20InitialHolder,

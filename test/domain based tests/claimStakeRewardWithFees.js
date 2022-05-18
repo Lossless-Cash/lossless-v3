@@ -14,6 +14,7 @@ let env;
 const scriptName = path.basename(__filename, '.js');
 
 const reportedAmount = 1000000;
+const fee = 0.97;
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -23,7 +24,7 @@ describe(scriptName, () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-    lerc20Token = await setupToken(false, 2000000,
+    lerc20Token = await setupToken(true, 2000000,
       'Random Token',
       'RAND',
       adr.lerc20InitialHolder,
@@ -201,7 +202,7 @@ describe(scriptName, () => {
             adr.staker1.address,
             lerc20Token.address,
             1,
-            7095,
+            6675,
           );
         });
       });
@@ -219,34 +220,34 @@ describe(scriptName, () => {
       describe('when all stakers claims', () => {
         it('should not revert', async () => {
           await expect(
-            // Should get around 7095.2
+            // Should get around 6475.2
             env.lssStaking.connect(adr.staker1).stakerClaim(1),
 
-            // Should get around 6872.7
+            // Should get around 6273.7
             env.lssStaking.connect(adr.staker2).stakerClaim(1),
 
-            // Should get around 4499.4
+            // Should get around 4107.4
             env.lssStaking.connect(adr.staker3).stakerClaim(1),
 
-            // Should get around 1532.8
+            // Should get around 1399.8
             env.lssStaking.connect(adr.staker4).stakerClaim(1),
           ).to.not.be.reverted;
 
           expect(
             await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(7095);
+          ).to.be.equal(6475);
 
           expect(
             await lerc20Token.balanceOf(adr.staker2.address),
-          ).to.be.equal(6872);
+          ).to.be.equal(6273);
 
           expect(
             await lerc20Token.balanceOf(adr.staker3.address),
-          ).to.be.equal(4499);
+          ).to.be.equal(4107);
 
           expect(
             await lerc20Token.balanceOf(adr.staker4.address),
-          ).to.be.equal(1532);
+          ).to.be.equal(1399);
         });
       });
     });
@@ -376,46 +377,46 @@ describe(scriptName, () => {
         // https://docs.google.com/spreadsheets/d/1-ufuOixhv2pYbUu-dQozqBcZJv2Yg69Wi_yRwnulC00/edit?usp=sharing
         it('should not revert', async () => {
           await expect(
-            // Should get around 4379.7
+            // Should get around 3997.7
             env.lssStaking.connect(adr.staker1).stakerClaim(1),
 
-            // Should get around 4370.5
+            // Should get around 3989.5
             env.lssStaking.connect(adr.staker2).stakerClaim(1),
 
-            // Should get around 4364.4
+            // Should get around 3983.4
             env.lssStaking.connect(adr.staker3).stakerClaim(1),
 
-            // Should get around 4358.3
+            // Should get around 3977.3
             env.lssStaking.connect(adr.staker4).stakerClaim(1),
 
-            // Should get around 2527.1
+            // Should get around 2306.1
             env.lssStaking.connect(adr.staker5).stakerClaim(1),
           ).to.not.be.reverted;
 
           // Margin of error -0.7 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(4379);
+          ).to.be.equal(3997);
 
           // Margin of error -0.5 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker2.address),
-          ).to.be.equal(4370);
+          ).to.be.equal(3989);
 
           // Margin of error -0.4 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker3.address),
-          ).to.be.equal(4364);
+          ).to.be.equal(3983);
 
           // Margin of error -0.3 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker4.address),
-          ).to.be.equal(4358);
+          ).to.be.equal(3977);
 
           // Margin of error -0.1 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker5.address),
-          ).to.be.equal(2527);
+          ).to.be.equal(2306);
         });
       });
     });
@@ -545,46 +546,46 @@ describe(scriptName, () => {
         // https://docs.google.com/spreadsheets/d/1-ufuOixhv2pYbUu-dQozqBcZJv2Yg69Wi_yRwnulC00/edit?usp=sharing
         it('should not revert', async () => {
           await expect(
-            // Should get around 6512.1
+            // Should get around 5944.1
             env.lssStaking.connect(adr.staker1).stakerClaim(1),
 
             // Should get around 3420.0
             env.lssStaking.connect(adr.staker2).stakerClaim(1),
 
-            // Should get around 3373.2
+            // Should get around 3078.2
             env.lssStaking.connect(adr.staker3).stakerClaim(1),
 
-            // Should get around 3349.7
+            // Should get around 3057.7
             env.lssStaking.connect(adr.staker4).stakerClaim(1),
 
-            // Should get around 3345
+            // Should get around 3053
             env.lssStaking.connect(adr.staker5).stakerClaim(1),
           ).to.not.be.reverted;
 
           // Margin of error -0.1 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(6512);
+          ).to.be.equal(5944);
 
           // Margin of error -1 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker2.address),
-          ).to.be.equal(3419);
+          ).to.be.equal(3121);
 
           // Margin of error -0.2 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker3.address),
-          ).to.be.equal(3373);
+          ).to.be.equal(3078);
 
           // Margin of error -0.7 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker4.address),
-          ).to.be.equal(3349);
+          ).to.be.equal(3057);
 
           // Margin of error -1 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker5.address),
-          ).to.be.equal(3345);
+          ).to.be.equal(3053);
         });
       });
     });
@@ -673,7 +674,7 @@ describe(scriptName, () => {
           // Margin of error -1 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(19999);
+          ).to.be.equal(18253);
         });
       });
     });
@@ -762,7 +763,7 @@ describe(scriptName, () => {
           // Margin of error -1 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(19999);
+          ).to.be.equal(18253);
         });
       });
     });
@@ -851,22 +852,22 @@ describe(scriptName, () => {
         // https://docs.google.com/spreadsheets/d/1-ufuOixhv2pYbUu-dQozqBcZJv2Yg69Wi_yRwnulC00/edit?usp=sharing
         it('should not revert', async () => {
           await expect(
-            // Should get around 10000
+            // Should get around 9127
             env.lssStaking.connect(adr.staker1).stakerClaim(1),
 
-            // Should get around 10000
+            // Should get around 9127
             env.lssStaking.connect(adr.staker2).stakerClaim(1),
           ).to.not.be.reverted;
 
           // Margin of error 0 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(10000);
+          ).to.be.equal(9127);
 
           // Margin of error -1 token/s
           expect(
             await lerc20Token.balanceOf(adr.staker2.address),
-          ).to.be.equal(9999);
+          ).to.be.equal(9126);
         });
       });
     });

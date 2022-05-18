@@ -20,8 +20,7 @@ interface ILssGovernance {
     function getVote(uint256 _reportId, uint256 _voterIndex) external view returns(bool);
     function isReportSolved(uint256 _reportId) external view returns(bool);
     function reportResolution(uint256 _reportId) external view returns(bool);
-    function getReportingBalance(uint256 _reportId) external view returns(uint256);
-    function getStakingBalance(uint256 _reportId) external view returns(uint256);
+    function getAmountToDistribute(uint256 _reportId) external view returns(uint256);
     function getAmountReported(uint256 _reportId) external view returns(uint256);
     
     function setDisputePeriod(uint256 _timeFrame) external;
