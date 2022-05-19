@@ -187,7 +187,6 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
 
         (,,,, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
 
-        // TODO: Update staking amount on LssGov
         require(reportTokens.transfer(msg.sender, amountToClaim),
         "LSS: Reward transfer failed");
         require(stakingToken.transfer(msg.sender, stakedOnReport[msg.sender].report[_reportId]),

@@ -296,7 +296,6 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
 
         uint256 amountToClaim = reporterClaimableAmount(_reportId);
         queriedReport.reporterClaimStatus = true;
-        // TODO: Update staking amount on LssGov
 
         require(queriedReport.reportTokens.transfer(msg.sender, amountToClaim), "LSS: Token transfer failed");
         require(stakingToken.transfer(msg.sender, reportingAmount), "LSS: Reporting stake failed");
