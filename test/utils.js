@@ -244,7 +244,11 @@ const setupToken = async (
 
   let tokenName;
 
-  fees? tokenName = 'LERC20Fee': tokenName = 'LERC20';
+  if (fees) {
+    tokenName = 'LERC20Fee'
+  } else {
+    tokenName = 'LERC20'
+  }
   
   const token = await ethers.getContractFactory(tokenName);
 
