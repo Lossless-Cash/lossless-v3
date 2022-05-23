@@ -14,6 +14,7 @@ const scriptName = path.basename(__filename, '.js');
 
 const reportedAmount = 1000000;
 const losslessReward = 0.1;
+const fee = 0.97;
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -23,7 +24,7 @@ describe(scriptName, () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-    lerc20Token = await setupToken(false, 2000000,
+    lerc20Token = await setupToken(true, 2000000,
       'Random Token',
       'RAND',
       adr.lerc20InitialHolder,
@@ -184,7 +185,7 @@ describe(scriptName, () => {
         await env.lssGovernance.connect(adr.lssAdmin).losslessClaim(1);
 
         expect(await lerc20Token.balanceOf(adr.lssAdmin.address)).to.be.equal(
-          reportedAmount * losslessReward,
+          Math.ceil((((reportedAmount * fee) * losslessReward) * fee) * fee),
         );
       });
 
@@ -194,7 +195,7 @@ describe(scriptName, () => {
         ).to.emit(env.lssGovernance, 'LosslessClaim').withArgs(
           lerc20Token.address,
           1,
-          reportedAmount * losslessReward,
+          ((reportedAmount * fee) * losslessReward) * fee,
         );
       });
     });

@@ -76,6 +76,13 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     address[] private reportedAddresses;
 
+    struct ClaimInfo {
+        uint256 reportingAmount;
+        uint256 amountToDistribute;
+    }
+
+    mapping(uint256 => ClaimInfo) reportClaimInfo;
+
 
     function initialize(ILssReporting _losslessReporting, ILssController _losslessController, ILssStaking _losslessStaking, uint256 _walletDisputePeriod) public initializer {
         losslessReporting = _losslessReporting;
@@ -195,6 +202,12 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @param _reportId Report id to check
     function getAmountReported(uint256 _reportId) override external view returns(uint256) {
         return reportVotes[_reportId].amountReported;
+    }
+
+    /// @notice This function returns the reporting contract balance for particular contract    
+    /// @param _reportId Report id to check
+    function getAmountToDistribute(uint256 _reportId) override external view returns(uint256) {
+        return reportClaimInfo[_reportId].amountToDistribute;
     }
 
     /// @notice This function adds committee members    
@@ -341,17 +354,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         Vote storage reportVote = reportVotes[_reportId];
 
-        uint256 agreeCount = 0;
-        uint256 voteCount = 0;
-
-        if (getIsVoted(_reportId, LSS_TEAM_INDEX)){voteCount += 1;
-        if (getVote(_reportId, LSS_TEAM_INDEX)){ agreeCount += 1;}}
-        if (getIsVoted(_reportId, TOKEN_OWNER_INDEX)){voteCount += 1;
-        if (getVote(_reportId, TOKEN_OWNER_INDEX)){ agreeCount += 1;}}
-
-        (bool committeeResoluted, bool committeeResolution) = _getCommitteeMajorityReachedResult(_reportId);
-        if (committeeResoluted) {voteCount += 1;
-        if (committeeResolution) {agreeCount += 1;}}
+        (uint256 voteCount, uint256 agreeCount) = getVoteCount(_reportId);
 
         require(voteCount >= 2, "LSS: Not enough votes");
         require(!(voteCount == 2 && agreeCount == 1), "LSS: Need another vote to untie");
@@ -368,13 +371,56 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
                 reportVote.amountReported += token.balanceOf(reportedAddresses[i]);
                 unchecked{i++;}
             }
-            proposedWalletOnReport[_reportId].retrievalAmount = losslessController.retrieveBlacklistedFunds(reportedAddresses, token, _reportId);
+            // Check balances before inflow of new tokens
+            (uint256 totalInitialBalance) = getLssContractsBalances(token);
+            // Inflow of new tokens
+            losslessController.retrieveBlacklistedFunds(reportedAddresses, token, _reportId);
+            // Check new balances
+            uint256 fundsToRetrieve = updateBalances(_reportId, token, totalInitialBalance);
+
+            proposedWalletOnReport[_reportId].retrievalAmount = fundsToRetrieve;
+            
             losslessController.deactivateEmergency(token);
         }else{
             reportVote.resolution = false;
             _compensateAddresses(reportedAddresses);
         }
-    } 
+    }
+
+    function updateBalances(uint256 _reportId, ILERC20 token, uint256 totalInitialBalance) private returns(uint256) {
+        (uint256 totalAfterBalance) = getLssContractsBalances(token);
+        ClaimInfo storage claimInfo = reportClaimInfo[_reportId];
+        claimInfo.amountToDistribute = totalAfterBalance - totalInitialBalance;
+
+        (uint256 reporterReward, uint256 losslessReward, uint256 committeeReward, uint256 stakersReward) = losslessReporting.getRewards();
+
+        return claimInfo.amountToDistribute * (100 - (committeeReward + losslessReward + reporterReward + stakersReward)) / HUNDRED;
+    }
+
+    function getVoteCount(uint256 _reportId) private view returns(uint256, uint256){
+        uint256 agreeCount = 0;
+        uint256 voteCount = 0;
+
+        if (getIsVoted(_reportId, LSS_TEAM_INDEX)){voteCount += 1;
+        if (getVote(_reportId, LSS_TEAM_INDEX)){ agreeCount += 1;}}
+        if (getIsVoted(_reportId, TOKEN_OWNER_INDEX)){voteCount += 1;
+        if (getVote(_reportId, TOKEN_OWNER_INDEX)){ agreeCount += 1;}}
+
+        (bool committeeResoluted, bool committeeResolution) = _getCommitteeMajorityReachedResult(_reportId);
+        if (committeeResoluted) {voteCount += 1;
+        if (committeeResolution) {agreeCount += 1;}}
+
+        return (voteCount, agreeCount);
+    }
+
+    // @notice This function returns current balances of the lossless contracts
+    // @param _token token for which to check the balance
+    function getLssContractsBalances(ILERC20 _token) public view returns (uint256 totalContractBalances) {
+        uint256 reportingBalance = _token.balanceOf(address(losslessReporting));
+        uint256 stakingBalance = _token.balanceOf(address(losslessStaking));
+        uint256 governanceBalance = _token.balanceOf(address(this));
+        return reportingBalance + stakingBalance + governanceBalance;
+    }
 
     /// @notice This function has the logic to solve a report that it's expired
     /// @param _reportId Report to be resolved
@@ -574,7 +620,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         uint256 numberOfMembersVote = reportVote.committeeVotes.length;
         uint256 committeeReward = losslessReporting.committeeReward();
 
-        uint256 compensationPerMember = (reportVote.amountReported * committeeReward /  HUNDRED) / numberOfMembersVote;
+        uint256 compensationPerMember = (reportClaimInfo[_reportId].amountToDistribute * committeeReward /  HUNDRED) / numberOfMembersVote;
 
         reportVote.committeeMemberClaimed[msg.sender] = true;
 
@@ -594,9 +640,10 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
 
-        uint256 amountToClaim = reportVote.amountReported * losslessReporting.losslessReward() / HUNDRED;
+        uint256 amountToClaim = reportClaimInfo[_reportId].amountToDistribute * losslessReporting.losslessReward() / HUNDRED;
 
         reportVote.losslessPayed = true;
+
         require(reportTokens.transfer(losslessController.admin(), amountToClaim), 
         "LSS: Reward transfer failed");
 

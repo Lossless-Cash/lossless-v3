@@ -231,6 +231,7 @@ const setupEnvironment = async (
 };
 
 const setupToken = async (
+  fees,
   supply,
   name,
   symbol,
@@ -240,7 +241,16 @@ const setupToken = async (
   lockPeriod,
   controller,
 ) => {
-  const token = await ethers.getContractFactory('LERC20');
+
+  let tokenName;
+
+  if (fees) {
+    tokenName = 'LERC20Fee'
+  } else {
+    tokenName = 'LERC20'
+  }
+  
+  const token = await ethers.getContractFactory(tokenName);
 
   const deployedToken = await token
     .connect(initialHolder)

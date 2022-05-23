@@ -26,6 +26,7 @@ describe(scriptName, () => {
       adr.lssBackupAdmin,
     );
     lerc20Token = await setupToken(
+      false,
       2000000,
       'Random Token',
       'RAND',
@@ -36,6 +37,7 @@ describe(scriptName, () => {
       env.lssController.address,
     );
     anotherLerc20Token = await setupToken(
+      false,
       2000000,
       'Another Token',
       'OTHER',

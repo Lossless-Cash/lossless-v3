@@ -44,6 +44,7 @@ describe(scriptName, () => {
       .mint(adr.lerc20InitialHolder.address, 1000000000000);
 
     anotherLerc20Token = await setupToken(
+      false,
       2000000,
       'Another Token',
       'OTHER',

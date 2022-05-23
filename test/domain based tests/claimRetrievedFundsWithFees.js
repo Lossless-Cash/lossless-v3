@@ -17,8 +17,9 @@ const losslessReward = 0.1;
 const committeeReward = 0.02;
 const reporterReward = 0.02;
 const stakerReward = 0.02;
+const fee = 0.97;
 
-const toRetrieve = reportedAmount * (1 - (losslessReward + committeeReward + reporterReward + stakerReward));
+const toRetrieve = Math.ceil((((reportedAmount * fee)* (1 - (losslessReward + committeeReward + reporterReward + stakerReward))) * fee) * fee);
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -28,7 +29,7 @@ describe(scriptName, () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-    lerc20Token = await setupToken(false, 2000000,
+    lerc20Token = await setupToken(true, 2000000,
       'Random Token',
       'RAND',
       adr.lerc20InitialHolder,

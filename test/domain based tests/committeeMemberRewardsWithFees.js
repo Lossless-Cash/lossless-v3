@@ -14,6 +14,7 @@ const scriptName = path.basename(__filename, '.js');
 
 const reportedAmount = 1000000;
 const committeeReward = 0.02;
+const fee = 0.97;
 
 describe(scriptName, () => {
   beforeEach(async () => {
@@ -23,7 +24,7 @@ describe(scriptName, () => {
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
       adr.lssBackupAdmin);
-    lerc20Token = await setupToken(false, 2000000,
+    lerc20Token = await setupToken(true, 2000000,
       'Random Token',
       'RAND',
       adr.lerc20InitialHolder,
@@ -121,7 +122,7 @@ describe(scriptName, () => {
 
         expect(
           await lerc20Token.balanceOf(adr.member1.address),
-        ).to.be.equal((reportedAmount * committeeReward) / 4);
+        ).to.be.equal(Math.floor(((((reportedAmount * fee) * committeeReward) / 4) * fee) * fee));
       });
 
       it('should emit event when member claims', async () => {
@@ -130,7 +131,7 @@ describe(scriptName, () => {
         ).to.emit(env.lssGovernance, 'CommitteeMemberClaim').withArgs(
           1,
           adr.member1.address,
-          (reportedAmount * committeeReward) / 4,
+          Math.floor(((((reportedAmount * fee) * committeeReward) / 4) * fee)),
         );
       });
 
@@ -150,7 +151,7 @@ describe(scriptName, () => {
 
         expect(
           await lerc20Token.balanceOf(adr.member2.address),
-        ).to.be.equal((reportedAmount * committeeReward) / 4);
+        ).to.be.equal(4563);
       });
       it('should not revert when member 3 claims', async () => {
         await expect(
@@ -159,7 +160,7 @@ describe(scriptName, () => {
 
         expect(
           await lerc20Token.balanceOf(adr.member3.address),
-        ).to.be.equal((reportedAmount * committeeReward) / 4);
+        ).to.be.equal(Math.floor(((((reportedAmount * fee) * committeeReward) / 4) * fee) * fee));
       });
       it('should not revert when member 4 claims', async () => {
         await expect(
@@ -168,7 +169,7 @@ describe(scriptName, () => {
 
         expect(
           await lerc20Token.balanceOf(adr.member4.address),
-        ).to.be.equal((reportedAmount * committeeReward) / 4);
+        ).to.be.equal(Math.floor(((((reportedAmount * fee) * committeeReward) / 4) * fee) * fee));
       });
     });
   });
