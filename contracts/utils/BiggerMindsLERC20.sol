@@ -121,12 +121,12 @@ contract MINDv2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentran
 
     /***** ERC20 TRANSFERS *****/
 
-    function transfer(address recipient, uint256 amount) public override returns (bool) {
+    function transfer(address recipient, uint256 amount) public override lssTransfer(recipient, amount) returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public override lssTransferFrom(sender, recipient, amount) returns (bool) {
         _spendAllowance(sender, _msgSender(), amount);
         _transfer(sender, recipient, amount);        
         return true;
@@ -697,9 +697,9 @@ contract MINDv2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentran
      */
     function setLosslessController(address _controller) public onlyOwner {
         require(_controller != address(0), 
-        "BridgeMintableToken: Controller cannot be zero address.");
+        "LERC20: Controller cannot be zero address.");
         require(_controller != address(lossless), 
-        "BridgeMintableToken: Cannot set same address.");
+        "LERC20: Cannot set same address.");
 
         lossless = ILssController(_controller);
     }
