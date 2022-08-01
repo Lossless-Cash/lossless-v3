@@ -658,16 +658,18 @@ contract MINDv2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentran
 
     event ConfirmBlacklisted(address blacklisted);
 
-    function lssTransfer(address recipient, uint256 amount) internal {
+    modifier lssTransfer(address recipient, uint256 amount) {
         if (isLosslessOn) {
             lossless.beforeTransfer(_msgSender(), recipient, amount);
         }
+        _;
     }
 
-    function lssTransferFrom(address sender, address recipient, uint256 amount) internal {
+    modifier lssTransferFrom(address sender, address recipient, uint256 amount) {
         if (isLosslessOn) {
             lossless.beforeTransferFrom(_msgSender(), sender, recipient, amount);
         }
+        _;
     }
 
     modifier lssBurn(address account, uint256 amount) {
