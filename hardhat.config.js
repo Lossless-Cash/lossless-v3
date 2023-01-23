@@ -9,7 +9,6 @@ require('@nomiclabs/hardhat-etherscan');
 // const { PRIVATE_KEY, MORALIS_KEY, ETHERSCAN_KEY } = require('./config');
 
 const PRIVATE_KEY = '';
-const MORALIS_KEY = '';
 const ETHERSCAN_KEY = '';
 
 module.exports = {
@@ -65,7 +64,29 @@ module.exports = {
   paths: {
     artifacts: './src/artifacts',
   },
+  networks: {
+    elysiumTestnet: {
+      url: `https://elysium-test-rpc.vulcanforged.com/`,
+      accounts: [PRIVATE_KEY],
+    },
+    elysiumMainnet: {
+      url: `https://elysium-rpc.vulcanforged.com/`,
+      accounts: [PRIVATE_KEY],
+    },
+  },
 
+  /*   networks: {
+    // --- TESTNETS ---
+    elysiumTestnet: {
+      url: `https://elysium-test-rpc.vulcanforged.com/`,
+      accounts: [PRIVATE_KEY],
+    },
+    ropsten: {
+      url: `https://eth-goerli.g.alchemy.com/v2/xJGbk0_IOuNjsaA8_HmzMBmzIKnyx93N`,
+      accounts: [PRIVATE_KEY],
+    },
+  },
+  */
   // networks: {
   //   // --- TESTNETS ---
   //   ropsten: {
@@ -135,7 +156,7 @@ module.exports = {
   //   flat: true,
   //   spacing: 2,
   // },
-  etherscan: {
+  /*   etherscan: {
     apiKey: ETHERSCAN_KEY,
-  },
+  }, */
 };
