@@ -8,7 +8,8 @@ require('@nomiclabs/hardhat-etherscan');
 
 // const { PRIVATE_KEY, MORALIS_KEY, ETHERSCAN_KEY } = require('./config');
 
-const PRIVATE_KEY = '';
+const PRIVATE_KEY =
+  'c5a87baeba1b3a2f4823d0e3251010ec8f67b93e28a66f06f218aa40f01b31e9';
 const ETHERSCAN_KEY = '';
 
 module.exports = {
@@ -71,6 +72,8 @@ module.exports = {
     },
     elysiumMainnet: {
       url: `https://elysium-rpc.vulcanforged.com/`,
+      chainId: 1339,
+      gasPrice: 70000000000000,
       accounts: [PRIVATE_KEY],
     },
   },

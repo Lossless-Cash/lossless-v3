@@ -5,9 +5,6 @@ const { ethers } = require('hardhat');
 
 /* eslint-disable global-require */
 async function main() {
-  const gasLimit = 70000000000000;
-  const { time } = require('@openzeppelin/test-helpers');
-  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   const ADMIN_ADDRESS = '0x06F2075587fa961E4Bf7e9c01c5c8EFf69C52837';
 
   console.log('Deploying controllerV1...');
@@ -101,7 +98,7 @@ async function main() {
     { gasLimit: gasLimit },
   );
 
-  /*   console.log('Setting up Lossless ControllerV3...');
+  console.log('Setting up Lossless ControllerV3...');
 
   console.log('   Setting Staking Contract address...');
   await controllerV3.setStakingContractAddress(lssStaking.address);
@@ -152,7 +149,7 @@ async function main() {
   console.log('   Setting Staker Reward percentage...');
   await lssReporting.setStakersReward(2);
   console.log('   Setting Committee Reward percentage...');
-  await lssReporting.setCommitteeReward(2); */
+  await lssReporting.setCommitteeReward(2);
 
   console.log('All done!');
 
