@@ -130,7 +130,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
 
         StakeInfo storage stakeInfo = stakes[msg.sender].stakeInfoOnReport[_reportId];
 
-        (address reporter,,, uint256 reportTimestamps, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        (address reporter,, uint256 reportTimestamps, ILERC20 reportTokens,) = losslessReporting.getReportInfo(_reportId);
 
         require(!stakeInfo.staked, "LSS: already staked");
         require(msg.sender != reporter, "LSS: reporter can not stake");   
@@ -185,7 +185,7 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
 
         uint256 amountToClaim = stakerClaimableAmount(_reportId);
 
-        (,,,, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        (,,,ILERC20 reportTokens,) = losslessReporting.getReportInfo(_reportId);
 
         require(reportTokens.transfer(msg.sender, amountToClaim),
         "LSS: Reward transfer failed");

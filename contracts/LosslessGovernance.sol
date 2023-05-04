@@ -273,7 +273,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         require(!isReportSolved(_reportId), "LSS: Report already solved");
         require(isReportActive(_reportId), "LSS: report is not valid");
 
-        (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        (,,,ILERC20 reportTokens,) = losslessReporting.getReportInfo(_reportId);
 
         require(msg.sender == reportTokens.admin(), "LSS: Must be token owner");
 
@@ -332,7 +332,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         require(!isReportSolved(_reportId), "LSS: Report already solved");
 
 
-        (,,,uint256 reportTimestamps,,,) = losslessReporting.getReportInfo(_reportId);
+        (,,uint256 reportTimestamps,,) = losslessReporting.getReportInfo(_reportId);
         
         if (reportTimestamps + losslessReporting.reportLifetime() > block.timestamp) {
             _resolveActive(_reportId);
@@ -350,7 +350,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @param _reportId Report to be resolved
     function _resolveActive(uint256 _reportId) private {
                 
-        (,address reportedAddress, address secondReportedAddress,, ILERC20 token, bool secondReports,) = losslessReporting.getReportInfo(_reportId);
+        (,address reportedAddress,, ILERC20 token,) = losslessReporting.getReportInfo(_reportId);
 
         Vote storage reportVote = reportVotes[_reportId];
 
@@ -360,10 +360,6 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         require(!(voteCount == 2 && agreeCount == 1), "LSS: Need another vote to untie");
 
         reportedAddresses.push(reportedAddress);
-
-        if (secondReports) {
-            reportedAddresses.push(secondReportedAddress);
-        }
 
         if (agreeCount > (voteCount - agreeCount)){
             reportVote.resolution = true;
@@ -426,13 +422,9 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @param _reportId Report to be resolved
     function _resolveExpired(uint256 _reportId) private {
 
-        (,address reportedAddress, address secondReportedAddress,,,bool secondReports,) = losslessReporting.getReportInfo(_reportId);
+        (,address reportedAddress,,,) = losslessReporting.getReportInfo(_reportId);
 
         reportedAddresses.push(reportedAddress);
-
-        if (secondReports) {
-            reportedAddresses.push(secondReportedAddress);
-        }
 
         reportVotes[_reportId].resolution = false;
         _compensateAddresses(reportedAddresses);
@@ -459,7 +451,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @notice This method retuns if a report is still active
     /// @param _reportId report Id to verify
     function isReportActive(uint256 _reportId) public view returns(bool) {
-        (,,,uint256 reportTimestamps,,,) = losslessReporting.getReportInfo(_reportId);
+        (,,uint256 reportTimestamps,,) = losslessReporting.getReportInfo(_reportId);
         return reportTimestamps != 0 && reportTimestamps + losslessReporting.reportLifetime() > block.timestamp;
     }
 
@@ -470,7 +462,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @param _reportId Report to propose the wallet
     /// @param _wallet proposed address
     function proposeWallet(uint256 _reportId, address _wallet) override public whenNotPaused {
-        (,,,uint256 reportTimestamps, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        (,,uint256 reportTimestamps, ILERC20 reportTokens,) = losslessReporting.getReportInfo(_reportId);
 
         require(msg.sender == losslessController.admin() || 
                 msg.sender == reportTokens.admin(),
@@ -496,7 +488,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @dev Only can be run by the three pilars.
     /// @param _reportId Report to propose the wallet
     function rejectWallet(uint256 _reportId) override public whenNotPaused {
-        (,,,uint256 reportTimestamps,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        (,,uint256 reportTimestamps,ILERC20 reportTokens,) = losslessReporting.getReportInfo(_reportId);
 
         ProposedWallet storage proposedWallet = proposedWalletOnReport[_reportId];
 
@@ -525,7 +517,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
     /// @notice This function retrieves the fund to the accepted proposed wallet
     /// @param _reportId Report to propose the wallet
     function retrieveFunds(uint256 _reportId) override public whenNotPaused {
-        (,,,uint256 reportTimestamps, ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        (,,uint256 reportTimestamps, ILERC20 reportTokens,) = losslessReporting.getReportInfo(_reportId);
 
         ProposedWallet storage proposedWallet = proposedWalletOnReport[_reportId];
 
@@ -615,7 +607,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         require(reportVote.committeeMemberVoted[msg.sender], "LSS: Did not vote on report");
         require(!reportVote.committeeMemberClaimed[msg.sender], "LSS: Already claimed");
 
-        (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        (,,,ILERC20 reportTokens,) = losslessReporting.getReportInfo(_reportId);
 
         uint256 numberOfMembersVote = reportVote.committeeVotes.length;
         uint256 committeeReward = losslessReporting.committeeReward();
@@ -638,7 +630,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         require(!reportVote.losslessPayed, "LSS: Already claimed");
 
-        (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        (,,,ILERC20 reportTokens,) = losslessReporting.getReportInfo(_reportId);
 
         uint256 amountToClaim = reportClaimInfo[_reportId].amountToDistribute * losslessReporting.losslessReward() / HUNDRED;
 

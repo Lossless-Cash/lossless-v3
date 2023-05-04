@@ -41,10 +41,8 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     struct Report {
         address reporter;
         address reportedAddress;
-        address secondReportedAddress;
         uint256 reportTimestamps;
         ILERC20 reportTokens;
-        bool secondReports;
         bool reporterClaimStatus;
     }
 
@@ -189,27 +187,21 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// @param _reportId Report Id to get admin
     /// @return reporter
     /// @return reportedAddress
-    /// @return secondReportedAddress
     /// @return reportTimestamps
     /// @return reportTokens
-    /// @return secondReports 
     /// @return reporterClaimStatus 
     function getReportInfo(uint256 _reportId) override external view returns(address reporter,
         address reportedAddress,
-        address secondReportedAddress,
         uint256 reportTimestamps,
         ILERC20 reportTokens,
-        bool secondReports,
         bool reporterClaimStatus) {
 
         Report storage queriedReport = reportInfo[_reportId];
 
         return (queriedReport.reporter, 
         queriedReport.reportedAddress, 
-        queriedReport.secondReportedAddress, 
         queriedReport.reportTimestamps, 
         queriedReport.reportTokens, 
-        queriedReport.secondReports, 
         queriedReport.reporterClaimStatus);
     }
 
@@ -251,37 +243,6 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         emit ReportSubmission(_token, _account, reportId, reportingAmount);
 
         return reportId;
-    }
-
-
-    /// @notice This function will add a second address to a given report.
-    /// @dev This funtion must be called by a non blacklisted/reported address. 
-    /// It will generate a second report linked to the first one created. 
-    /// This can be used in the event that the malicious actor is able to frontrun the first report by swapping the tokens or transfering.
-    /// @param _reportId Report that was previously generated.
-    /// @param _account Potential malicious address
-    function secondReport(uint256 _reportId, address _account) override public whenNotPaused {
-        require(_account != address(0), "LSS: Cannot report zero address");
-        require(!losslessGovernance.isReportSolved(_reportId) && !losslessGovernance.reportResolution(_reportId), "LSS: Report already solved");
-        require(!losslessController.whitelist(_account), "LSS: Cannot report LSS protocol");
-        require(!losslessController.dexList(_account), "LSS: Cannot report Dex");
-
-        Report storage queriedReport = reportInfo[_reportId]; 
-
-        uint256 reportTimestamp = queriedReport.reportTimestamps;
-        ILERC20 token = queriedReport.reportTokens;
-
-        require(_reportId != 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
-        require(queriedReport.secondReports == false, "LSS: Another already submitted");
-        require(msg.sender == queriedReport.reporter, "LSS: invalid reporter");
-
-        queriedReport.secondReports = true;
-        tokenReports[token].reports[_account] = _reportId;
-
-        losslessController.addToBlacklist(_account);
-        queriedReport.secondReportedAddress = _account;
-
-        emit SecondReportSubmission(token, _account, _reportId);
     }
 
     /// @notice This function is for the reporter to claim their rewards

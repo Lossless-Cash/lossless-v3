@@ -23,10 +23,8 @@ interface ILssReporting {
   function reporterClaimableAmount(uint256 _reportId) external view returns (uint256);
   function getReportInfo(uint256 _reportId) external view returns(address _reporter,
         address _reportedAddress,
-        address _secondReportedAddress,
         uint256 _reportTimestamps,
         ILERC20 _reportTokens,
-        bool _secondReports,
         bool _reporterClaimStatus);
   
   function pause() external;
@@ -39,12 +37,10 @@ interface ILssReporting {
   function setStakersReward(uint256 _reward) external;
   function setCommitteeReward(uint256 _reward) external;
   function setReportLifetime(uint256 _lifetime) external;
-  function secondReport(uint256 _reportId, address _account) external;
   function reporterClaim(uint256 _reportId) external;
   function retrieveCompensation(address _adr, uint256 _amount) external;
 
   event ReportSubmission(ILERC20 indexed _token, address indexed _account, uint256 indexed _reportId, uint256 _amount);
-  event SecondReportSubmission(ILERC20 indexed _token, address indexed _account, uint256 indexed _reportId);
   event NewReportingAmount(uint256 indexed _newAmount);
   event NewStakingToken(ILERC20 indexed _token);
   event NewGovernanceContract(ILssGovernance indexed _adr);
