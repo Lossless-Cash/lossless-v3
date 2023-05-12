@@ -260,29 +260,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// This can be used in the event that the malicious actor is able to frontrun the first report by swapping the tokens or transfering.
     /// @param _reportId Report that was previously generated.
     /// @param _account Potential malicious address
-    function secondReport(uint256 _reportId, address _account) override public whenNotPaused {
-        require(_account != address(0), "LSS: Cannot report zero address");
-        require(!losslessGovernance.isReportSolved(_reportId) && !losslessGovernance.reportResolution(_reportId), "LSS: Report already solved");
-        require(!losslessController.whitelist(_account), "LSS: Cannot report LSS protocol");
-        require(!losslessController.dexList(_account), "LSS: Cannot report Dex");
-
-        Report storage queriedReport = reportInfo[_reportId]; 
-
-        uint256 reportTimestamp = queriedReport.reportTimestamps;
-        ILERC20 token = queriedReport.reportTokens;
-
-        require(_reportId != 0 && reportTimestamp + reportLifetime > block.timestamp, "LSS: report does not exists");
-        require(queriedReport.secondReports == false, "LSS: Another already submitted");
-        require(msg.sender == queriedReport.reporter, "LSS: invalid reporter");
-
-        queriedReport.secondReports = true;
-        tokenReports[token].reports[_account] = _reportId;
-
-        losslessController.addToBlacklist(_account);
-        queriedReport.secondReportedAddress = _account;
-
-        emit SecondReportSubmission(token, _account, _reportId);
-    }
+    function secondReport(uint256 _reportId, address _account) override public whenNotPaused {}
 
     /// @notice This function is for the reporter to claim their rewards
     /// @param _reportId Staked report
