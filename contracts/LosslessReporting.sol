@@ -173,7 +173,7 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// @notice This function gets the contract version
     /// @return Version of the contract
     function getVersion() override external pure returns (uint256) {
-        return 1;
+        return 2;
     }
 
     /// @notice This function will return the reward amount for all parties
