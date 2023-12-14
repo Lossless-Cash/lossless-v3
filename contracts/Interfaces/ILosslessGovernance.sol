@@ -56,5 +56,7 @@ interface ILssGovernance {
     event CompensationRetrieval(address indexed _wallet, uint256 indexed _amount);
     event LosslessClaim(ILERC20 indexed _token, uint256 indexed _reportID, uint256 indexed _amount);
     event NewCompensationPercentage(uint256 indexed _compensationPercentage);
+    event LosslessAdminClaimCommitteeTokens(uint256 indexed reportId, uint256 amountClaimed);
+
 }
 

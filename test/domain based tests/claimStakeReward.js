@@ -18,22 +18,31 @@ const reportedAmount = 1000000;
 describe(scriptName, () => {
   beforeEach(async () => {
     adr = await setupAddresses();
-    env = await setupEnvironment(adr.lssAdmin,
+    env = await setupEnvironment(
+      adr.lssAdmin,
       adr.lssRecoveryAdmin,
       adr.lssPauseAdmin,
       adr.lssInitialHolder,
-      adr.lssBackupAdmin);
-    lerc20Token = await setupToken(false, 2000000,
+      adr.lssBackupAdmin,
+    );
+    lerc20Token = await setupToken(
+      false,
+      2000000,
       'Random Token',
       'RAND',
       adr.lerc20InitialHolder,
       adr.lerc20Admin.address,
       adr.lerc20BackupAdmin.address,
       Number(time.duration.days(1)),
-      env.lssController.address);
+      env.lssController.address,
+    );
 
-    await env.lssController.connect(adr.lssAdmin).setWhitelist([env.lssReporting.address], true);
-    await env.lssController.connect(adr.lssAdmin).setDexList([adr.dexAddress.address], true);
+    await env.lssController
+      .connect(adr.lssAdmin)
+      .setWhitelist([env.lssReporting.address], true);
+    await env.lssController
+      .connect(adr.lssAdmin)
+      .setDexList([adr.dexAddress.address], true);
   });
 
   describe('when report is solved and claiming available - case 1', () => {
@@ -132,9 +141,15 @@ describe(scriptName, () => {
     describe('when report is solved negatively', () => {
       beforeEach(async () => {
         await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, false);
-        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, false);
-        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.lerc20Admin)
+          .tokenOwnersVote(1, false);
+        await env.lssGovernance
+          .connect(adr.member1)
+          .committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member2)
+          .committeeMemberVote(1, true);
 
         await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -155,9 +170,15 @@ describe(scriptName, () => {
     describe('when report is solved positively', () => {
       beforeEach(async () => {
         await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.lerc20Admin)
+          .tokenOwnersVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member1)
+          .committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member2)
+          .committeeMemberVote(1, true);
 
         await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -195,14 +216,9 @@ describe(scriptName, () => {
         });
 
         it('should emit event', async () => {
-          expect(
-            await env.lssStaking.connect(adr.staker1).stakerClaim(1),
-          ).to.be.emit(env.lssStaking, 'StakerClaim').withArgs(
-            adr.staker1.address,
-            lerc20Token.address,
-            1,
-            7095,
-          );
+          expect(await env.lssStaking.connect(adr.staker1).stakerClaim(1))
+            .to.be.emit(env.lssStaking, 'StakerClaim')
+            .withArgs(adr.staker1.address, lerc20Token.address, 1, 7095);
         });
       });
 
@@ -232,21 +248,21 @@ describe(scriptName, () => {
             env.lssStaking.connect(adr.staker4).stakerClaim(1),
           ).to.not.be.reverted;
 
-          expect(
-            await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(7095);
+          expect(await lerc20Token.balanceOf(adr.staker1.address)).to.be.equal(
+            7095,
+          );
 
-          expect(
-            await lerc20Token.balanceOf(adr.staker2.address),
-          ).to.be.equal(6872);
+          expect(await lerc20Token.balanceOf(adr.staker2.address)).to.be.equal(
+            6872,
+          );
 
-          expect(
-            await lerc20Token.balanceOf(adr.staker3.address),
-          ).to.be.equal(4499);
+          expect(await lerc20Token.balanceOf(adr.staker3.address)).to.be.equal(
+            4499,
+          );
 
-          expect(
-            await lerc20Token.balanceOf(adr.staker4.address),
-          ).to.be.equal(1532);
+          expect(await lerc20Token.balanceOf(adr.staker4.address)).to.be.equal(
+            1532,
+          );
         });
       });
     });
@@ -360,9 +376,15 @@ describe(scriptName, () => {
     describe('when report is solved positively', () => {
       beforeEach(async () => {
         await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.lerc20Admin)
+          .tokenOwnersVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member1)
+          .committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member2)
+          .committeeMemberVote(1, true);
 
         await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -393,29 +415,29 @@ describe(scriptName, () => {
           ).to.not.be.reverted;
 
           // Margin of error -0.7 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(4379);
+          expect(await lerc20Token.balanceOf(adr.staker1.address)).to.be.equal(
+            4379,
+          );
 
           // Margin of error -0.5 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker2.address),
-          ).to.be.equal(4370);
+          expect(await lerc20Token.balanceOf(adr.staker2.address)).to.be.equal(
+            4370,
+          );
 
           // Margin of error -0.4 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker3.address),
-          ).to.be.equal(4364);
+          expect(await lerc20Token.balanceOf(adr.staker3.address)).to.be.equal(
+            4364,
+          );
 
           // Margin of error -0.3 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker4.address),
-          ).to.be.equal(4358);
+          expect(await lerc20Token.balanceOf(adr.staker4.address)).to.be.equal(
+            4358,
+          );
 
           // Margin of error -0.1 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker5.address),
-          ).to.be.equal(2527);
+          expect(await lerc20Token.balanceOf(adr.staker5.address)).to.be.equal(
+            2527,
+          );
         });
       });
     });
@@ -529,9 +551,15 @@ describe(scriptName, () => {
     describe('when report is solved positively', () => {
       beforeEach(async () => {
         await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.lerc20Admin)
+          .tokenOwnersVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member1)
+          .committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member2)
+          .committeeMemberVote(1, true);
 
         await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -562,29 +590,29 @@ describe(scriptName, () => {
           ).to.not.be.reverted;
 
           // Margin of error -0.1 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(6512);
+          expect(await lerc20Token.balanceOf(adr.staker1.address)).to.be.equal(
+            6512,
+          );
 
           // Margin of error -1 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker2.address),
-          ).to.be.equal(3419);
+          expect(await lerc20Token.balanceOf(adr.staker2.address)).to.be.equal(
+            3419,
+          );
 
           // Margin of error -0.2 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker3.address),
-          ).to.be.equal(3373);
+          expect(await lerc20Token.balanceOf(adr.staker3.address)).to.be.equal(
+            3373,
+          );
 
           // Margin of error -0.7 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker4.address),
-          ).to.be.equal(3349);
+          expect(await lerc20Token.balanceOf(adr.staker4.address)).to.be.equal(
+            3349,
+          );
 
           // Margin of error -1 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker5.address),
-          ).to.be.equal(3345);
+          expect(await lerc20Token.balanceOf(adr.staker5.address)).to.be.equal(
+            3345,
+          );
         });
       });
     });
@@ -650,9 +678,15 @@ describe(scriptName, () => {
     describe('when report is solved positively', () => {
       beforeEach(async () => {
         await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.lerc20Admin)
+          .tokenOwnersVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member1)
+          .committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member2)
+          .committeeMemberVote(1, true);
 
         await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -671,9 +705,9 @@ describe(scriptName, () => {
           ).to.not.be.reverted;
 
           // Margin of error -1 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(19999);
+          expect(await lerc20Token.balanceOf(adr.staker1.address)).to.be.equal(
+            19999,
+          );
         });
       });
     });
@@ -739,9 +773,15 @@ describe(scriptName, () => {
     describe('when report is solved positively', () => {
       beforeEach(async () => {
         await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.lerc20Admin)
+          .tokenOwnersVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member1)
+          .committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member2)
+          .committeeMemberVote(1, true);
 
         await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -760,9 +800,9 @@ describe(scriptName, () => {
           ).to.not.be.reverted;
 
           // Margin of error -1 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(19999);
+          expect(await lerc20Token.balanceOf(adr.staker1.address)).to.be.equal(
+            19999,
+          );
         });
       });
     });
@@ -835,9 +875,15 @@ describe(scriptName, () => {
     describe('when report is solved positively', () => {
       beforeEach(async () => {
         await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
-        await env.lssGovernance.connect(adr.lerc20Admin).tokenOwnersVote(1, true);
-        await env.lssGovernance.connect(adr.member1).committeeMemberVote(1, true);
-        await env.lssGovernance.connect(adr.member2).committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.lerc20Admin)
+          .tokenOwnersVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member1)
+          .committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member2)
+          .committeeMemberVote(1, true);
 
         await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
 
@@ -859,14 +905,93 @@ describe(scriptName, () => {
           ).to.not.be.reverted;
 
           // Margin of error 0 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker1.address),
-          ).to.be.equal(10000);
+          expect(await lerc20Token.balanceOf(adr.staker1.address)).to.be.equal(
+            10000,
+          );
 
           // Margin of error -1 token/s
-          expect(
-            await lerc20Token.balanceOf(adr.staker2.address),
-          ).to.be.equal(9999);
+          expect(await lerc20Token.balanceOf(adr.staker2.address)).to.be.equal(
+            9999,
+          );
+        });
+      });
+    });
+  });
+
+  describe('when report is solved and nobody claimed stakes', () => {
+    // Calculations based on Test Case 6
+    // Two stakers staking at the same timestamp
+    // https://docs.google.com/spreadsheets/d/1-ufuOixhv2pYbUu-dQozqBcZJv2Yg69Wi_yRwnulC00/edit?usp=sharing
+    beforeEach(async () => {
+      await env.lssController
+        .connect(adr.lssAdmin)
+        .setWhitelist(
+          [
+            env.lssGovernance.address,
+            env.lssReporting.address,
+            env.lssStaking.address,
+          ],
+          true,
+        );
+
+      await env.lssToken
+        .connect(adr.lssInitialHolder)
+        .transfer(adr.reporter1.address, env.stakingAmount * 2);
+
+      await env.lssToken
+        .connect(adr.reporter1)
+        .approve(env.lssReporting.address, env.stakingAmount * 2);
+
+      await lerc20Token
+        .connect(adr.lerc20InitialHolder)
+        .transfer(adr.maliciousActor1.address, reportedAmount);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(5)),
+      ]);
+
+      await env.lssReporting
+        .connect(adr.reporter1)
+        .report(lerc20Token.address, adr.maliciousActor1.address);
+
+      await ethers.provider.send('evm_increaseTime', [
+        Number(time.duration.minutes(30)),
+      ]);
+
+      await env.lssGovernance
+        .connect(adr.lssAdmin)
+        .addCommitteeMembers([
+          adr.member1.address,
+          adr.member2.address,
+          adr.member3.address,
+        ]);
+    });
+
+    describe('when report is solved positively', () => {
+      beforeEach(async () => {
+        await env.lssGovernance.connect(adr.lssAdmin).losslessVote(1, true);
+        await env.lssGovernance
+          .connect(adr.lerc20Admin)
+          .tokenOwnersVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member1)
+          .committeeMemberVote(1, true);
+        await env.lssGovernance
+          .connect(adr.member2)
+          .committeeMemberVote(1, true);
+
+        await env.lssGovernance.connect(adr.lssAdmin).resolveReport(1);
+
+        await ethers.provider.send('evm_increaseTime', [
+          Number(time.duration.minutes(5)),
+        ]);
+      });
+
+      describe('when all stakers claims', () => {
+        it('should not revert', async () => {
+          await expect(
+            env.lssStaking.connect(adr.lssAdmin).losslessClaimNoStakers(1),
+          ).to.not.be.reverted;
         });
       });
     });
