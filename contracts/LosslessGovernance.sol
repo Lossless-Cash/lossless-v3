@@ -397,6 +397,12 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         return claimInfo.amountToDistribute * (100 - (committeeReward + losslessReward + reporterReward + stakersReward)) / HUNDRED;
     }
 
+    function updateBalancesManual(uint256 _reportId, ILERC20 token) public onlyLosslessAdmin {
+        (uint256 totalBalance) = getLssContractsBalances(token);
+        ClaimInfo storage claimInfo = reportClaimInfo[_reportId];
+        claimInfo.amountToDistribute = totalBalance;
+    }
+
     function getVoteCount(uint256 _reportId) private view returns(uint256, uint256){
         uint256 agreeCount = 0;
         uint256 voteCount = 0;
