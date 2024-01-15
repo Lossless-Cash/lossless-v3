@@ -79,6 +79,7 @@ contract LERC20 is Context, ILERC20 {
     // --- LOSSLESS management ---
     function transferOutBlacklistedFunds(address[] calldata from) override external {
         require(_msgSender() == address(lossless), "LERC20: Only lossless contract");
+        require(isLosslessOn, "LERC20: Lossless is off");
 
         uint256 fromLength = from.length;
         uint256 totalAmount = 0;
