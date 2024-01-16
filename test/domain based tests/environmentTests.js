@@ -1147,7 +1147,7 @@ describe(scriptName, () => {
 
     describe('when the Lossless Reporting Contract has been set up', () => {
       it('should get version', async () => {
-        expect(await env.lssReporting.getVersion()).to.be.equal(1);
+        expect(await env.lssReporting.getVersion()).to.be.equal(2);
       });
 
       it('should set the reporting amount correctly', async () => {
