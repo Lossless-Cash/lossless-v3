@@ -173,6 +173,33 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
         emit NewCompensationPercentage(compensationPercentage);
     }
 
+    /// @notice This function sets the address for Lossless Reporting
+    /// @param _newAddress New Address
+    function setLosslessReportingContract(address _newAddress) override public onlyLosslessAdmin {
+        require(_newAddress != address(0), "LSS: Cannot be zero address");
+        require(_newAddress != address(losslessReporting), "LSS: Already set to that address");
+        losslessReporting = ILssReporting(_newAddress);
+        emit NewLosslessReportingContract(_newAddress);
+    }
+
+    /// @notice This function sets the address for Lossless Staking
+    /// @param _newAddress New Address
+    function setLosslessStakingContract(address _newAddress) override public onlyLosslessAdmin {
+        require(_newAddress != address(0), "LSS: Cannot be zero address");
+        require(_newAddress != address(losslessStaking), "LSS: Already set to that address");
+        losslessStaking = ILssStaking(_newAddress);
+        emit NewLosslessStakingContract(_newAddress);
+    }
+
+    /// @notice This function sets the address for Lossless Controller
+    /// @param _newAddress New Address
+    function setLosslessControllerContract(address _newAddress) override public onlyLosslessAdmin {
+        require(_newAddress != address(0), "LSS: Cannot be zero address");
+        require(_newAddress != address(losslessController), "LSS: Already set to that address");
+        losslessController = ILssController(_newAddress);
+        emit NewLosslessControllerContract(_newAddress);
+    }
+
     /// @notice This function returns if the majority of the commitee voted and the resolution of the votes
     /// @param _reportId Report number to be checked
     /// @return isMajorityReached result Returns True if the majority has voted and the true if the result is positive
