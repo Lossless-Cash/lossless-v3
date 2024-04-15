@@ -298,4 +298,19 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
         emit CompensationRetrieve(_adr, _amount);
     }
 
-}
+    /// @notice This function allows the admin to retrieve tokens that are stuck in the contract
+    /// @param _token Address of the token to be retrieved
+    /// @param _to Address to which the tokens will be sent
+    /// @param _amount Amount of tokens to be retrieved
+    function retrieveRejectedReportTokens(ILERC20 _token, address _to, uint256 _amount) public onlyLosslessAdmin {
+        require(_to != address(0), "LSS: Cannot send to zero address");
+        require(_token != stakingToken, "LSS: Cannot retrieve staking tokens");
+        require(_amount > 0, "LSS: Amount must be greater than zero");
+
+        uint256 contractBalance = _token.balanceOf(address(this));
+        require(_amount <= contractBalance, "LSS: Not enough tokens in contract");
+
+        require(_token.transfer(_to, _amount), "LSS: Token transfer failed");
+    }
+    
+    }
