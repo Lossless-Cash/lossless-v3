@@ -302,9 +302,14 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// @param _token Address of the token to be retrieved
     /// @param _to Address to which the tokens will be sent
     /// @param _amount Amount of tokens to be retrieved
-    function retrieveRejectedReportTokens(ILERC20 _token, address _to, uint256 _amount) public onlyLosslessAdmin {
+    /// @param _reportId ID of the associated report to check its status
+    function retrieveRejectedReportTokens(ILERC20 _token, address _to, uint256 _amount, uint256 _reportId) public onlyLosslessAdmin {
         require(_to != address(0), "LSS: Cannot send to zero address");
         require(_amount > 0, "LSS: Amount must be greater than zero");
+
+        // Check the status of the report
+        Report storage report = reportInfo[_reportId];
+        require(report.status == ReportStatus.Rejected || (report.status == ReportStatus.Expired && block.timestamp > report.reportTimestamps + reportLifetime), "LSS: Report not expired or rejected");
 
         uint256 contractBalance = _token.balanceOf(address(this));
         require(_amount <= contractBalance, "LSS: Not enough tokens in contract");
