@@ -301,20 +301,23 @@ contract LosslessReporting is ILssReporting, Initializable, ContextUpgradeable, 
     /// @notice This function allows the admin to retrieve tokens that are stuck in the contract
     /// @param _token Address of the token to be retrieved
     /// @param _to Address to which the tokens will be sent
-    /// @param _amount Amount of tokens to be retrieved
     /// @param _reportId ID of the associated report to check its status
-    function retrieveRejectedReportTokens(ILERC20 _token, address _to, uint256 _amount, uint256 _reportId) public onlyLosslessAdmin {
+    function retrieveRejectedReportTokens(ILERC20 _token, address _to, uint256 _reportId) public onlyLosslessAdmin {
         require(_to != address(0), "LSS: Cannot send to zero address");
-        require(_amount > 0, "LSS: Amount must be greater than zero");
 
-        // Check the status of the report
+        // Retrieve the report from storage
         Report storage report = reportInfo[_reportId];
-        require(report.status == ReportStatus.Rejected || (report.status == ReportStatus.Expired && block.timestamp > report.reportTimestamps + reportLifetime), "LSS: Report not expired or rejected");
+        
+        // Check if the report is either expired or resolved negatively
+        bool isExpired = (block.timestamp > report.reportTimestamps + reportLifetime);
+        bool isResolvedNegatively = (losslessGovernance.isReportSolved(_reportId) && !losslessGovernance.reportResolution(_reportId));
+        
+        require(isExpired || isResolvedNegatively, "LSS: Report not expired or resolved negatively");
 
         uint256 contractBalance = _token.balanceOf(address(this));
-        require(_amount <= contractBalance, "LSS: Not enough tokens in contract");
+        require(reportingAmount <= contractBalance, "LSS: Not enough tokens in contract");
 
-        require(_token.transfer(_to, _amount), "LSS: Token transfer failed");
+        require(_token.transfer(_to, reportingAmount), "LSS: Token transfer failed");
     }
     
     }
