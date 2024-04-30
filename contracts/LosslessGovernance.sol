@@ -175,7 +175,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     /// @notice This function sets the address for Lossless Reporting
     /// @param _newAddress New Address
-    function setLosslessReportingContract(address _newAddress) override public onlyLosslessAdmin {
+    function setLosslessReportingContract(address _newAddress) public onlyLosslessAdmin {
         require(_newAddress != address(0), "LSS: Cannot be zero address");
         require(_newAddress != address(losslessReporting), "LSS: Already set to that address");
         losslessReporting = ILssReporting(_newAddress);
@@ -184,7 +184,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     /// @notice This function sets the address for Lossless Staking
     /// @param _newAddress New Address
-    function setLosslessStakingContract(address _newAddress) override public onlyLosslessAdmin {
+    function setLosslessStakingContract(address _newAddress) public onlyLosslessAdmin {
         require(_newAddress != address(0), "LSS: Cannot be zero address");
         require(_newAddress != address(losslessStaking), "LSS: Already set to that address");
         losslessStaking = ILssStaking(_newAddress);
@@ -193,7 +193,7 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
     /// @notice This function sets the address for Lossless Controller
     /// @param _newAddress New Address
-    function setLosslessControllerContract(address _newAddress) override public onlyLosslessAdmin {
+    function setLosslessControllerContract(address _newAddress) public onlyLosslessAdmin {
         require(_newAddress != address(0), "LSS: Cannot be zero address");
         require(_newAddress != address(losslessController), "LSS: Already set to that address");
         losslessController = ILssController(_newAddress);
