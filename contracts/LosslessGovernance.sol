@@ -676,4 +676,24 @@ contract LosslessGovernance is ILssGovernance, Initializable, AccessControlUpgra
 
         emit LosslessClaim(reportTokens, _reportId, amountToClaim);
     }
+
+    /// @notice Claims the committee's tokens for a report if no committee member has voted
+    /// @dev This function should be called by Lossless Admin only after a report is resolved
+    /// @param _reportId The ID of the report for which the tokens are being claimed
+    function losslessAdminClaimCommitteeTokens(uint256 _reportId) public onlyLosslessAdmin {
+        require(isReportSolved(_reportId), "LSS: Report not resolved");
+        (bool committeeResoluted,) = _getCommitteeMajorityReachedResult(_reportId);
+        require(committeeResoluted == false, "LSS: Committee has voted");
+        
+        Vote storage reportVote = reportVotes[_reportId];
+        uint256 numberOfVotes = reportVote.committeeVotes.length;
+        require(numberOfVotes == 0, "LSS: Committee members have voted");
+
+        (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        uint256 committeeTokenAmount = reportClaimInfo[_reportId].amountToDistribute * losslessReporting.committeeReward() / HUNDRED;
+        require(reportTokens.transfer(losslessController.admin(), committeeTokenAmount), "LSS: Transfer failed");
+        
+        emit LosslessAdminClaimCommitteeTokens(_reportId, committeeTokenAmount);
+    }
+
 }

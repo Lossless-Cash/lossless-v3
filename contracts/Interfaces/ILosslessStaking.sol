@@ -32,4 +32,5 @@ interface ILssStaking {
   event NewStakingToken(ILERC20 indexed _newToken);
   event NewReportingContract(ILssReporting indexed _newContract);
   event NewGovernanceContract(ILssGovernance indexed _newContract);
+  event LosslessClaim(uint256 indexed reportId, uint256 amountClaimed);
 }

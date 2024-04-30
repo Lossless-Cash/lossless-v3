@@ -220,5 +220,21 @@ contract LosslessStaking is ILssStaking, Initializable, ContextUpgradeable, Paus
         return stakes[_address].stakeInfoOnReport[_reportId].coefficient;
     }
 
+    /// @notice Claims the tokens staked on a report if there were no stakers
+    /// @dev This function should be called by Lossless Admin only after a report is resolved
+    /// @param _reportId The ID of the report for which the tokens are being claimed
+    function losslessClaimNoStakers(uint256 _reportId) public onlyLosslessAdmin {
+        require(losslessGovernance.isReportSolved(_reportId), "LSS: Report not resolved");
+        require(reportCoefficient[_reportId] == 0, "LSS: There are stakers on this report");
 
+        uint256 balance = losslessGovernance.getAmountToDistribute(_reportId);
+        require(balance > 0, "LSS: No amount to claim");
+
+        (,,, uint256 stakersReward) = losslessReporting.getRewards();
+        uint256 amountDistributedToStakers = (balance * stakersReward) / HUNDRED;
+        (,,,,ILERC20 reportTokens,,) = losslessReporting.getReportInfo(_reportId);
+        require(reportTokens.transfer(losslessController.admin(), amountDistributedToStakers), "LSS: Transfer failed");
+
+        emit LosslessClaim(_reportId, balance);
+    }
 }

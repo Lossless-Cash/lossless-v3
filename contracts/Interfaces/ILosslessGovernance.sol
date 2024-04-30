@@ -59,5 +59,7 @@ interface ILssGovernance {
     event NewLosslessReportingContract(address _newContract);
     event NewLosslessControllerContract(address _newContract);
     event NewLosslessStakingContract(address _newContract);
+    event LosslessAdminClaimCommitteeTokens(uint256 indexed reportId, uint256 amountClaimed);
+
 }
 
